@@ -1,0 +1,233 @@
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
+from flask_login import login_required, current_user
+from app import db
+from app.models.google_calendar_sync import GoogleCalendarSync
+from app.models.user import User
+
+bp = Blueprint('settings', __name__)
+
+@bp.route('/settings')
+@login_required
+def index():
+    """Settings page with profile information and account settings"""
+    return render_template('settings/index.html', user=current_user)
+
+@bp.route('/settings/update', methods=['POST'])
+@login_required
+def update_settings():
+    """Update user settings"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        # Update SMS notifications preference
+        sms_notifications = data.get('sms_notifications') == 'true' or data.get('sms_notifications') == True
+        current_user.sms_notifications = sms_notifications
+        
+        # Update other profile fields if provided
+        if 'first_name' in data:
+            current_user.first_name = data.get('first_name', '').strip()
+        if 'last_name' in data:
+            current_user.last_name = data.get('last_name', '').strip()
+        if 'phone' in data:
+            current_user.phone = data.get('phone', '').strip()
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Settings updated successfully'})
+        else:
+            flash('Settings updated successfully!', 'success')
+            return redirect(url_for('settings.index'))
+            
+    except Exception as e:
+        db.session.rollback()
+        if request.is_json:
+            return jsonify({'error': str(e)}), 500
+        else:
+            flash('Error updating settings. Please try again.', 'error')
+            return redirect(url_for('settings.index'))
+
+@bp.route('/settings/google-calendar', methods=['POST'])
+@login_required
+def update_google_calendar_settings():
+    """Update Google Calendar sync settings"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        # Get or create GoogleCalendarSync record
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
+        if not sync_record:
+            return jsonify({'success': False, 'error': 'Google Calendar not connected'}), 400
+        
+        # Update settings
+        if 'auto_sync_availability' in data:
+            sync_record.auto_sync_availability = data.get('auto_sync_availability') == 'true' or data.get('auto_sync_availability') == True
+        
+        if 'auto_add_events' in data:
+            sync_record.auto_add_events = data.get('auto_add_events') == 'true' or data.get('auto_add_events') == True
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Google Calendar settings updated successfully'})
+        else:
+            flash('Google Calendar settings updated successfully!', 'success')
+            return redirect(url_for('settings.index'))
+            
+    except Exception as e:
+        db.session.rollback()
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash('Error updating Google Calendar settings. Please try again.', 'error')
+            return redirect(url_for('settings.index'))
+
+@bp.route('/settings/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validation
+        if not current_password or not new_password or not confirm_password:
+            error_msg = 'All fields are required.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Check current password
+        if not current_user.check_password(current_password):
+            error_msg = 'Current password is incorrect.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Validate new password
+        if len(new_password) < 6:
+            error_msg = 'New password must be at least 6 characters long.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Check password confirmation
+        if new_password != confirm_password:
+            error_msg = 'New passwords do not match.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Check if new password is different from current
+        if current_user.check_password(new_password):
+            error_msg = 'New password must be different from your current password.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Update password
+        current_user.set_password(new_password)
+        db.session.commit()
+        
+        success_msg = 'Password changed successfully!'
+        if request.is_json:
+            return jsonify({'success': True, 'message': success_msg})
+        else:
+            flash(success_msg, 'success')
+            return redirect(url_for('settings.index'))
+            
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f'Error changing password: {str(e)}'
+        if request.is_json:
+            return jsonify({'success': False, 'error': error_msg}), 500
+        else:
+            flash('Error changing password. Please try again.', 'error')
+            return redirect(url_for('settings.index'))
+
+@bp.route('/settings/edit-profile', methods=['POST'])
+@login_required
+def edit_profile():
+    """Edit user profile information"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        first_name = data.get('first_name', '').strip()
+        last_name = data.get('last_name', '').strip()
+        email = data.get('email', '').strip()
+        phone = data.get('phone', '').strip()
+        
+        # Validation
+        if not first_name or not last_name:
+            error_msg = 'First name and last name are required.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        if not email:
+            error_msg = 'Email is required.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Check if email is already taken by another user
+        existing_user = User.query.filter(User.email == email, User.id != current_user.id).first()
+        if existing_user:
+            error_msg = 'This email is already registered to another account.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg}), 400
+            else:
+                flash(error_msg, 'error')
+                return redirect(url_for('settings.index'))
+        
+        # Check if phone is already taken by another user (if provided)
+        if phone:
+            existing_user_phone = User.query.filter(User.phone == phone, User.id != current_user.id).first()
+            if existing_user_phone:
+                error_msg = 'This phone number is already registered to another account.'
+                if request.is_json:
+                    return jsonify({'success': False, 'error': error_msg}), 400
+                else:
+                    flash(error_msg, 'error')
+                    return redirect(url_for('settings.index'))
+        
+        # Update profile information
+        current_user.first_name = first_name
+        current_user.last_name = last_name
+        current_user.email = email
+        current_user.phone = phone if phone else None
+        
+        db.session.commit()
+        
+        success_msg = 'Profile updated successfully!'
+        if request.is_json:
+            return jsonify({'success': True, 'message': success_msg})
+        else:
+            flash(success_msg, 'success')
+            return redirect(url_for('settings.index'))
+            
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f'Error updating profile: {str(e)}'
+        if request.is_json:
+            return jsonify({'success': False, 'error': error_msg}), 500
+        else:
+            flash('Error updating profile. Please try again.', 'error')
+            return redirect(url_for('settings.index'))

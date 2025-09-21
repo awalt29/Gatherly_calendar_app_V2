@@ -1,0 +1,385 @@
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask_login import login_required, current_user
+from datetime import datetime, timedelta
+from app import db
+from app.models.availability import Availability
+from app.models.default_schedule import DefaultSchedule
+from app.models.google_calendar_sync import GoogleCalendarSync
+from app.services.google_calendar_service import google_calendar_service
+import logging
+
+logger = logging.getLogger(__name__)
+
+bp = Blueprint('availability', __name__)
+
+@bp.route('/availability')
+@login_required
+def index():
+    """Availability setting page"""
+    return render_template('availability/index.html')
+
+@bp.route('/availability/api/<date>')
+@login_required
+def get_availability_data(date):
+    """Get availability data for a specific week"""
+    try:
+        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        week_start = Availability.get_week_start(date_obj)
+        
+        availability = Availability.query.filter_by(
+            user_id=current_user.id,
+            week_start_date=week_start
+        ).first()
+        
+        if availability:
+            return jsonify({
+                'week_start': week_start.strftime('%Y-%m-%d'),
+                'availability_data': availability.get_availability_data()
+            })
+        else:
+            return jsonify({
+                'week_start': week_start.strftime('%Y-%m-%d'),
+                'availability_data': {}
+            })
+    
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+
+@bp.route('/availability/submit', methods=['POST'])
+@login_required
+def submit_availability():
+    """Submit availability data for a week"""
+    try:
+        data = request.get_json()
+        week_start_str = data.get('week_start')
+        availability_data = data.get('availability_data', {})
+        
+        if not week_start_str:
+            return jsonify({'error': 'Week start date is required'}), 400
+        
+        week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
+        
+        # Get or create availability record
+        availability = Availability.get_or_create_availability(
+            current_user.id, 
+            week_start
+        )
+        
+        # Update availability data
+        availability.set_availability_data(availability_data)
+        availability.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Availability updated successfully'})
+    
+    except ValueError as e:
+        return jsonify({'error': 'Invalid date format'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/availability/week/<int:week_offset>')
+@login_required
+def get_week_availability(week_offset):
+    """Get availability data for a specific week offset"""
+    try:
+        # Use a fixed reference date to ensure consistent week calculations
+        # Use the start of the current week as the reference point
+        today = datetime.now().date()
+        reference_week_start = Availability.get_week_start(today)
+        week_start = reference_week_start + timedelta(weeks=week_offset)
+        
+        availability = Availability.query.filter_by(
+            user_id=current_user.id,
+            week_start_date=week_start
+        ).first()
+        
+        auto_applied_this_request = False
+        
+        # If no availability exists for this week and it's a future week, check for default schedule
+        if not availability and week_offset > 0:
+            logger.info(f"No availability found for week {week_offset}, checking for default schedule")
+            default_schedule = DefaultSchedule.get_active_default(current_user.id)
+            if default_schedule:
+                logger.info(f"Found default schedule, applying to week {week_offset}")
+                # Create new availability with default schedule
+                availability = Availability(
+                    user_id=current_user.id,
+                    week_start_date=week_start
+                )
+                availability.set_availability_data(default_schedule.get_schedule_data())
+                db.session.add(availability)
+                db.session.commit()
+                auto_applied_this_request = True
+                logger.info(f"Auto-applied default schedule to week {week_offset} for user {current_user.id}")
+            else:
+                logger.info(f"No default schedule found for user {current_user.id}")
+        
+        # Calculate the actual week offset from the reference point (current week)
+        current_week_start = Availability.get_week_start(today)
+        actual_week_offset = (week_start - current_week_start).days // 7
+        
+        week_data = {
+            'week_start': week_start.strftime('%Y-%m-%d'),
+            'week_end': (week_start + timedelta(days=6)).strftime('%Y-%m-%d'),
+            'availability_data': availability.get_availability_data() if availability else {},
+            'auto_applied_default': auto_applied_this_request,
+            'actual_week_offset': actual_week_offset,
+            'requested_week_offset': week_offset
+        }
+        
+        # Add day information
+        days = []
+        for day_offset in range(7):
+            current_date = week_start + timedelta(days=day_offset)
+            day_name = current_date.strftime('%A').lower()
+            
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'day_name': day_name,
+                'day_short': current_date.strftime('%a'),
+                'day_number': current_date.day,
+                'is_today': current_date == today
+            }
+            days.append(day_data)
+        
+        week_data['days'] = days
+        
+        return jsonify(week_data)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/availability/sync-google', methods=['POST'])
+@login_required
+def sync_from_google_calendar():
+    """Sync availability from Google Calendar"""
+    try:
+        # Check if user has Google Calendar connected
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
+        if not sync_record or not sync_record.sync_enabled:
+            return jsonify({'success': False, 'error': 'Google Calendar not connected or sync disabled'}), 400
+        
+        # Sync availability for the next 4 weeks
+        success_count = 0
+        error_count = 0
+        
+        for week_offset in range(4):
+            try:
+                today = datetime.now().date()
+                week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
+                week_end = week_start + timedelta(days=6)
+                
+                # Get busy times from Google Calendar
+                busy_times = google_calendar_service.get_busy_times(
+                    current_user.id,
+                    datetime.combine(week_start, datetime.min.time()),
+                    datetime.combine(week_end, datetime.max.time())
+                )
+                
+                # Convert busy times to availability data
+                availability_data = _convert_busy_times_to_availability(busy_times, week_start)
+                
+                # Update availability in database
+                availability = Availability.get_or_create_availability(current_user.id, week_start)
+                availability.set_availability_data(availability_data)
+                availability.updated_at = datetime.utcnow()
+                
+                success_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error syncing week {week_offset} for user {current_user.id}: {str(e)}")
+                error_count += 1
+        
+        # Update last sync time
+        sync_record.last_sync = datetime.utcnow()
+        db.session.commit()
+        
+        if success_count > 0:
+            message = f'Successfully synced {success_count} weeks from Google Calendar'
+            if error_count > 0:
+                message += f' ({error_count} weeks had errors)'
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to sync any weeks from Google Calendar'}), 500
+        
+    except Exception as e:
+        logger.error(f"Error syncing Google Calendar for user {current_user.id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def _convert_busy_times_to_availability(busy_times, week_start):
+    """Convert Google Calendar busy times to Gatherly availability format"""
+    # Default availability: 9 AM to 5 PM on weekdays
+    default_start = "09:00"
+    default_end = "17:00"
+    
+    availability_data = {}
+    day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    
+    for day_offset in range(7):
+        current_date = week_start + timedelta(days=day_offset)
+        day_name = day_names[current_date.weekday()]  # Monday = 0
+        
+        # Check if it's a weekday (default available) or weekend (default not available)
+        is_weekday = current_date.weekday() < 5
+        
+        # Find busy periods for this day
+        day_busy_times = []
+        for busy_period in busy_times:
+            busy_start = busy_period['start'].date()
+            busy_end = busy_period['end'].date()
+            
+            # If busy period spans this day
+            if busy_start <= current_date <= busy_end:
+                # Extract time portion if it's the same day
+                if busy_start == current_date:
+                    start_time = busy_period['start'].time()
+                else:
+                    start_time = datetime.min.time()
+                
+                if busy_end == current_date:
+                    end_time = busy_period['end'].time()
+                else:
+                    end_time = datetime.max.time()
+                
+                day_busy_times.append({
+                    'start': start_time,
+                    'end': end_time
+                })
+        
+        # Determine availability based on busy times
+        if is_weekday and not day_busy_times:
+            # Weekday with no conflicts - available default hours
+            availability_data[day_name] = {
+                'available': True,
+                'start': default_start,
+                'end': default_end,
+                'all_day': False
+            }
+        elif is_weekday and day_busy_times:
+            # Weekday with some conflicts - try to find free time
+            # For simplicity, mark as unavailable if there are any conflicts
+            # In a more sophisticated version, we could calculate free time slots
+            availability_data[day_name] = {
+                'available': False,
+                'start': default_start,
+                'end': default_end,
+                'all_day': False
+            }
+        else:
+            # Weekend - default to not available
+            availability_data[day_name] = {
+                'available': False,
+                'start': default_start,
+                'end': default_end,
+                'all_day': False
+            }
+    
+    return availability_data
+
+
+@bp.route('/availability/save-default', methods=['POST'])
+@login_required
+def save_default_schedule():
+    """Save current week's availability as default schedule"""
+    try:
+        data = request.get_json()
+        week_offset = data.get('week_offset', 0)
+        availability_data = data.get('availability_data')
+        
+        # If availability_data is provided in the request, use it directly
+        if availability_data:
+            logger.info(f"Using availability data from request for user {current_user.id}")
+            schedule_data = availability_data
+        else:
+            # Fallback: Get the current week's availability from database
+            today = datetime.now().date()
+            week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
+            availability = Availability.get_or_create_availability(current_user.id, week_start)
+            
+            if not availability.availability_data:
+                return jsonify({'success': False, 'error': 'No availability data found for this week'}), 400
+            
+            schedule_data = availability.get_availability_data()
+        
+        # Deactivate any existing default schedules
+        existing_defaults = DefaultSchedule.query.filter_by(user_id=current_user.id, is_active=True).all()
+        for existing in existing_defaults:
+            existing.is_active = False
+        
+        # Create new default schedule
+        default_schedule = DefaultSchedule(
+            user_id=current_user.id,
+            schedule_name='Default Schedule',
+            is_active=True
+        )
+        default_schedule.set_schedule_data(schedule_data)
+        
+        db.session.add(default_schedule)
+        db.session.commit()
+        
+        # Apply default schedule to all future weeks (next 52 weeks - full year)
+        logger.info(f"Starting batch application of default schedule for user {current_user.id}")
+        _apply_default_to_future_weeks(current_user.id, default_schedule, max_weeks=52)
+        logger.info(f"Completed batch application of default schedule for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Default schedule saved and applied to the entire year!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error saving default schedule for user {current_user.id}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/availability/has-default')
+@login_required
+def has_default_schedule():
+    """Check if user has a default schedule"""
+    default_schedule = DefaultSchedule.get_active_default(current_user.id)
+    return jsonify({
+        'has_default': default_schedule is not None,
+        'schedule_name': default_schedule.schedule_name if default_schedule else None,
+        'created_at': default_schedule.created_at.isoformat() if default_schedule else None
+    })
+
+
+def _apply_default_to_future_weeks(user_id, default_schedule, max_weeks=52):
+    """Helper function to apply default schedule to all future weeks"""
+    try:
+        today = datetime.now().date()
+        applied_count = 0
+        updated_count = 0
+        
+        for week_offset in range(1, max_weeks + 1):  # Start from week 1 (next week)
+            week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
+            
+            # Get or create availability for this week
+            existing_availability = Availability.query.filter_by(
+                user_id=user_id,
+                week_start_date=week_start
+            ).first()
+            
+            if existing_availability:
+                # Update existing availability with new default schedule
+                existing_availability.set_availability_data(default_schedule.get_schedule_data())
+                existing_availability.updated_at = datetime.utcnow()
+                updated_count += 1
+            else:
+                # Create new availability with default schedule
+                new_availability = Availability(
+                    user_id=user_id,
+                    week_start_date=week_start
+                )
+                new_availability.set_availability_data(default_schedule.get_schedule_data())
+                db.session.add(new_availability)
+                applied_count += 1
+        
+        db.session.commit()
+        logger.info(f"Applied default schedule to {applied_count} new weeks and updated {updated_count} existing weeks for user {user_id}")
+        
+    except Exception as e:
+        logger.error(f"Error applying default schedule to future weeks for user {user_id}: {str(e)}")
+        db.session.rollback()

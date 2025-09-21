@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Gatherly{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="form-title">Welcome Back</h2>
+    
+    <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" class="form-input" 
+                   placeholder="Enter your email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" class="form-input" 
+                   placeholder="Enter your password" required>
+        </div>
+        
+        <div class="form-group">
+            <div class="form-checkbox">
+                <input type="checkbox" id="remember_me" name="remember_me">
+                <label for="remember_me">Remember me</label>
+            </div>
+            <div class="form-link">
+                <a href="{{ url_for('auth.forgot_password') }}" class="text-primary">Forgot your password?</a>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-full">Login</button>
+    </form>
+    
+    <div class="text-center mt-4">
+        <p class="text-secondary">
+            Don't have an account? 
+            <a href="{{ url_for('auth.signup') }}" class="text-primary">Sign up</a>
+        </p>
+    </div>
+</div>
+
+<style>
+/* Override form-group styles for login form */
+.form-group {
+    display: block;
+    margin-bottom: var(--space-4);
+}
+
+.form-group .form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group .form-input {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* Special styling for the remember me / forgot password row */
+.form-group:has(.form-checkbox) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.form-link {
+    font-size: var(--font-size-sm);
+}
+
+.form-link a {
+    text-decoration: none;
+}
+
+.form-link a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

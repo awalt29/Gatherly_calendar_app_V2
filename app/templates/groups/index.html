@@ -1,0 +1,1088 @@
+{% extends "base.html" %}
+
+{% block title %}Groups - Gatherly{% endblock %}
+
+{% block content %}
+<div class="groups-container">
+    <div class="groups-header">
+        <h1 class="page-title">Friend Groups</h1>
+        <p class="page-description">
+            Create groups of friends and get notified when everyone is free at the same time.
+        </p>
+    </div>
+    
+    <!-- Your Groups -->
+    {% if created_groups %}
+        <div class="friends-section">
+            <h2 class="section-title">Your Groups</h2>
+            <div class="groups-list">
+                {% for group in created_groups %}
+                    <div class="group-card" data-group-id="{{ group.id }}">
+                        <div class="group-header">
+                            <h3 class="group-name">{{ group.name }}</h3>
+                            <div class="group-actions">
+                                <label class="toggle-switch" data-group-id="{{ group.id }}">
+                                    <input type="checkbox" 
+                                           {{ 'checked' if group.notifications_enabled else '' }}
+                                           data-group-id="{{ group.id }}">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <button class="btn btn-small btn-danger group-delete-btn" 
+                                        data-group-id="{{ group.id }}">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {% if group.description %}
+                            <p class="group-description">{{ group.description }}</p>
+                        {% endif %}
+                        
+                        <div class="group-info">
+                            <div class="group-stat">
+                                <span class="stat-label">Members:</span>
+                                <span class="stat-value">{{ group.get_member_count() }}</span>
+                            </div>
+                            <div class="group-stat">
+                                <span class="stat-label">Alerts:</span>
+                                <span class="stat-value">
+                                    {% if group.notifications_enabled %}✅ On{% else %}❌ Off{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="group-members">
+                            {% for member in group.get_members() %}
+                                <div class="member-avatar" title="{{ member.get_full_name() }}">
+                                    {{ member.get_initials() }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Groups You're In -->
+    {% if member_groups %}
+        <div class="friends-section">
+            <h2 class="section-title">Groups You're In</h2>
+            <div class="groups-list">
+                {% for group in member_groups %}
+                    <div class="group-card member-group" data-group-id="{{ group.id }}">
+                        <div class="group-header">
+                            <h3 class="group-name">{{ group.name }}</h3>
+                            <div class="group-creator">
+                                Created by {{ group.created_by.get_full_name() }}
+                            </div>
+                            <button class="btn btn-small btn-secondary leave-group-btn" 
+                                    data-group-id="{{ group.id }}">
+                                Leave
+                            </button>
+                        </div>
+                        
+                        {% if group.description %}
+                            <p class="group-description">{{ group.description }}</p>
+                        {% endif %}
+                        
+                        <div class="group-info">
+                            <div class="group-stat">
+                                <span class="stat-label">Members:</span>
+                                <span class="stat-value">{{ group.get_member_count() }}</span>
+                            </div>
+                            <div class="group-stat">
+                                <span class="stat-label">Alerts:</span>
+                                <span class="stat-value">
+                                    {% if group.notifications_enabled %}✅ On{% else %}❌ Off{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="group-members">
+                            {% for member in group.get_members() %}
+                                <div class="member-avatar" title="{{ member.get_full_name() }}">
+                                    {{ member.get_initials() }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    
+    <!-- How it works -->
+    <div class="how-it-works-section">
+        <h2 class="how-it-works-title">How Group Alerts Work</h2>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-icon">👥</div>
+                <div class="step-number">1</div>
+                <h3 class="step-title">Create a Group</h3>
+                <p class="step-description">Add your friends to create groups like "College Buddies" or "Work Friends"</p>
+            </div>
+            <div class="step-connector">→</div>
+            <div class="step-card">
+                <div class="step-icon">📅</div>
+                <div class="step-number">2</div>
+                <h3 class="step-title">Set Availability</h3>
+                <p class="step-description">Everyone updates their weekly schedule on the Availability page</p>
+            </div>
+            <div class="step-connector">→</div>
+            <div class="step-card">
+                <div class="step-icon">📱</div>
+                <div class="step-number">3</div>
+                <h3 class="step-title">Get Notified</h3>
+                <p class="step-description">Receive SMS alerts when everyone in the group is free on the same day</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Group Form -->
+    <div class="create-group-section">
+        <div class="create-group-header">
+            <h2 class="create-group-title">Create New Group</h2>
+            <p class="create-group-subtitle">Start getting notified when your friends are all available</p>
+        </div>
+        
+        <div class="create-group-card">
+            <form id="createGroupForm" class="create-group-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="group_name" class="form-label">
+                            <span class="label-icon">🏷️</span>
+                            Group Name
+                        </label>
+                        <input type="text" id="group_name" name="name" class="form-input modern-input" 
+                               placeholder="e.g., College Friends, Work Buddies, Gaming Squad" required maxlength="100">
+                    </div>
+                </div>
+                
+                {% if friends %}
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon">👥</span>
+                            Add Friends to Group
+                        </label>
+                        <div class="friends-grid">
+                            {% for friend in friends %}
+                                <label class="friend-card">
+                                    <input type="checkbox" name="member_ids" value="{{ friend.id }}" class="friend-checkbox-input">
+                                    <div class="friend-card-content">
+                                        <div class="friend-avatar">{{ friend.get_initials() }}</div>
+                                        <span class="friend-name">{{ friend.get_full_name() }}</span>
+                                        <div class="checkmark">✓</div>
+                                    </div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-friends-state">
+                        <div class="empty-icon">👥</div>
+                        <h3>No Friends Yet</h3>
+                        <p>Add some friends first to include them in groups!</p>
+                        <a href="{{ url_for('friends.index') }}" class="btn btn-secondary">
+                            <span class="btn-icon">➕</span>
+                            Add Friends
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large" id="submitCreateGroup">
+                        <span class="btn-icon">✨</span>
+                        Create Group
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<style>
+.groups-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-6);
+}
+
+.groups-header {
+    text-align: center;
+    margin-bottom: var(--space-10);
+    padding: var(--space-8) 0;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    background: linear-gradient(135deg, var(--primary) 0%, #0068B1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-description {
+    font-size: var(--font-size-xl);
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+    margin: var(--space-12) 0;
+    padding: var(--space-8) 0;
+    background: linear-gradient(135deg, rgba(0, 104, 177, 0.03) 0%, rgba(26, 31, 46, 0.05) 100%);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(0, 104, 177, 0.1);
+}
+
+.how-it-works-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-8);
+}
+
+.steps-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-6);
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+.step-card {
+    flex: 1;
+    max-width: 280px;
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    text-align: center;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 104, 177, 0.15);
+    border-color: var(--primary);
+}
+
+.step-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-3);
+    display: block;
+}
+
+.step-number {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    box-shadow: 0 2px 8px rgba(0, 104, 177, 0.3);
+}
+
+.step-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: var(--space-3) 0;
+}
+
+.step-description {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-size: var(--font-size-sm);
+}
+
+.step-connector {
+    font-size: 1.5rem;
+    color: var(--primary);
+    font-weight: bold;
+    opacity: 0.6;
+}
+
+/* Create Group Section */
+.create-group-section {
+    margin: var(--space-12) 0;
+}
+
+.create-group-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.create-group-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.create-group-subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.create-group-card {
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.label-icon {
+    font-size: 1.2rem;
+}
+
+.modern-input {
+    width: 100%;
+    padding: var(--space-4);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-md);
+    background: var(--background);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.modern-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 104, 177, 0.1);
+}
+
+.friends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.friend-card {
+    position: relative;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.friend-checkbox-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.friend-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--background-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.friend-card:hover .friend-card-content {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
+}
+
+.friend-checkbox-input:checked + .friend-card-content {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.1);
+}
+
+.friend-avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 104, 177, 0.2);
+}
+
+.friend-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.checkmark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+.friend-checkbox-input:checked + .friend-card-content .checkmark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.empty-friends-state {
+    text-align: center;
+    padding: var(--space-8);
+    background: var(--background-secondary);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    margin: var(--space-4) 0;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.6;
+}
+
+.empty-friends-state h3 {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-friends-state p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-8);
+}
+
+.btn-large {
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 104, 177, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 104, 177, 0.3);
+}
+
+/* Existing Groups */
+.groups-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+.group-card {
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.group-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 25px rgba(0, 104, 177, 0.15);
+    transform: translateY(-2px);
+}
+
+.group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.group-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.group-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.group-creator {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+.group-role {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.group-members {
+    margin-bottom: var(--space-4);
+}
+
+.members-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+}
+
+.members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--background-secondary);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+}
+
+.member-avatar {
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.btn-small {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+    min-width: auto;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .groups-container {
+        padding: var(--space-4);
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .steps-container {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .step-connector {
+        transform: rotate(90deg);
+    }
+    
+    .friends-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--space-2);
+    }
+    
+    .create-group-card {
+        padding: var(--space-6);
+    }
+    
+    .groups-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 1.75rem;
+    }
+    
+    .how-it-works-title {
+        font-size: 1.5rem;
+    }
+    
+    .create-group-title {
+        font-size: 1.5rem;
+    }
+}
+
+.group-creator {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+.group-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.group-info {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+    padding: var(--space-3);
+    background: var(--background);
+    border-radius: var(--radius-md);
+}
+
+.group-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-1);
+}
+
+/* iOS-style toggle switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    margin-right: var(--space-2);
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-switch:hover .toggle-slider {
+    box-shadow: 0 0 0 8px rgba(0, 104, 177, 0.1);
+}
+
+.group-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.member-group {
+    border-left: 4px solid var(--secondary);
+}
+
+.friends-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+}
+
+.friend-checkbox {
+    display: block;
+    cursor: pointer;
+}
+
+.friend-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    transition: background-color 0.2s ease;
+}
+
+.friend-checkbox:hover .friend-item {
+    background: var(--background);
+}
+
+.friend-checkbox input[type="checkbox"]:checked + .friend-item {
+    background: var(--primary);
+    color: white;
+}
+
+.friend-checkbox input[type="checkbox"]:checked + .friend-item .friend-avatar {
+    background: white;
+    color: var(--primary);
+}
+
+.friend-item .friend-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.friend-name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.btn-small {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    min-width: auto;
+}
+
+.create-group-card {
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-top: var(--space-4);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .groups-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .group-info {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .friends-selection {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createGroupForm = document.getElementById('createGroupForm');
+    
+    // Create group form submission
+    if (createGroupForm) {
+        createGroupForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = document.getElementById('submitCreateGroup');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+            
+            fetch('/groups/create', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showNotification(data.error || 'Error creating group', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating group:', error);
+                showNotification('Error creating group. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+    
+    // Alert toggle switches
+    document.querySelectorAll('.toggle-switch input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const groupId = this.dataset.groupId;
+            const newEnabled = this.checked;
+            const groupCard = this.closest('.group-card');
+            
+            // Find the correct status element (the one for Alerts, not Members)
+            const statElements = groupCard.querySelectorAll('.stat-value');
+            const alertsStatusElement = Array.from(statElements).find(el => 
+                el.previousElementSibling.textContent.includes('Alerts:')
+            );
+            
+            // Update alerts status text immediately
+            if (alertsStatusElement) {
+                alertsStatusElement.innerHTML = newEnabled ? '✅ On' : '❌ Off';
+            }
+            
+            // Send update to server
+            fetch(`/groups/${groupId}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notifications_enabled: newEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert UI changes on error
+                    this.checked = !newEnabled;
+                    if (alertsStatusElement) {
+                        alertsStatusElement.innerHTML = !newEnabled ? '✅ On' : '❌ Off';
+                    }
+                    showNotification(data.error || 'Failed to update alert settings', 'error');
+                }
+                // Don't show success notification to reduce noise
+            })
+            .catch(error => {
+                // Revert UI changes on error
+                this.checked = !newEnabled;
+                if (alertsStatusElement) {
+                    alertsStatusElement.innerHTML = !newEnabled ? '✅ On' : '❌ Off';
+                }
+                showNotification('Error updating alert settings', 'error');
+                console.error('Error:', error);
+            });
+        });
+    });
+    
+    // Delete group buttons
+    document.querySelectorAll('.group-delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const groupId = this.dataset.groupId;
+            if (confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+                deleteGroup(groupId);
+            }
+        });
+    });
+    
+    // Leave group buttons
+    document.querySelectorAll('.leave-group-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const groupId = this.dataset.groupId;
+            if (confirm('Are you sure you want to leave this group?')) {
+                leaveGroup(groupId);
+            }
+        });
+    });
+    
+    function deleteGroup(groupId) {
+        fetch(`/groups/${groupId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(data.error || 'Error deleting group', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting group:', error);
+            showNotification('Error deleting group. Please try again.', 'error');
+        });
+    }
+    
+    function leaveGroup(groupId) {
+        fetch(`/groups/${groupId}/members/{{ current_user.id }}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(data.error || 'Error leaving group', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error leaving group:', error);
+            showNotification('Error leaving group. Please try again.', 'error');
+        });
+    }
+});
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Style the notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'var(--success)' : 'var(--error)'};
+        color: white;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        font-size: var(--font-size-sm);
+        max-width: 300px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

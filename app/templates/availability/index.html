@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Availability - Gatherly{% endblock %}
+
+{% block content %}
+<div class="availability-container">
+    <div class="availability-header">
+        <h1 class="page-title">Set Your Availability</h1>
+        <p class="page-description">
+            Let your friends know when you're free to hang out. 
+            Set your availability for each day of the week.
+        </p>
+    </div>
+    
+    <!-- Week Navigation -->
+    <div class="availability-week-nav">
+        <button id="availabilityPrevWeek" class="nav-btn">← Previous Week</button>
+        <div id="availabilityWeekDisplay">This Week</div>
+        <button id="availabilityNextWeek" class="nav-btn">Next Week →</button>
+    </div>
+    
+    <!-- Calendar Grid -->
+    <div class="calendar-availability-grid">
+        <div class="grid-header">
+            <div class="days-header">
+                <div class="day-header">MON</div>
+                <div class="day-header">TUE</div>
+                <div class="day-header">WED</div>
+                <div class="day-header">THU</div>
+                <div class="day-header">FRI</div>
+                <div class="day-header">SAT</div>
+                <div class="day-header">SUN</div>
+            </div>
+        </div>
+        
+        <div class="grid-body" id="availabilityGrid">
+            <!-- Grid will be populated by JavaScript -->
+        </div>
+        
+        <div class="grid-controls">
+            <button id="saveAvailability" class="btn btn-primary">Save Availability</button>
+            
+            <!-- Default Schedule Controls -->
+            <div class="default-schedule-controls">
+                <button id="saveAsDefault" class="btn btn-secondary">
+                    <span class="btn-icon">💾</span>
+                    Set as Default Schedule
+                </button>
+                <div id="defaultScheduleStatus" class="default-status" style="display: none;">
+                    <span class="btn-icon">✨</span>
+                    <span class="status-text">Default schedule will auto-apply to the entire year</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<style>
+.availability-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.page-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.availability-week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#availabilityWeekDisplay {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+/* Calendar Grid Styles */
+.calendar-availability-grid {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.grid-header {
+    margin-bottom: var(--space-4);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: var(--space-3);
+}
+
+.days-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-2);
+    background: var(--background);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    border-right: 1px solid var(--border);
+    min-width: 0;
+}
+
+.day-header:last-child {
+    border-right: none;
+}
+
+.day-header .day-name {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.day-header .day-date {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.day-header.today-header {
+    background: var(--primary);
+    color: white;
+}
+
+.day-header.today-header .day-name {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.day-header.today-header .day-date {
+    color: white;
+}
+
+.grid-body {
+    position: relative;
+}
+
+.day-columns {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+}
+
+.day-column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--space-2);
+    gap: var(--space-2);
+    text-align: center;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+}
+
+.day-column:last-child {
+    border-right: none;
+}
+
+.vertical-slider {
+    position: relative;
+    width: 8px;
+    height: 300px;
+    background: var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    margin: var(--space-1) auto;
+    pointer-events: auto;
+    align-self: center;
+}
+
+.vertical-slider.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.slider-track-vertical {
+    position: absolute;
+    width: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    min-height: 20px;
+}
+
+.slider-handle-vertical {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: grab;
+    transform: translateX(-50%) translateY(-50%);
+    left: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+/* Create invisible larger touch target */
+.slider-handle-vertical::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+    border-radius: 50%;
+    background: transparent;
+}
+
+.slider-handle-vertical:hover {
+    transform: translateX(-50%) translateY(-50%) scale(1.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.slider-handle-vertical:active {
+    cursor: grabbing;
+    transform: translateX(-50%) translateY(-50%) scale(1.1);
+}
+
+.slider-handle-vertical.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.time-display-vertical {
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+    text-align: center;
+    width: fit-content;
+    margin: var(--space-2) auto;
+    line-height: 1.1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.time-display-vertical:first-of-type {
+    margin-bottom: var(--space-3);
+}
+
+.time-display-vertical:last-of-type {
+    margin-top: var(--space-3);
+}
+
+.day-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    order: -1;
+    width: 100%;
+    margin-bottom: var(--space-2);
+}
+
+.day-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0 auto;
+    display: block;
+    background-color: var(--background);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.day-toggle input[type="checkbox"]:hover {
+    border-color: var(--primary-light);
+}
+
+.day-toggle input[type="checkbox"]:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.day-toggle input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.grid-controls {
+    margin-top: var(--space-6);
+    text-align: center;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.default-schedule-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.btn-icon {
+    margin-right: var(--space-1);
+}
+
+.default-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--success);
+    font-size: var(--font-size-sm);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(52, 199, 89, 0.1);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.default-status .btn-icon {
+    color: var(--success);
+}
+
+.status-text {
+    font-weight: 500;
+}
+
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
+    }
+    
+    .availability-week-nav {
+        gap: var(--space-3);
+        padding: var(--space-3);
+    }
+    
+    #availabilityWeekDisplay {
+        font-size: var(--font-size-base);
+        min-width: 150px;
+    }
+    
+    .calendar-availability-grid {
+        padding: var(--space-4);
+        overflow-x: auto;
+    }
+    
+    .day-header {
+        font-size: var(--font-size-xs);
+        padding: var(--space-1);
+    }
+    
+    .day-column {
+        padding: var(--space-2) var(--space-1);
+    }
+    
+    .vertical-slider {
+        height: 250px;
+        width: 6px;
+    }
+    
+    .time-display-vertical {
+        font-size: 10px;
+        padding: 1px 3px;
+        min-width: 30px;
+        margin: var(--space-1) 0;
+    }
+    
+    .time-display-vertical:first-of-type {
+        margin-bottom: var(--space-2);
+    }
+
+    .time-display-vertical:last-of-type {
+        margin-top: var(--space-2);
+    }
+    
+    .slider-handle-vertical {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .day-toggle input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .day-toggle input[type="checkbox"]:checked::after {
+        font-size: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize availability page when loaded
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initializeAvailability === 'function') {
+        initializeAvailability();
+    }
+});
+</script>
+{% endblock %}

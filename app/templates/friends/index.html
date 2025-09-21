@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Friends - Gatherly{% endblock %}
+
+{% block content %}
+<div class="friends-container">
+    <div class="friends-header">
+        <h1 class="page-title">Friends</h1>
+        <p class="page-description">
+            Connect with friends to see their availability and plan events together.
+        </p>
+    </div>
+    
+    <!-- Add Friend Section -->
+    <div class="friends-section">
+        <h2 class="section-title">Add Friends</h2>
+        <form id="addFriendForm" class="add-friend-form">
+            <input type="tel" id="phoneNumber" name="phone_number" 
+                   class="form-input" placeholder="Enter phone number (e.g., +1234567890)" required>
+            <button type="submit" class="btn btn-primary">Send Request</button>
+        </form>
+    </div>
+    
+    <!-- Pending Friend Requests -->
+    {% if pending_requests %}
+        <div class="friends-section">
+            <h2 class="section-title">Pending Requests</h2>
+            <div class="friend-requests">
+                {% for request_data in pending_requests %}
+                    <div class="friend-item">
+                        <div class="friend-info">
+                            <div class="friend-avatar friend-color-{{ request_data.user.id % 8 }}">
+                                {{ request_data.user.get_initials() }}
+                            </div>
+                            <div class="friend-details">
+                                <h4>{{ request_data.user.get_full_name() }}</h4>
+                                <p>{{ request_data.user.email }}</p>
+                                <small class="text-muted">
+                                    Sent {{ request_data.request.created_at.strftime('%B %d, %Y') }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <button class="btn btn-primary btn-sm accept-friend" 
+                                    data-friend-id="{{ request_data.request.id }}">
+                                Accept
+                            </button>
+                            <button class="btn btn-secondary btn-sm decline-friend" 
+                                    data-friend-id="{{ request_data.request.id }}">
+                                Decline
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Sent Requests -->
+    {% if sent_requests %}
+        <div class="friends-section">
+            <h2 class="section-title">Sent Requests</h2>
+            <div class="friend-requests">
+                {% for request_data in sent_requests %}
+                    <div class="friend-item">
+                        <div class="friend-info">
+                            <div class="friend-avatar friend-color-{{ request_data.user.id % 8 }}">
+                                {{ request_data.user.get_initials() }}
+                            </div>
+                            <div class="friend-details">
+                                <h4>{{ request_data.user.get_full_name() }}</h4>
+                                <p>{{ request_data.user.email }}</p>
+                                <small class="text-muted">
+                                    Sent {{ request_data.request.created_at.strftime('%B %d, %Y') }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Current Friends -->
+    {% if friends %}
+        <div class="friends-section">
+            <h2 class="section-title">Your Friends ({{ friends|length }})</h2>
+            <div class="friends-list">
+                {% for friend in friends %}
+                    <div class="friend-item">
+                        <div class="friend-info">
+                            <div class="friend-avatar friend-color-{{ friend.id % 8 }}">
+                                {{ friend.get_initials() }}
+                            </div>
+                            <div class="friend-details">
+                                <h4>{{ friend.get_full_name() }}</h4>
+                                <p>{{ friend.email }}</p>
+                                {% if friend.phone %}
+                                    <small class="text-muted">{{ friend.phone }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <span class="status-badge connected">Connected</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Empty State -->
+    {% if not friends and not pending_requests and not sent_requests %}
+        <div class="friends-section">
+            <div class="empty-state">
+                <h3>No friends yet</h3>
+                <p>Add friends by entering their phone number above.</p>
+                <div class="empty-state-tips">
+                    <h4>Tips:</h4>
+                    <ul>
+                        <li>Ask friends for their phone number</li>
+                        <li>Share your phone: <strong>{{ current_user.phone }}</strong></li>
+                        <li>Once connected, you'll see each other's availability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.friends-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.page-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.add-friend-form {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.add-friend-form .form-input {
+    flex: 1;
+}
+
+.friend-requests,
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.2s ease;
+}
+
+.friend-item:hover {
+    border-color: var(--primary);
+}
+
+.friend-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+}
+
+.friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: var(--font-size-base);
+}
+
+.friend-details h4 {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1) 0;
+    font-size: var(--font-size-base);
+}
+
+.friend-details p {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.friend-details small {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.friend-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.status-badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+    background: rgba(255, 149, 0, 0.2);
+    color: #FF9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.status-badge.connected {
+    background: rgba(52, 199, 89, 0.2);
+    color: #34C759;
+    border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-secondary);
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--space-3);
+}
+
+.empty-state p {
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-base);
+}
+
+.empty-state-tips {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-state-tips h4 {
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.empty-state-tips li {
+    padding: var(--space-1) 0;
+    font-size: var(--font-size-sm);
+    position: relative;
+    padding-left: var(--space-4);
+}
+
+.empty-state-tips li:before {
+    content: '•';
+    color: var(--primary);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.empty-state-tips strong {
+    color: var(--primary);
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-xs);
+    background: rgba(0, 122, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
+    }
+    
+    .add-friend-form {
+        flex-direction: column;
+    }
+    
+    .friend-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+    }
+    
+    .friend-info {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .friend-actions {
+        justify-content: center;
+    }
+    
+    .empty-state-tips {
+        text-align: center;
+    }
+    
+    .empty-state-tips ul {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize friends page when loaded
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initializeFriends === 'function') {
+        initializeFriends();
+    }
+});
+</script>
+{% endblock %}

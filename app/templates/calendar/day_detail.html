@@ -1,0 +1,641 @@
+{% extends "base.html" %}
+
+{% block title %}{{ date.strftime('%B %d, %Y') }} - Gatherly{% endblock %}
+
+{% block content %}
+<div class="day-detail-container">
+    <div class="day-detail-header">
+        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary">← Back to Calendar</a>
+        <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
+    </div>
+    
+    <div class="friends-section">
+        <h2 class="section-title">Available Friends</h2>
+        
+        {% if available_users %}
+            <div class="available-users">
+                {% for user_data in available_users %}
+                    <div class="user-availability-card" data-user-id="{{ user_data.user.id }}" data-start-time="{{ user_data.time_range.start }}" data-end-time="{{ user_data.time_range.end }}" data-all-day="{{ user_data.time_range.all_day }}">
+                        <div class="user-checkbox">
+                            <input type="checkbox" id="user-{{ user_data.user.id }}" class="user-select-checkbox" {% if user_data.user.id == current_user.id %}checked{% endif %}>
+                            <label for="user-{{ user_data.user.id }}" class="checkbox-label"></label>
+                        </div>
+                        
+                        <div class="user-info">
+                            <div class="friend-avatar {% if user_data.user.id == current_user.id %}current-user-block{% else %}friend-color-{{ user_data.user.id % 8 }}{% endif %}">
+                                {{ user_data.user.get_initials() }}
+                            </div>
+                            <div class="user-details">
+                                <h3>{{ user_data.user.get_full_name() }}</h3>
+                                {% if user_data.user.id == current_user.id %}
+                                    <span class="user-badge">You</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="time-info">
+                            {% if user_data.time_range.all_day %}
+                                <span class="time-badge all-day">All Day</span>
+                            {% else %}
+                                <span class="time-badge">
+                                    {{ user_data.time_range.start }} - {{ user_data.time_range.end }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No one is available on this day.</p>
+                <a href="{{ url_for('availability.index') }}" class="btn btn-primary">Set Your Availability</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if available_users|length > 1 %}
+        <div class="friends-section">
+            <h2 class="section-title">Plan an Event</h2>
+            <p class="text-secondary mb-4" id="selected-count">
+                {{ available_users|length }} people are available on this day. 
+                Select friends above and create an event!
+            </p>
+            <button id="create-event-btn" class="btn btn-primary" disabled>Create Event</button>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.day-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.day-detail-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.day-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.available-users {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.user-availability-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.user-availability-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+}
+
+.user-checkbox {
+    flex-shrink: 0;
+}
+
+.user-select-checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.checkbox-label {
+    cursor: pointer;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+}
+
+.friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: var(--font-size-base);
+}
+
+.user-details h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.user-badge {
+    font-size: var(--font-size-sm);
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.time-info {
+    display: flex;
+    align-items: center;
+}
+
+.time-badge {
+    background: var(--primary);
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.time-badge.all-day {
+    background: var(--success);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-secondary);
+}
+
+.empty-state p {
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-lg);
+}
+
+@media (max-width: 768px) {
+    .day-detail-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+    }
+    
+    .day-title {
+        font-size: var(--font-size-xl);
+        text-align: center;
+    }
+    
+    .user-availability-card {
+        flex-direction: column;
+        gap: var(--space-3);
+        text-align: center;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: var(--background);
+    margin: 5% auto;
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.modal-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.close {
+    color: var(--text-muted);
+    font-size: var(--font-size-2xl);
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.time-slot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.time-slot:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+}
+
+.time-slot.selected {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.slot-time-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.slot-time {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.slot-duration {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    background: var(--background);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-weight: 500;
+}
+
+.slot-attendees {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.attendee-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: var(--font-size-sm);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+}
+
+.event-form {
+    margin-bottom: var(--space-4);
+}
+
+.form-group {
+    margin-bottom: var(--space-3);
+}
+
+.form-group label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+</style>
+
+<!-- Event Planning Modal -->
+<div id="event-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Plan Your Event</h2>
+            <button class="close" id="close-modal">&times;</button>
+        </div>
+        
+        <div id="modal-body">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-event">Cancel</button>
+            <button class="btn btn-primary" id="finalize-event" disabled>Finalize Event</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.user-select-checkbox');
+    const createEventBtn = document.getElementById('create-event-btn');
+    const selectedCount = document.getElementById('selected-count');
+    const modal = document.getElementById('event-modal');
+    const closeModal = document.getElementById('close-modal');
+    const cancelEvent = document.getElementById('cancel-event');
+    const finalizeEvent = document.getElementById('finalize-event');
+    const modalBody = document.getElementById('modal-body');
+    
+    let selectedSlot = null;
+    let selectedUsers = [];
+    
+    // Update create event button state
+    function updateCreateEventButton() {
+        const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (count >= 2) {
+            createEventBtn.disabled = false;
+            selectedCount.textContent = `${count} people selected. Ready to create an event!`;
+        } else {
+            createEventBtn.disabled = true;
+            selectedCount.textContent = `Select at least 2 people to create an event.`;
+        }
+    }
+    
+    // Add event listeners to checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCreateEventButton);
+    });
+    
+    // Calculate overlapping time windows
+    function calculateOverlaps() {
+        const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
+        const users = [];
+        
+        checkedBoxes.forEach(checkbox => {
+            const card = checkbox.closest('.user-availability-card');
+            const userId = card.dataset.userId;
+            const userName = card.querySelector('h3').textContent;
+            const startTime = card.dataset.startTime;
+            const endTime = card.dataset.endTime;
+            const allDay = card.dataset.allDay === 'true';
+            const avatarClass = card.querySelector('.friend-avatar').className;
+            
+            users.push({
+                id: userId,
+                name: userName,
+                startTime: allDay ? '00:00' : startTime,
+                endTime: allDay ? '23:59' : endTime,
+                allDay: allDay,
+                avatarClass: avatarClass
+            });
+        });
+        
+        selectedUsers = users;
+        
+        // Find overlapping time windows
+        const overlaps = findOverlappingWindows(users);
+        return overlaps;
+    }
+    
+    function findOverlappingWindows(users) {
+        if (users.length < 2) return [];
+        
+        // Convert times to minutes for easier comparison
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+        
+        // Find the latest start time and earliest end time
+        let latestStart = Math.max(...users.map(u => timeToMinutes(u.startTime)));
+        let earliestEnd = Math.min(...users.map(u => timeToMinutes(u.endTime)));
+        
+        if (latestStart >= earliestEnd) {
+            return []; // No overlap
+        }
+        
+        const totalOverlapMinutes = earliestEnd - latestStart;
+        
+        // Only proceed if there's at least 2 hours of overlap
+        if (totalOverlapMinutes < 120) {
+            return []; // Less than 2 hours of overlap
+        }
+        
+        // Create duration text
+        const durationHours = Math.floor(totalOverlapMinutes / 60);
+        const durationMinutes = totalOverlapMinutes % 60;
+        let durationText = `${durationHours} hour${durationHours > 1 ? 's' : ''}`;
+        if (durationMinutes > 0) {
+            durationText += ` ${durationMinutes} min`;
+        }
+        
+        // Return only the full overlap window
+        return [{
+            startTime: minutesToTime(latestStart),
+            endTime: minutesToTime(earliestEnd),
+            duration: durationText,
+            attendees: users
+        }];
+    }
+    
+    // Show modal with time slots
+    function showEventModal() {
+        const overlaps = calculateOverlaps();
+        
+        if (overlaps.length === 0) {
+            modalBody.innerHTML = `
+                <div class="empty-state">
+                    <p>No suitable time windows found for the selected users.</p>
+                    <p>Events require at least 2 hours of overlapping availability.</p>
+                    <p>Please try selecting different users or check their availability times.</p>
+                </div>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="event-form">
+                    <div class="form-group">
+                        <label for="event-title">Activity</label>
+                        <input type="text" id="event-title" placeholder="Enter activity..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Description (optional)</label>
+                        <textarea id="event-description" placeholder="Add event details..."></textarea>
+                    </div>
+                </div>
+                
+                <h3>Available Time Window</h3>
+                <p class="text-secondary mb-3">This is when everyone is available:</p>
+                <div class="time-slots">
+                    ${overlaps.map((slot, index) => `
+                        <div class="time-slot" data-slot-index="${index}">
+                            <div class="slot-time-header">
+                                <span class="slot-time">${slot.startTime} - ${slot.endTime}</span>
+                                <span class="slot-duration">${slot.duration}</span>
+                            </div>
+                            <div class="slot-attendees">
+                                ${slot.attendees.map(user => `
+                                    <div class="${user.avatarClass} attendee-avatar" title="${user.name}">
+                                        ${user.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Add click handlers to time slots
+            document.querySelectorAll('.time-slot').forEach((slot, index) => {
+                slot.addEventListener('click', function() {
+                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedSlot = overlaps[parseInt(this.dataset.slotIndex)];
+                    finalizeEvent.disabled = false;
+                });
+                
+                // Auto-select the first (and likely only) time slot
+                if (index === 0) {
+                    slot.classList.add('selected');
+                    selectedSlot = overlaps[0];
+                    finalizeEvent.disabled = false;
+                }
+            });
+        }
+        
+        modal.style.display = 'block';
+    }
+    
+    // Close modal
+    function closeEventModal() {
+        modal.style.display = 'none';
+        selectedSlot = null;
+        finalizeEvent.disabled = true;
+    }
+    
+    // Event listeners
+    createEventBtn.addEventListener('click', showEventModal);
+    closeModal.addEventListener('click', closeEventModal);
+    cancelEvent.addEventListener('click', closeEventModal);
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeEventModal();
+        }
+    });
+    
+    // Finalize event
+    finalizeEvent.addEventListener('click', function() {
+        const title = document.getElementById('event-title').value.trim();
+        const description = document.getElementById('event-description').value.trim();
+        
+        if (!title) {
+            alert('Please enter an activity.');
+            return;
+        }
+        
+        if (!selectedSlot) {
+            alert('Please select a time slot.');
+            return;
+        }
+        
+        // Create the event
+        const eventData = {
+            title: title,
+            description: description,
+            date: '{{ date.strftime('%Y-%m-%d') }}',
+            start_time: selectedSlot.startTime,
+            end_time: selectedSlot.endTime,
+            attendee_ids: selectedUsers.map(u => parseInt(u.id))
+        };
+        
+        // Send to server
+        finalizeEvent.disabled = true;
+        finalizeEvent.textContent = 'Creating...';
+        
+        fetch('/events/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(eventData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Event created successfully!');
+                closeEventModal();
+                // Optionally reload the page or update the UI
+                window.location.reload();
+            } else {
+                throw new Error(data.error || 'Failed to create event');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating event:', error);
+            alert('Failed to create event. Please try again.');
+        })
+        .finally(() => {
+            finalizeEvent.disabled = false;
+            finalizeEvent.textContent = 'Finalize Event';
+        });
+    });
+    
+    // Initialize button state
+    updateCreateEventButton();
+});
+</script>
+{% endblock %}

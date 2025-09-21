@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Gatherly{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="form-title">Join Gatherly</h2>
+    
+    <form method="POST" action="{{ url_for('auth.signup') }}">
+        <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" class="form-input" 
+                   placeholder="Enter your email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" id="first_name" name="first_name" class="form-input" 
+                   placeholder="Enter your first name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" id="last_name" name="last_name" class="form-input" 
+                   placeholder="Enter your last name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" id="phone" name="phone" class="form-input" 
+                   placeholder="Enter your phone number" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" class="form-input" 
+                   placeholder="Create a password" required minlength="6">
+            <small class="form-help">Password must be at least 6 characters long</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-input" 
+                   placeholder="Confirm your password" required minlength="6">
+        </div>
+        
+        <button type="submit" class="btn btn-full">Create Account</button>
+    </form>
+    
+    <div class="text-center mt-4">
+        <p class="text-secondary">
+            Already have an account? 
+            <a href="{{ url_for('auth.login') }}" class="text-primary">Login</a>
+        </p>
+    </div>
+</div>
+
+<style>
+.form-help {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-1);
+    display: block;
+}
+
+.password-mismatch {
+    border-color: var(--error) !important;
+}
+
+.password-match {
+    border-color: var(--success) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    const form = document.querySelector('form');
+    
+    function validatePasswords() {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
+        
+        if (confirmPassword.length === 0) {
+            confirmPasswordField.classList.remove('password-mismatch', 'password-match');
+            confirmPasswordField.setCustomValidity('');
+            return;
+        }
+        
+        if (password === confirmPassword) {
+            confirmPasswordField.classList.remove('password-mismatch');
+            confirmPasswordField.classList.add('password-match');
+            confirmPasswordField.setCustomValidity('');
+        } else {
+            confirmPasswordField.classList.remove('password-match');
+            confirmPasswordField.classList.add('password-mismatch');
+            confirmPasswordField.setCustomValidity('Passwords do not match');
+        }
+    }
+    
+    // Validate on input
+    passwordField.addEventListener('input', validatePasswords);
+    confirmPasswordField.addEventListener('input', validatePasswords);
+    
+    // Validate on form submission
+    form.addEventListener('submit', function(e) {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            confirmPasswordField.focus();
+            confirmPasswordField.setCustomValidity('Passwords do not match');
+            confirmPasswordField.reportValidity();
+        }
+    });
+});
+</script>
+{% endblock %}

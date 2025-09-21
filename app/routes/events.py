@@ -1,0 +1,543 @@
+from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required, current_user
+from datetime import datetime, date, time
+from app import db
+from app.models.event import Event
+from app.models.event_invitation import EventInvitation
+from app.models.user import User
+from app.models.google_calendar_sync import GoogleCalendarSync
+from app.services.google_calendar_service import google_calendar_service
+import logging
+
+logger = logging.getLogger(__name__)
+
+bp = Blueprint('events', __name__)
+
+@bp.route('/events')
+@login_required
+def index():
+    """Events page showing user's events and pending invitations"""
+    # Get all events where the user is an attendee or creator
+    user_events = Event.query.filter(
+        (Event.attendees.contains(current_user)) | 
+        (Event.created_by_id == current_user.id)
+    ).order_by(Event.date.desc(), Event.start_time.desc()).all()
+    
+    # Get pending invitations for this user
+    pending_invitations = EventInvitation.query.filter_by(
+        invitee_id=current_user.id,
+        status='pending'
+    ).order_by(EventInvitation.created_at.desc()).all()
+    
+    return render_template('events/index.html', events=user_events, pending_invitations=pending_invitations)
+
+@bp.route('/events/<int:event_id>/data')
+@login_required
+def get_event_data(event_id):
+    """Get event data for editing"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Only the event creator can edit
+    if event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    return jsonify({
+        'success': True,
+        'event': {
+            'id': event.id,
+            'title': event.title,
+            'description': event.description,
+            'date': event.date.isoformat(),
+            'start_time': event.start_time.strftime('%H:%M'),
+            'end_time': event.end_time.strftime('%H:%M')
+        }
+    })
+
+@bp.route('/events/<int:event_id>/edit', methods=['POST'])
+@login_required
+def edit_event(event_id):
+    """Edit an existing event"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Only the event creator can edit
+    if event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    try:
+        # Get form data
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        date_str = request.form.get('date')
+        start_time_str = request.form.get('start_time')
+        end_time_str = request.form.get('end_time')
+        
+        # Validation
+        if not title:
+            return jsonify({'success': False, 'error': 'Event title is required'})
+        
+        if not date_str or not start_time_str or not end_time_str:
+            return jsonify({'success': False, 'error': 'Date and time are required'})
+        
+        # Parse date and times
+        event_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+        end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        
+        # Validate times
+        if start_time >= end_time:
+            return jsonify({'success': False, 'error': 'Start time must be before end time'})
+        
+        # Update event
+        event.title = title
+        event.description = description if description else None
+        event.date = event_date
+        event.start_time = start_time
+        event.end_time = end_time
+        event.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Event updated successfully!'
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': 'Invalid date or time format'}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating event {event_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update event'}), 500
+
+@bp.route('/events/<int:event_id>/delete', methods=['POST'])
+@login_required
+def delete_event(event_id):
+    """Delete an event"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Only the event creator can delete
+    if event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    try:
+        # Delete all related invitations first
+        EventInvitation.query.filter_by(event_id=event_id).delete()
+        
+        # Delete the event (this will also remove attendee relationships)
+        db.session.delete(event)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Event deleted successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting event {event_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to delete event'}), 500
+
+@bp.route('/events/<int:event_id>/group-chat', methods=['POST'])
+@login_required
+def create_group_chat(event_id):
+    """Send group SMS to all event attendees"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Check if user is part of the event (either creator or attendee)
+    if not (event.created_by_id == current_user.id or current_user in event.attendees):
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    try:
+        from app.services.sms_service import sms_service
+        
+        # Check if SMS is configured
+        if not sms_service.is_configured():
+            return jsonify({'success': False, 'error': 'SMS service not configured'}), 400
+        
+        # Get all attendees with phone numbers (including creator)
+        recipients = []
+        
+        # Add event creator
+        if event.created_by.phone:
+            recipients.append(event.created_by)
+        
+        # Add all attendees
+        for attendee in event.attendees:
+            if attendee.phone and attendee not in recipients:
+                recipients.append(attendee)
+        
+        if not recipients:
+            return jsonify({'success': False, 'error': 'No attendees have phone numbers'}), 400
+        
+        # Send group SMS
+        stats = sms_service.send_event_group_chat(event, recipients, current_user)
+        
+        if stats['sent'] > 0:
+            return jsonify({
+                'success': True,
+                'message': f'Group chat messages sent to {stats["sent"]} attendees!'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': f'Failed to send messages. {stats["failed"]} failed, {stats["skipped"]} skipped.'
+            })
+        
+    except ImportError:
+        return jsonify({'success': False, 'error': 'SMS service not available'}), 500
+    except Exception as e:
+        logger.error(f"Error sending group chat for event {event_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to send group messages'}), 500
+
+@bp.route('/events/<int:event_id>/send-reminders', methods=['POST'])
+@login_required
+def send_rsvp_reminders(event_id):
+    """Send RSVP reminder SMS to users who haven't responded"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Only the event creator can send reminders
+    if event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    try:
+        from app.services.sms_service import sms_service
+        
+        # Check if SMS is configured
+        if not sms_service.is_configured():
+            return jsonify({'success': False, 'error': 'SMS service not configured'}), 400
+        
+        # Get all pending invitations for this event
+        pending_invitations = EventInvitation.query.filter_by(
+            event_id=event_id,
+            status='pending'
+        ).all()
+        
+        if not pending_invitations:
+            return jsonify({
+                'success': True,
+                'message': 'No pending RSVPs to remind!'
+            })
+        
+        # Get users who haven't responded
+        pending_users = [invitation.invitee for invitation in pending_invitations if invitation.invitee.phone]
+        
+        if not pending_users:
+            return jsonify({
+                'success': False,
+                'error': 'No pending invitees have phone numbers'
+            })
+        
+        # Send RSVP reminders
+        stats = sms_service.send_rsvp_reminders(event, pending_users, current_user)
+        
+        if stats['sent'] > 0:
+            return jsonify({
+                'success': True,
+                'message': f'RSVP reminders sent to {stats["sent"]} people!'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': f'Failed to send reminders. {stats["failed"]} failed, {stats["skipped"]} skipped.'
+            })
+        
+    except ImportError:
+        return jsonify({'success': False, 'error': 'SMS service not available'}), 500
+    except Exception as e:
+        logger.error(f"Error sending RSVP reminders for event {event_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to send reminders'}), 500
+
+@bp.route('/events/create', methods=['POST'])
+@login_required
+def create():
+    """Create a new event"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('title'):
+            return jsonify({'success': False, 'error': 'Event title is required'}), 400
+        
+        if not data.get('date'):
+            return jsonify({'success': False, 'error': 'Event date is required'}), 400
+        
+        if not data.get('start_time') or not data.get('end_time'):
+            return jsonify({'success': False, 'error': 'Start and end times are required'}), 400
+        
+        if not data.get('attendee_ids') or len(data.get('attendee_ids', [])) < 2:
+            return jsonify({'success': False, 'error': 'At least 2 attendees are required'}), 400
+        
+        # Parse date and times
+        event_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        
+        # Validate attendees exist and include current user
+        attendee_ids = data['attendee_ids']
+        if current_user.id not in attendee_ids:
+            attendee_ids.append(current_user.id)
+        
+        attendees = User.query.filter(User.id.in_(attendee_ids)).all()
+        if len(attendees) != len(attendee_ids):
+            return jsonify({'success': False, 'error': 'Some attendees were not found'}), 400
+        
+        # Create the event
+        event = Event(
+            title=data['title'],
+            description=data.get('description', ''),
+            date=event_date,
+            start_time=start_time,
+            end_time=end_time,
+            created_by_id=current_user.id
+        )
+        
+        # Add only the creator as an attendee initially
+        event.attendees = [current_user]
+        
+        db.session.add(event)
+        db.session.flush()  # Flush to get the event ID
+        
+        # Create invitations for other attendees (excluding the creator)
+        other_attendees = [user for user in attendees if user.id != current_user.id]
+        for attendee in other_attendees:
+            invitation = EventInvitation(
+                event_id=event.id,
+                invitee_id=attendee.id,
+                status='pending'
+            )
+            db.session.add(invitation)
+        
+        db.session.commit()
+        
+        # Send SMS invitations to other attendees
+        try:
+            from app.services.sms_service import sms_service
+            if sms_service.is_configured() and other_attendees:
+                stats = sms_service.send_event_invitations(event, other_attendees, current_user)
+                logger.info(f"SMS invitation stats: {stats}")
+        except Exception as e:
+            logger.error(f"Failed to send SMS invitations: {str(e)}")
+            # Don't fail the event creation if SMS fails
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Event created and invitations sent!',
+            'event_id': event.id
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': 'Invalid date or time format'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def _add_event_to_google_calendar(user, event):
+    """Helper function to add an event to user's Google Calendar"""
+    try:
+        # Check if user has Google Calendar connected and auto-add enabled
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
+        if not sync_record or not sync_record.auto_add_events:
+            return False
+        
+        # Create Google Calendar event data
+        google_event = {
+            'summary': event.title,
+            'description': f"{event.description}\n\nCreated via Gatherly",
+            'start': {
+                'dateTime': f"{event.date}T{event.start_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'end': {
+                'dateTime': f"{event.date}T{event.end_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'attendees': [
+                {'email': attendee.email, 'displayName': attendee.get_full_name()} 
+                for attendee in event.attendees
+            ],
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 30},
+                    {'method': 'email', 'minutes': 60}
+                ]
+            },
+            'source': {
+                'title': 'Gatherly',
+                'url': 'http://localhost:5006'  # Update with actual domain
+            }
+        }
+        
+        # Add to Google Calendar
+        google_event_id = google_calendar_service.create_event(user.id, google_event)
+        
+        if google_event_id:
+            logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
+            return True
+        else:
+            logger.warning(f"Failed to add event {event.id} to Google Calendar for user {user.id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
+        return False
+
+@bp.route('/events/invitation/<int:invitation_id>/accept', methods=['POST'])
+@login_required
+def accept_invitation(invitation_id):
+    """Accept an event invitation"""
+    try:
+        invitation = EventInvitation.query.get_or_404(invitation_id)
+        
+        # Verify the invitation belongs to the current user
+        if invitation.invitee_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if invitation.accept():
+            db.session.commit()
+            
+            # Try to add event to user's Google Calendar if enabled
+            _add_event_to_google_calendar(current_user, invitation.event)
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Invitation accepted successfully!'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': 'Invitation has already been responded to'
+            }), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def _add_event_to_google_calendar(user, event):
+    """Helper function to add an event to user's Google Calendar"""
+    try:
+        # Check if user has Google Calendar connected and auto-add enabled
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
+        if not sync_record or not sync_record.auto_add_events:
+            return False
+        
+        # Create Google Calendar event data
+        google_event = {
+            'summary': event.title,
+            'description': f"{event.description}\n\nCreated via Gatherly",
+            'start': {
+                'dateTime': f"{event.date}T{event.start_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'end': {
+                'dateTime': f"{event.date}T{event.end_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'attendees': [
+                {'email': attendee.email, 'displayName': attendee.get_full_name()} 
+                for attendee in event.attendees
+            ],
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 30},
+                    {'method': 'email', 'minutes': 60}
+                ]
+            },
+            'source': {
+                'title': 'Gatherly',
+                'url': 'http://localhost:5006'  # Update with actual domain
+            }
+        }
+        
+        # Add to Google Calendar
+        google_event_id = google_calendar_service.create_event(user.id, google_event)
+        
+        if google_event_id:
+            logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
+            return True
+        else:
+            logger.warning(f"Failed to add event {event.id} to Google Calendar for user {user.id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
+        return False
+
+@bp.route('/events/invitation/<int:invitation_id>/decline', methods=['POST'])
+@login_required
+def decline_invitation(invitation_id):
+    """Decline an event invitation"""
+    try:
+        invitation = EventInvitation.query.get_or_404(invitation_id)
+        
+        # Verify the invitation belongs to the current user
+        if invitation.invitee_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if invitation.decline():
+            db.session.commit()
+            return jsonify({
+                'success': True, 
+                'message': 'Invitation declined'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': 'Invitation has already been responded to'
+            }), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def _add_event_to_google_calendar(user, event):
+    """Helper function to add an event to user's Google Calendar"""
+    try:
+        # Check if user has Google Calendar connected and auto-add enabled
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
+        if not sync_record or not sync_record.auto_add_events:
+            return False
+        
+        # Create Google Calendar event data
+        google_event = {
+            'summary': event.title,
+            'description': f"{event.description}\n\nCreated via Gatherly",
+            'start': {
+                'dateTime': f"{event.date}T{event.start_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'end': {
+                'dateTime': f"{event.date}T{event.end_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'attendees': [
+                {'email': attendee.email, 'displayName': attendee.get_full_name()} 
+                for attendee in event.attendees
+            ],
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 30},
+                    {'method': 'email', 'minutes': 60}
+                ]
+            },
+            'source': {
+                'title': 'Gatherly',
+                'url': 'http://localhost:5006'  # Update with actual domain
+            }
+        }
+        
+        # Add to Google Calendar
+        google_event_id = google_calendar_service.create_event(user.id, google_event)
+        
+        if google_event_id:
+            logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
+            return True
+        else:
+            logger.warning(f"Failed to add event {event.id} to Google Calendar for user {user.id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
+        return False

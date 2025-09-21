@@ -1,0 +1,1073 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Gatherly{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-description">
+            Manage your account settings and preferences.
+        </p>
+    </div>
+    
+    <!-- Profile Information -->
+    <div class="friends-section">
+        <h2 class="section-title">Profile Information</h2>
+        <div class="profile-card">
+            <div class="profile-avatar">
+                <div class="friend-avatar current-user-block">
+                    {{ user.get_initials() }}
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="info-group">
+                    <label class="info-label">Full Name</label>
+                    <div class="info-value">{{ user.get_full_name() }}</div>
+                </div>
+                <div class="info-group">
+                    <label class="info-label">Username</label>
+                    <div class="info-value">{{ user.username }}</div>
+                </div>
+                <div class="info-group">
+                    <label class="info-label">Email</label>
+                    <div class="info-value">{{ user.email }}</div>
+                </div>
+                {% if user.phone %}
+                    <div class="info-group">
+                        <label class="info-label">Phone</label>
+                        <div class="info-value">{{ user.phone }}</div>
+                    </div>
+                {% endif %}
+                <div class="info-group">
+                    <label class="info-label">Member Since</label>
+                    <div class="info-value">{{ user.created_at.strftime('%B %d, %Y') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Preferences -->
+    <div class="friends-section">
+        <h2 class="section-title">Notification Preferences</h2>
+        <div class="settings-card">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Email Notifications</h4>
+                    <p>Receive email notifications for friend requests and events</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="email-notifications" checked disabled>
+                    <label for="email-notifications" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Friend Request Notifications</h4>
+                    <p>Get notified when someone sends you a friend request</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="friend-notifications" checked disabled>
+                    <label for="friend-notifications" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Event Reminders</h4>
+                    <p>Receive reminders about upcoming events</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="event-notifications" checked disabled>
+                    <label for="event-notifications" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>SMS Availability Reminders</h4>
+                    <p>Get weekly text reminders to update your availability</p>
+                    <button id="test-sms-btn" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                        Send Test SMS
+                    </button>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" 
+                           id="sms-notifications" 
+                           {% if user.sms_notifications %}checked{% endif %}>
+                    <label for="sms-notifications" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-note">
+                <small class="text-muted">
+                    <em>Other notification settings will be available in a future update.</em>
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Privacy Settings -->
+    <div class="friends-section">
+        <h2 class="section-title">Privacy Settings</h2>
+        <div class="settings-card">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Profile Visibility</h4>
+                    <p>Allow friends to see your profile information</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="profile-visibility" checked disabled>
+                    <label for="profile-visibility" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Availability Sharing</h4>
+                    <p>Share your availability with accepted friends</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="availability-sharing" checked disabled>
+                    <label for="availability-sharing" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-note">
+                <small class="text-muted">
+                    <em>Privacy settings will be configurable in a future update.</em>
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Google Calendar Integration -->
+    <div class="friends-section">
+        <h2 class="section-title">Google Calendar Integration</h2>
+        <div class="settings-card">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Google Calendar Sync</h4>
+                    <p>Connect your Google Calendar to sync availability and events</p>
+                    {% if user.google_calendar_enabled %}
+                        <small class="text-success">✅ Connected</small>
+                    {% else %}
+                        <small class="text-muted">Not connected</small>
+                    {% endif %}
+                </div>
+                <div class="setting-control">
+                    {% if user.google_calendar_enabled %}
+                        <button id="disconnect-google-btn" class="btn btn-secondary btn-sm">Disconnect</button>
+                    {% else %}
+                        <button id="connect-google-btn" class="btn btn-primary btn-sm">Connect Google Calendar</button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if user.google_calendar_enabled %}
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Auto-Sync Availability</h4>
+                    <p>Automatically update your Gatherly availability based on Google Calendar events</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="auto-sync-availability" {% if user.google_calendar_sync and user.google_calendar_sync.auto_sync_availability %}checked{% endif %}>
+                    <label for="auto-sync-availability" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Auto-Add Events</h4>
+                    <p>Automatically add accepted Gatherly events to your Google Calendar</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" id="auto-add-events" {% if user.google_calendar_sync and user.google_calendar_sync.auto_add_events %}checked{% endif %}>
+                    <label for="auto-add-events" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Sync Now</h4>
+                    <p>Manually sync your availability from Google Calendar</p>
+                </div>
+                <div class="setting-control">
+                    <button id="sync-now-btn" class="btn btn-secondary btn-sm">Sync Availability</button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="setting-note">
+                <small class="text-muted">
+                    <em>Google Calendar integration allows seamless availability sync and event management.</em>
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Actions -->
+    <div class="friends-section">
+        <h2 class="section-title">Account Actions</h2>
+        <div class="settings-card">
+            <div class="action-buttons">
+                <button id="edit-profile-btn" class="btn btn-secondary">
+                    Edit Profile
+                </button>
+                <button id="change-password-btn" class="btn btn-secondary">
+                    Change Password
+                </button>
+                <button class="btn btn-secondary" disabled>
+                    Export Data
+                </button>
+            </div>
+            
+            <div class="danger-zone">
+                <h4 class="danger-title">Danger Zone</h4>
+                <p class="danger-description">
+                    These actions cannot be undone. Please be careful.
+                </p>
+                <button class="btn btn-danger" disabled>
+                    Delete Account
+                </button>
+            </div>
+            
+            <div class="setting-note">
+                <small class="text-muted">
+                    <em>Account management features will be available in a future update.</em>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="change-password-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Change Password</h3>
+            <button class="modal-close" id="close-change-password-modal">&times;</button>
+        </div>
+        <form id="change-password-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="current_password" class="form-label">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" 
+                           class="form-input" placeholder="Enter your current password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" id="new_password" name="new_password" 
+                           class="form-input" placeholder="Enter your new password" 
+                           required minlength="6">
+                    <small class="form-help">Password must be at least 6 characters long</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirm_new_password" name="confirm_password" 
+                           class="form-input" placeholder="Confirm your new password" 
+                           required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-change-password">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submit-change-password">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="edit-profile-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Profile</h3>
+            <button class="modal-close" id="close-edit-profile-modal">&times;</button>
+        </div>
+        <form id="edit-profile-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_first_name" class="form-label">First Name</label>
+                    <input type="text" id="edit_first_name" name="first_name" 
+                           class="form-input" placeholder="Enter your first name" 
+                           value="{{ user.first_name or '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_last_name" class="form-label">Last Name</label>
+                    <input type="text" id="edit_last_name" name="last_name" 
+                           class="form-input" placeholder="Enter your last name" 
+                           value="{{ user.last_name or '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_email" class="form-label">Email</label>
+                    <input type="email" id="edit_email" name="email" 
+                           class="form-input" placeholder="Enter your email" 
+                           value="{{ user.email }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_phone" class="form-label">Phone Number</label>
+                    <input type="tel" id="edit_phone" name="phone" 
+                           class="form-input" placeholder="Enter your phone number" 
+                           value="{{ user.phone or '' }}">
+                    <small class="form-help">Required for SMS notifications and friend connections</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-edit-profile">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submit-edit-profile">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.page-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.profile-card,
+.settings-card {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+}
+
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    align-items: center;
+    text-align: center;
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+}
+
+.profile-avatar .friend-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: var(--font-size-xl);
+}
+
+.profile-info {
+    flex: 1;
+    width: 100%;
+    max-width: 400px;
+}
+
+.info-group {
+    margin-bottom: var(--space-4);
+}
+
+.info-group:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: var(--space-1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info h4 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.setting-info p {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.setting-control {
+    flex-shrink: 0;
+}
+
+.setting-control input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+}
+
+.setting-control input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+.danger-zone {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-4);
+}
+
+.danger-title {
+    color: var(--error);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.danger-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin: 0 0 var(--space-3) 0;
+    line-height: 1.4;
+}
+
+.setting-note {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
+    }
+    
+    .profile-card {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .profile-avatar .friend-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: var(--font-size-lg);
+        margin: 0 auto;
+    }
+    
+    .setting-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+        text-align: center;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+
+.text-warning {
+    color: var(--warning) !important;
+    font-size: var(--font-size-xs);
+    display: block;
+    margin-top: var(--space-1);
+}
+
+.btn-sm {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    min-width: auto;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+    background-color: var(--border);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--space-6);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border);
+}
+
+.form-help {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-1);
+    display: block;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const smsToggle = document.getElementById('sms-notifications');
+    const testSmsBtn = document.getElementById('test-sms-btn');
+    const connectGoogleBtn = document.getElementById('connect-google-btn');
+    const disconnectGoogleBtn = document.getElementById('disconnect-google-btn');
+    const autoSyncToggle = document.getElementById('auto-sync-availability');
+    const autoAddEventsToggle = document.getElementById('auto-add-events');
+    const syncNowBtn = document.getElementById('sync-now-btn');
+    
+    // Change password modal elements
+    const changePasswordBtn = document.getElementById('change-password-btn');
+    const changePasswordModal = document.getElementById('change-password-modal');
+    const closeChangePasswordModal = document.getElementById('close-change-password-modal');
+    const cancelChangePassword = document.getElementById('cancel-change-password');
+    const changePasswordForm = document.getElementById('change-password-form');
+    
+    // Edit profile modal elements
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const editProfileModal = document.getElementById('edit-profile-modal');
+    const closeEditProfileModal = document.getElementById('close-edit-profile-modal');
+    const cancelEditProfile = document.getElementById('cancel-edit-profile');
+    const editProfileForm = document.getElementById('edit-profile-form');
+    
+        if (smsToggle) {
+        smsToggle.addEventListener('change', function() {
+            const isEnabled = this.checked;
+            
+            // Show loading state
+            this.disabled = true;
+            
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sms_notifications: isEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to update settings');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating SMS settings:', error);
+                showNotification('Failed to update SMS settings. Please try again.', 'error');
+                // Revert the toggle
+                this.checked = !isEnabled;
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    }
+    
+    if (testSmsBtn) {
+        testSmsBtn.addEventListener('click', function() {
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Sending...';
+            
+            fetch('/admin/test-sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to send test SMS');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending test SMS:', error);
+                showNotification('Failed to send test SMS. Please check your Twilio configuration.', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = originalText;
+            });
+        });
+    }
+    
+    // Google Calendar Connect
+    if (connectGoogleBtn) {
+        connectGoogleBtn.addEventListener('click', function() {
+            window.location.href = '/auth/google/connect';
+        });
+    }
+    
+    // Google Calendar Disconnect
+    if (disconnectGoogleBtn) {
+        disconnectGoogleBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to disconnect Google Calendar? This will stop syncing your availability.')) {
+                const originalText = this.textContent;
+                this.disabled = true;
+                this.textContent = 'Disconnecting...';
+                
+                fetch('/auth/google/disconnect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(data.error || 'Failed to disconnect Google Calendar');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error disconnecting Google Calendar:', error);
+                    showNotification('Failed to disconnect Google Calendar. Please try again.', 'error');
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.textContent = originalText;
+                });
+            }
+        });
+    }
+    
+    // Auto-sync availability toggle
+    if (autoSyncToggle) {
+        autoSyncToggle.addEventListener('change', function() {
+            updateGoogleCalendarSetting('auto_sync_availability', this.checked);
+        });
+    }
+    
+    // Auto-add events toggle
+    if (autoAddEventsToggle) {
+        autoAddEventsToggle.addEventListener('change', function() {
+            updateGoogleCalendarSetting('auto_add_events', this.checked);
+        });
+    }
+    
+    // Sync now button
+    if (syncNowBtn) {
+        syncNowBtn.addEventListener('click', function() {
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Syncing...';
+            
+            fetch('/availability/sync-google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Availability synced successfully from Google Calendar!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to sync availability');
+                }
+            })
+            .catch(error => {
+                console.error('Error syncing availability:', error);
+                showNotification('Failed to sync availability. Please try again.', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = originalText;
+            });
+        });
+    }
+    
+    // Change Password Modal functionality
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', function() {
+            changePasswordModal.classList.add('show');
+            document.getElementById('current_password').focus();
+        });
+    }
+    
+    // Close modal functions
+    function closeModal() {
+        changePasswordModal.classList.remove('show');
+        changePasswordForm.reset();
+    }
+    
+    if (closeChangePasswordModal) {
+        closeChangePasswordModal.addEventListener('click', closeModal);
+    }
+    
+    if (cancelChangePassword) {
+        cancelChangePassword.addEventListener('click', closeModal);
+    }
+    
+    // Close modal when clicking outside
+    changePasswordModal.addEventListener('click', function(e) {
+        if (e.target === changePasswordModal) {
+            closeModal();
+        }
+    });
+    
+    // Handle form submission
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_new_password').value;
+            
+            // Client-side validation
+            if (newPassword !== confirmPassword) {
+                showNotification('New passwords do not match.', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showNotification('New password must be at least 6 characters long.', 'error');
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submit-change-password');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Changing...';
+            
+            fetch('/settings/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeModal();
+                } else {
+                    throw new Error(data.error || 'Failed to change password');
+                }
+            })
+            .catch(error => {
+                console.error('Error changing password:', error);
+                showNotification(error.message || 'Failed to change password. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+    
+    // Password confirmation validation
+    const newPasswordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_new_password');
+    
+    function validatePasswords() {
+        if (newPasswordField.value && confirmPasswordField.value) {
+            if (newPasswordField.value !== confirmPasswordField.value) {
+                confirmPasswordField.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPasswordField.setCustomValidity('');
+            }
+        }
+    }
+    
+    if (newPasswordField && confirmPasswordField) {
+        newPasswordField.addEventListener('input', validatePasswords);
+        confirmPasswordField.addEventListener('input', validatePasswords);
+    }
+    
+    // Edit Profile Modal functionality
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', function() {
+            editProfileModal.classList.add('show');
+            document.getElementById('edit_first_name').focus();
+        });
+    }
+    
+    // Close edit profile modal functions
+    function closeEditProfileModalFunc() {
+        editProfileModal.classList.remove('show');
+        editProfileForm.reset();
+        // Reset to original values
+        document.getElementById('edit_first_name').value = '{{ user.first_name or "" }}';
+        document.getElementById('edit_last_name').value = '{{ user.last_name or "" }}';
+        document.getElementById('edit_email').value = '{{ user.email }}';
+        document.getElementById('edit_phone').value = '{{ user.phone or "" }}';
+    }
+    
+    if (closeEditProfileModal) {
+        closeEditProfileModal.addEventListener('click', closeEditProfileModalFunc);
+    }
+    
+    if (cancelEditProfile) {
+        cancelEditProfile.addEventListener('click', closeEditProfileModalFunc);
+    }
+    
+    // Close modal when clicking outside
+    editProfileModal.addEventListener('click', function(e) {
+        if (e.target === editProfileModal) {
+            closeEditProfileModalFunc();
+        }
+    });
+    
+    // Handle edit profile form submission
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const firstName = document.getElementById('edit_first_name').value.trim();
+            const lastName = document.getElementById('edit_last_name').value.trim();
+            const email = document.getElementById('edit_email').value.trim();
+            const phone = document.getElementById('edit_phone').value.trim();
+            
+            // Client-side validation
+            if (!firstName || !lastName) {
+                showNotification('First name and last name are required.', 'error');
+                return;
+            }
+            
+            if (!email) {
+                showNotification('Email is required.', 'error');
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submit-edit-profile');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            
+            fetch('/settings/edit-profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
+                    phone: phone
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeEditProfileModalFunc();
+                    // Reload page to show updated information
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Failed to update profile');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating profile:', error);
+                showNotification(error.message || 'Failed to update profile. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+});
+
+function updateGoogleCalendarSetting(setting, value) {
+    const data = {};
+    data[setting] = value;
+    
+    fetch('/settings/google-calendar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Google Calendar setting updated!', 'success');
+        } else {
+            throw new Error(data.error || 'Failed to update setting');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating Google Calendar setting:', error);
+        showNotification('Failed to update setting. Please try again.', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Style the notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'var(--success)' : 'var(--error)'};
+        color: white;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        font-size: var(--font-size-sm);
+        max-width: 300px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

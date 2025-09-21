@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences - Gatherly{% endblock %}
+
+{% block content %}
+<div class="preferences-container">
+    <div class="preferences-header">
+        <h1 class="page-title">Preferences</h1>
+        <p class="page-description">
+            Customize your Gatherly experience.
+        </p>
+    </div>
+    
+    <div class="friends-section">
+        <div class="coming-soon">
+            <div class="coming-soon-icon">⚙️</div>
+            <h2>Coming Soon!</h2>
+            <p>
+                User preference settings are being developed. 
+                Soon you'll be able to customize:
+            </p>
+            <ul class="feature-list">
+                <li>Default availability times</li>
+                <li>Calendar view preferences</li>
+                <li>Time zone settings</li>
+                <li>Theme customization</li>
+                <li>Language preferences</li>
+                <li>Notification timing</li>
+            </ul>
+            <p class="coming-soon-note">
+                For now, you can manage your account settings in 
+                <a href="{{ url_for('settings.index') }}">Settings</a>!
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.preferences-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.preferences-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.page-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.coming-soon {
+    text-align: center;
+    padding: var(--space-8);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.coming-soon-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+}
+
+.coming-soon h2 {
+    font-size: var(--font-size-xl);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.coming-soon p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+    line-height: 1.6;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0;
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.feature-list li {
+    padding: var(--space-2) 0;
+    color: var(--text-secondary);
+    position: relative;
+    padding-left: var(--space-6);
+}
+
+.feature-list li:before {
+    content: '⚡';
+    position: absolute;
+    left: 0;
+    font-size: var(--font-size-base);
+}
+
+.coming-soon-note {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+}
+
+.coming-soon-note a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.coming-soon-note a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
+    }
+    
+    .coming-soon {
+        padding: var(--space-6);
+    }
+    
+    .coming-soon-icon {
+        font-size: 3rem;
+    }
+    
+    .feature-list {
+        text-align: center;
+    }
+    
+    .feature-list li {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}
