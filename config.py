@@ -9,8 +9,13 @@ class Config:
     
     # Handle Railway's PostgreSQL DATABASE_URL format
     database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    if database_url:
+        # Convert postgres:// to postgresql:// for SQLAlchemy
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        # For psycopg3, we need to use postgresql+psycopg:// 
+        if database_url.startswith('postgresql://'):
+            database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     
     SQLALCHEMY_DATABASE_URI = database_url or \
         'sqlite:///' + os.path.join(basedir, 'app.db')
