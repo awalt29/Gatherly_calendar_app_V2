@@ -197,6 +197,16 @@
                     <button id="sync-now-btn" class="btn btn-secondary btn-sm">Sync Availability</button>
                 </div>
             </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Test Auto-Sync</h4>
+                    <p>Test the new automatic sync logic (uses updated algorithm)</p>
+                </div>
+                <div class="setting-control">
+                    <button id="admin-sync-btn" class="btn btn-secondary btn-sm">Test Auto-Sync</button>
+                </div>
+            </div>
             {% endif %}
             
             <div class="setting-note">
@@ -628,6 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const autoSyncToggle = document.getElementById('auto-sync-availability');
     const autoAddEventsToggle = document.getElementById('auto-add-events');
     const syncNowBtn = document.getElementById('sync-now-btn');
+    const adminSyncBtn = document.getElementById('admin-sync-btn');
     
     // Change password modal elements
     const changePasswordBtn = document.getElementById('change-password-btn');
@@ -792,6 +803,38 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error syncing availability:', error);
                 showNotification('Failed to sync availability. Please try again.', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = originalText;
+            });
+        });
+    }
+    
+    // Admin sync button (test new auto-sync logic)
+    if (adminSyncBtn) {
+        adminSyncBtn.addEventListener('click', function() {
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Testing...';
+            
+            fetch('/admin/sync-google-calendar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Auto-sync test completed successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to test auto-sync');
+                }
+            })
+            .catch(error => {
+                console.error('Error testing auto-sync:', error);
+                showNotification('Failed to test auto-sync. Please try again.', 'error');
             })
             .finally(() => {
                 this.disabled = false;
