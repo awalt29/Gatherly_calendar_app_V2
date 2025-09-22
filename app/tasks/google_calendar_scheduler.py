@@ -102,8 +102,8 @@ class GoogleCalendarScheduler:
                         datetime.combine(week_end, datetime.max.time())
                     )
                     
-                    # Convert busy times to availability data
-                    availability_data = GoogleCalendarScheduler._convert_busy_times_to_availability(busy_times, week_start)
+                # Convert busy times to availability data using the same logic as manual sync
+                availability_data = GoogleCalendarScheduler._convert_busy_times_to_availability_format(busy_times, week_start)
                     
                     # Update availability in database
                     availability = Availability.get_or_create_availability(user_id, week_start)
@@ -130,117 +130,100 @@ class GoogleCalendarScheduler:
             return False
     
     @staticmethod
-    def _convert_busy_times_to_availability(busy_times, week_start):
-        """Convert Google Calendar busy times to availability data format"""
-        # Initialize all time slots as available (True)
+    def _convert_busy_times_to_availability_format(busy_times, week_start):
+        """Convert Google Calendar busy times to Gatherly availability format (matching manual sync)"""
+        # Default availability: 9 AM to 5 PM on weekdays (same as manual sync)
+        default_start = "09:00"
+        default_end = "17:00"
+        
         availability_data = {}
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
         
-        # Days of the week (0 = Monday, 6 = Sunday)
-        for day in range(7):
-            current_date = week_start + timedelta(days=day)
-            day_key = current_date.strftime('%Y-%m-%d')
+        for day_offset in range(7):
+            current_date = week_start + timedelta(days=day_offset)
+            day_name = day_names[current_date.weekday()]  # Monday = 0
             
-            # Initialize all days as available with full time range
-            availability_data[day_key] = {
-                'available': True,
-                'start_time': '06:00',
-                'end_time': '23:00'
-            }
-        
-        # Calculate busy hours per day
-        daily_busy_hours = {}
-        
-        for busy_period in busy_times:
-            try:
-                # Parse the datetime strings (handle both Z and timezone formats)
-                start_str = busy_period['start']
-                end_str = busy_period['end']
-                
-                if 'T' in start_str:
-                    # Handle datetime format
-                    start_time = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
-                    end_time = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
-                else:
-                    # Handle date-only format (all-day events)
-                    start_time = datetime.strptime(start_str, '%Y-%m-%d')
-                    end_time = datetime.strptime(end_str, '%Y-%m-%d')
-                
-                # Convert to local date
-                start_date = start_time.date()
-                end_date = end_time.date()
-                
-                # Handle busy periods that span multiple days
-                current_date = start_date
-                while current_date <= end_date:
-                    if week_start <= current_date <= week_start + timedelta(days=6):
-                        day_key = current_date.strftime('%Y-%m-%d')
-                        
-                        # Calculate busy hours for this specific day
-                        day_start = max(start_time, datetime.combine(current_date, datetime.min.time()))
-                        day_end = min(end_time, datetime.combine(current_date, datetime.max.time()))
-                        
-                        busy_hours = (day_end - day_start).total_seconds() / 3600
-                        
-                        # Add to daily busy hours
-                        if day_key not in daily_busy_hours:
-                            daily_busy_hours[day_key] = 0
-                        daily_busy_hours[day_key] += busy_hours
-                    
-                    current_date += timedelta(days=1)
-                    
-            except Exception as e:
-                logger.error(f"Error parsing busy period: {busy_period}, error: {str(e)}")
-                continue
-        
-        # Find the largest continuous available block for each day
-        for day_key in availability_data.keys():
-            if day_key in daily_busy_hours:
-                # Get all busy periods for this day
-                day_busy_periods = []
-                current_date = datetime.strptime(day_key, '%Y-%m-%d').date()
-                
-                for busy_period in busy_times:
-                    try:
-                        start_str = busy_period['start']
-                        end_str = busy_period['end']
-                        
-                        if 'T' in start_str:
-                            start_time = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
-                            end_time = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+            # Check if it's a weekday (default available) or weekend (default not available)
+            is_weekday = current_date.weekday() < 5
+            
+            # Find busy periods for this day
+            day_busy_times = []
+            for busy_period in busy_times:
+                try:
+                    # Handle both datetime and date formats
+                    if isinstance(busy_period['start'], str):
+                        if 'T' in busy_period['start']:
+                            busy_start_dt = datetime.fromisoformat(busy_period['start'].replace('Z', '+00:00'))
+                            busy_end_dt = datetime.fromisoformat(busy_period['end'].replace('Z', '+00:00'))
                         else:
-                            # All-day events - mark entire day as busy
-                            start_time = datetime.combine(current_date, datetime.min.time())
-                            end_time = datetime.combine(current_date, datetime.max.time())
-                        
-                        # Only include busy periods that overlap with this day
-                        if start_time.date() <= current_date <= end_time.date():
-                            # Clamp to this specific day
-                            day_start = max(start_time, datetime.combine(current_date, datetime.min.time()))
-                            day_end = min(end_time, datetime.combine(current_date, datetime.max.time()))
-                            
-                            day_busy_periods.append({
-                                'start': day_start.time(),
-                                'end': day_end.time()
-                            })
-                    except Exception as e:
-                        logger.error(f"Error processing busy period for day {day_key}: {str(e)}")
-                        continue
-                
-                # Find the largest continuous available block
-                largest_block = GoogleCalendarScheduler._find_largest_available_block(day_busy_periods)
-                
-                if largest_block:
-                    start_time, end_time, duration_hours = largest_block
-                    
-                    # If largest block is less than 2 hours, mark day as unavailable
-                    if duration_hours < 2:
-                        availability_data[day_key]['available'] = False
+                            busy_start_dt = datetime.strptime(busy_period['start'], '%Y-%m-%d')
+                            busy_end_dt = datetime.strptime(busy_period['end'], '%Y-%m-%d')
                     else:
-                        availability_data[day_key]['start_time'] = start_time.strftime('%H:%M')
-                        availability_data[day_key]['end_time'] = end_time.strftime('%H:%M')
+                        # Already datetime objects
+                        busy_start_dt = busy_period['start']
+                        busy_end_dt = busy_period['end']
+                    
+                    busy_start = busy_start_dt.date()
+                    busy_end = busy_end_dt.date()
+                    
+                    # If busy period spans this day
+                    if busy_start <= current_date <= busy_end:
+                        # Extract time portion if it's the same day
+                        if busy_start == current_date:
+                            start_time = busy_start_dt.time()
+                        else:
+                            start_time = datetime.min.time()
+                        
+                        if busy_end == current_date:
+                            end_time = busy_end_dt.time()
+                        else:
+                            end_time = datetime.max.time()
+                        
+                        day_busy_times.append({
+                            'start': start_time,
+                            'end': end_time
+                        })
+                except Exception as e:
+                    logger.error(f"Error parsing busy period: {busy_period}, error: {str(e)}")
+                    continue
+            
+            # Determine availability based on busy times (same logic as manual sync)
+            if is_weekday and not day_busy_times:
+                # Weekday with no conflicts - available default hours
+                availability_data[day_name] = {
+                    'available': True,
+                    'start': default_start,
+                    'end': default_end,
+                    'all_day': False
+                }
+            elif is_weekday and day_busy_times:
+                # Weekday with conflicts - find largest available block
+                largest_block = GoogleCalendarScheduler._find_largest_available_block(day_busy_times)
+                
+                if largest_block and largest_block[2] >= 2:  # At least 2 hours
+                    start_time, end_time, duration_hours = largest_block
+                    availability_data[day_name] = {
+                        'available': True,
+                        'start': start_time.strftime('%H:%M'),
+                        'end': end_time.strftime('%H:%M'),
+                        'all_day': False
+                    }
                 else:
-                    # No available blocks found
-                    availability_data[day_key]['available'] = False
+                    # No suitable time block found
+                    availability_data[day_name] = {
+                        'available': False,
+                        'start': default_start,
+                        'end': default_end,
+                        'all_day': False
+                    }
+            else:
+                # Weekend - default to not available
+                availability_data[day_name] = {
+                    'available': False,
+                    'start': default_start,
+                    'end': default_end,
+                    'all_day': False
+                }
         
         return availability_data
     
