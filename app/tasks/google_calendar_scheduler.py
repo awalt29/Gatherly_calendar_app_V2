@@ -140,43 +140,173 @@ class GoogleCalendarScheduler:
             current_date = week_start + timedelta(days=day)
             day_key = current_date.strftime('%Y-%m-%d')
             
-            # Initialize all hours as available
+            # Initialize all days as available with full time range
             availability_data[day_key] = {
                 'available': True,
                 'start_time': '06:00',
                 'end_time': '23:00'
             }
         
-        # Mark busy times as unavailable
+        # Calculate busy hours per day
+        daily_busy_hours = {}
+        
         for busy_period in busy_times:
-            start_time = datetime.fromisoformat(busy_period['start'].replace('Z', '+00:00'))
-            end_time = datetime.fromisoformat(busy_period['end'].replace('Z', '+00:00'))
-            
-            # Convert to local date
-            start_date = start_time.date()
-            end_date = end_time.date()
-            
-            # Handle busy periods that span multiple days
-            current_date = start_date
-            while current_date <= end_date:
-                if week_start <= current_date <= week_start + timedelta(days=6):
-                    day_key = current_date.strftime('%Y-%m-%d')
+            try:
+                # Parse the datetime strings (handle both Z and timezone formats)
+                start_str = busy_period['start']
+                end_str = busy_period['end']
+                
+                if 'T' in start_str:
+                    # Handle datetime format
+                    start_time = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+                    end_time = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+                else:
+                    # Handle date-only format (all-day events)
+                    start_time = datetime.strptime(start_str, '%Y-%m-%d')
+                    end_time = datetime.strptime(end_str, '%Y-%m-%d')
+                
+                # Convert to local date
+                start_date = start_time.date()
+                end_date = end_time.date()
+                
+                # Handle busy periods that span multiple days
+                current_date = start_date
+                while current_date <= end_date:
+                    if week_start <= current_date <= week_start + timedelta(days=6):
+                        day_key = current_date.strftime('%Y-%m-%d')
+                        
+                        # Calculate busy hours for this specific day
+                        day_start = max(start_time, datetime.combine(current_date, datetime.min.time()))
+                        day_end = min(end_time, datetime.combine(current_date, datetime.max.time()))
+                        
+                        busy_hours = (day_end - day_start).total_seconds() / 3600
+                        
+                        # Add to daily busy hours
+                        if day_key not in daily_busy_hours:
+                            daily_busy_hours[day_key] = 0
+                        daily_busy_hours[day_key] += busy_hours
                     
-                    # Determine the busy hours for this day
-                    day_start = max(start_time, datetime.combine(current_date, datetime.min.time()))
-                    day_end = min(end_time, datetime.combine(current_date, datetime.max.time()))
+                    current_date += timedelta(days=1)
                     
-                    # If the entire day is busy, mark as unavailable
-                    if (day_end - day_start).total_seconds() >= 8 * 3600:  # 8+ hours busy
+            except Exception as e:
+                logger.error(f"Error parsing busy period: {busy_period}, error: {str(e)}")
+                continue
+        
+        # Find the largest continuous available block for each day
+        for day_key in availability_data.keys():
+            if day_key in daily_busy_hours:
+                # Get all busy periods for this day
+                day_busy_periods = []
+                current_date = datetime.strptime(day_key, '%Y-%m-%d').date()
+                
+                for busy_period in busy_times:
+                    try:
+                        start_str = busy_period['start']
+                        end_str = busy_period['end']
+                        
+                        if 'T' in start_str:
+                            start_time = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+                            end_time = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+                        else:
+                            # All-day events - mark entire day as busy
+                            start_time = datetime.combine(current_date, datetime.min.time())
+                            end_time = datetime.combine(current_date, datetime.max.time())
+                        
+                        # Only include busy periods that overlap with this day
+                        if start_time.date() <= current_date <= end_time.date():
+                            # Clamp to this specific day
+                            day_start = max(start_time, datetime.combine(current_date, datetime.min.time()))
+                            day_end = min(end_time, datetime.combine(current_date, datetime.max.time()))
+                            
+                            day_busy_periods.append({
+                                'start': day_start.time(),
+                                'end': day_end.time()
+                            })
+                    except Exception as e:
+                        logger.error(f"Error processing busy period for day {day_key}: {str(e)}")
+                        continue
+                
+                # Find the largest continuous available block
+                largest_block = GoogleCalendarScheduler._find_largest_available_block(day_busy_periods)
+                
+                if largest_block:
+                    start_time, end_time, duration_hours = largest_block
+                    
+                    # If largest block is less than 2 hours, mark day as unavailable
+                    if duration_hours < 2:
                         availability_data[day_key]['available'] = False
                     else:
-                        # For partial day busy periods, we keep the day available
-                        # The user can manually adjust if needed
-                        pass
-                
-                current_date += timedelta(days=1)
+                        availability_data[day_key]['start_time'] = start_time.strftime('%H:%M')
+                        availability_data[day_key]['end_time'] = end_time.strftime('%H:%M')
+                else:
+                    # No available blocks found
+                    availability_data[day_key]['available'] = False
         
         return availability_data
+    
+    @staticmethod
+    def _find_largest_available_block(busy_periods):
+        """
+        Find the largest continuous available time block in a day
+        
+        Args:
+            busy_periods: List of {'start': time, 'end': time} busy periods
+            
+        Returns:
+            Tuple of (start_time, end_time, duration_hours) or None if no block >= 2 hours
+        """
+        from datetime import time
+        
+        # Define the full day range (6 AM to 11 PM)
+        day_start = time(6, 0)  # 6:00 AM
+        day_end = time(23, 0)   # 11:00 PM
+        
+        # Sort busy periods by start time
+        sorted_busy = sorted(busy_periods, key=lambda x: x['start'])
+        
+        # Find all available blocks
+        available_blocks = []
+        current_time = day_start
+        
+        for busy in sorted_busy:
+            # If there's a gap before this busy period
+            if current_time < busy['start']:
+                # Calculate duration in hours
+                start_minutes = current_time.hour * 60 + current_time.minute
+                end_minutes = busy['start'].hour * 60 + busy['start'].minute
+                duration_hours = (end_minutes - start_minutes) / 60
+                
+                available_blocks.append({
+                    'start': current_time,
+                    'end': busy['start'],
+                    'duration': duration_hours
+                })
+            
+            # Move current time to end of this busy period
+            current_time = max(current_time, busy['end'])
+        
+        # Check for available time after the last busy period
+        if current_time < day_end:
+            start_minutes = current_time.hour * 60 + current_time.minute
+            end_minutes = day_end.hour * 60 + day_end.minute
+            duration_hours = (end_minutes - start_minutes) / 60
+            
+            available_blocks.append({
+                'start': current_time,
+                'end': day_end,
+                'duration': duration_hours
+            })
+        
+        # Find the largest block that's at least 2 hours
+        largest_block = None
+        max_duration = 0
+        
+        for block in available_blocks:
+            if block['duration'] >= 2 and block['duration'] > max_duration:
+                max_duration = block['duration']
+                largest_block = (block['start'], block['end'], block['duration'])
+        
+        return largest_block
     
     @staticmethod
     def sync_user_now(user_id):
