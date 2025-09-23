@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - Gatherly{% endblock %}
+
+{% block content %}
+<div class="scrollable-calendar-container">
+    <!-- Header with today button -->
+    <div class="calendar-header">
+        <h1 class="calendar-title">Calendar</h1>
+        <button id="todayBtn" class="btn btn-primary">Today</button>
+    </div>
+    
+    <!-- Floating month header -->
+    <div id="floatingMonthHeader" class="floating-month-header">
+        September 2025
+    </div>
+    
+    <!-- Day headers (sticky) -->
+    <div class="sticky-day-headers">
+        <div class="day-header">MON</div>
+        <div class="day-header">TUE</div>
+        <div class="day-header">WED</div>
+        <div class="day-header">THU</div>
+        <div class="day-header">FRI</div>
+        <div class="day-header">SAT</div>
+        <div class="day-header">SUN</div>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+        <div class="spinner"></div>
+        <span>Loading calendar...</span>
+    </div>
+    
+    <!-- Scrollable calendar content -->
+    <div id="calendarScroll" class="calendar-scroll">
+        <!-- Continuous calendar grid -->
+        <div id="calendarGrid" class="calendar-grid-continuous">
+            <!-- Week rows will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+
+<style>
+.scrollable-calendar-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+.calendar-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.floating-month-header {
+    position: sticky;
+    top: 0;
+    background: var(--background);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-3) var(--space-4);
+    text-align: center;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    z-index: 15;
+    flex-shrink: 0;
+}
+
+.sticky-day-headers {
+    position: sticky;
+    top: 60px; /* Height of floating month header */
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.sticky-day-headers .day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-2);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.sticky-day-headers .day-header:last-child {
+    border-right: none;
+}
+
+.calendar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.calendar-grid-continuous {
+    background: transparent;
+}
+
+/* Continuous week rows */
+.calendar-grid-continuous .week-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    flex: 1;
+}
+
+.calendar-grid-continuous .week-row:last-child {
+    border-bottom: none;
+}
+
+.calendar-grid-continuous .day-column {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--border);
+    padding: var(--space-3);
+    min-height: 45vh; /* Make rows much taller - about half viewport height */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.calendar-grid-continuous .day-column:last-child {
+    border-right: none;
+}
+
+.calendar-grid-continuous .day-column:hover {
+    background: rgba(0, 104, 177, 0.1);
+    transform: translateY(-1px);
+}
+
+.calendar-grid-continuous .day-column.today {
+    background: rgba(0, 104, 177, 0.15);
+    border-color: var(--primary);
+}
+
+.calendar-grid-continuous .date-number {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    width: 100%;
+    text-align: left;
+}
+
+.calendar-grid-continuous .friend-block {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    margin-bottom: var(--space-2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    flex-shrink: 0;
+}
+
+.calendar-grid-continuous .friend-block:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.calendar-grid-continuous .friend-block.current-user {
+    background: white;
+    color: black;
+    border: 2px solid var(--primary);
+}
+
+/* User availability indicators */
+.day-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-top: var(--space-1);
+}
+
+.user-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.user-indicator.current-user {
+    background: white;
+    color: black;
+    border: 2px solid var(--primary);
+}
+
+/* Friend colors */
+.friend-color-0 { background: #3B82F6; }
+.friend-color-1 { background: #EF4444; }
+.friend-color-2 { background: #10B981; }
+.friend-color-3 { background: #F59E0B; }
+.friend-color-4 { background: #8B5CF6; }
+.friend-color-5 { background: #EC4899; }
+.friend-color-6 { background: #06B6D4; }
+.friend-color-7 { background: #84CC16; }
+
+/* Loading indicator */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .calendar-grid-continuous .day-column {
+        padding: var(--space-2);
+        min-height: 42vh; /* Slightly smaller on mobile but still tall */
+    }
+    
+    .calendar-grid-continuous .friend-block {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+    
+    .calendar-header {
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .calendar-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .floating-month-header {
+        font-size: var(--font-size-lg);
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .sticky-day-headers {
+        top: 50px; /* Adjusted for smaller floating header */
+    }
+    
+    .sticky-day-headers .day-header {
+        padding: var(--space-1);
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-grid-continuous .day-column {
+        padding: var(--space-1);
+        min-height: 40vh; /* Even smaller on very small screens */
+    }
+    
+    .calendar-grid-continuous .friend-block {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+    }
+}
+
+/* Intersection observer target for infinite scroll */
+.month-loader {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize scrollable calendar when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initializeScrollableCalendar === 'function') {
+        initializeScrollableCalendar();
+    }
+});
+</script>
+{% endblock %}

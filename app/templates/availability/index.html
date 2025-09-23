@@ -19,23 +19,10 @@
         <button id="availabilityNextWeek" class="nav-btn">Next Week →</button>
     </div>
     
-    <!-- Calendar Grid -->
-    <div class="calendar-availability-grid">
-        <div class="grid-header">
-            <div class="days-header">
-                <div class="day-header">MON</div>
-                <div class="day-header">TUE</div>
-                <div class="day-header">WED</div>
-                <div class="day-header">THU</div>
-                <div class="day-header">FRI</div>
-                <div class="day-header">SAT</div>
-                <div class="day-header">SUN</div>
-            </div>
-        </div>
-        
-        <div class="grid-body" id="availabilityGrid">
-            <!-- Grid will be populated by JavaScript -->
-        </div>
+    <!-- Availability Days List -->
+    <div class="availability-days-list" id="availabilityDaysList">
+        <!-- Days will be populated by JavaScript -->
+    </div>
         
         <div class="grid-controls">
             <button id="saveAvailability" class="btn btn-primary">Save Availability</button>
@@ -97,56 +84,193 @@
     text-align: center;
 }
 
-/* Calendar Grid Styles */
-.calendar-availability-grid {
+/* Calendly-Style Availability List */
+.availability-days-list {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto var(--space-4);
     background: var(--surface);
     border-radius: var(--radius-lg);
-    padding: var(--space-4);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    margin-bottom: var(--space-4);
     overflow: hidden;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
-.grid-header {
-    margin-bottom: var(--space-4);
-    border-bottom: 2px solid var(--border);
-    padding-bottom: var(--space-3);
+.availability-day-item {
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4);
+    transition: background-color 0.2s ease;
 }
 
-.days-header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0;
+.availability-day-item:last-child {
+    border-bottom: none;
 }
 
-.day-header {
-    text-align: center;
+.availability-day-item:hover {
+    background: rgba(0, 104, 177, 0.05);
+}
+
+.day-item-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.day-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.day-checkbox {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    max-width: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    flex-shrink: 0;
+}
+
+.day-checkbox:hover {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
+    transform: scale(1.05);
+}
+
+.day-checkbox:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 104, 177, 0.15);
+}
+
+.day-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.day-checkbox:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 104, 177, 0.25);
+}
+
+.day-checkbox:active {
+    transform: scale(0.95);
+}
+
+.day-name {
     font-weight: 600;
     color: var(--text-primary);
-    font-size: var(--font-size-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: var(--space-2);
-    background: var(--background);
-    border-radius: var(--radius-md);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    border-right: 1px solid var(--border);
-    min-width: 0;
+    font-size: var(--font-size-base);
+    min-width: 100px;
+    flex-shrink: 0;
 }
 
-.day-header:last-child {
-    border-right: none;
-}
-
-.day-header .day-name {
-    font-size: var(--font-size-xs);
+.day-date {
     color: var(--text-secondary);
-    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+.time-ranges-container {
+    margin-left: 45px;
+    display: none;
+}
+
+.availability-day-item.active .time-ranges-container {
+    display: block;
+}
+
+.time-range-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    padding: var(--space-2);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.time-range-item:last-child {
+    margin-bottom: 0;
+}
+
+.time-input {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    width: 120px;
+    min-width: 120px;
+}
+
+.time-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 104, 177, 0.2);
+}
+
+.time-separator {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.remove-time-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.remove-time-btn:hover {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.add-time-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+}
+
+.add-time-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
 }
 
 .day-header .day-date {
@@ -433,13 +557,75 @@
         height: 16px;
     }
     
-    .day-toggle input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
+    .day-checkbox {
+        width: 20px;
+        height: 20px;
     }
     
-    .day-toggle input[type="checkbox"]:checked::after {
+    .day-checkbox:checked::after {
+        font-size: 12px;
+    }
+    
+    .day-checkbox:hover {
+        transform: none; /* Disable hover transform on mobile */
+    }
+    
+    /* Calendly-style mobile adjustments */
+    .availability-days-list {
+        margin: 0 var(--space-2) var(--space-4);
+    }
+    
+    .availability-day-item {
+        padding: var(--space-3);
+    }
+    
+    .time-input {
+        width: 115px;
+        min-width: 115px;
+        font-size: var(--font-size-xs);
+        padding: var(--space-1) var(--space-2);
+    }
+    
+    .time-range-item {
+        gap: var(--space-2);
+        padding: var(--space-1);
+    }
+}
+
+@media (max-width: 480px) {
+    .day-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .time-input {
+        width: 105px;
+        min-width: 105px;
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+    
+    .time-ranges-container {
+        margin-left: 25px;
+    }
+    
+    .time-range-item {
+        gap: var(--space-1);
+        flex-wrap: nowrap;
+    }
+}
+
+@media (max-width: 360px) {
+    .time-input {
+        width: 95px;
+        min-width: 95px;
         font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .availability-day-item {
+        padding: var(--space-2);
     }
 }
 </style>

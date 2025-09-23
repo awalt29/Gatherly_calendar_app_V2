@@ -7,6 +7,7 @@ from app.models.event_invitation import EventInvitation
 from app.models.user import User
 from app.models.google_calendar_sync import GoogleCalendarSync
 from app.services.google_calendar_service import google_calendar_service
+from app.services.sms_service import SMSService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -399,6 +400,9 @@ def accept_invitation(invitation_id):
             # Try to add event to user's Google Calendar if enabled
             _add_event_to_google_calendar(current_user, invitation.event)
             
+            # Send SMS notification to event creator
+            _send_rsvp_notification(invitation.event.created_by, invitation, 'accepted')
+            
             return jsonify({
                 'success': True, 
                 'message': 'Invitation accepted successfully!'
@@ -477,6 +481,10 @@ def decline_invitation(invitation_id):
         
         if invitation.decline():
             db.session.commit()
+            
+            # Send SMS notification to event creator
+            _send_rsvp_notification(invitation.event.created_by, invitation, 'declined')
+            
             return jsonify({
                 'success': True, 
                 'message': 'Invitation declined'
@@ -541,3 +549,46 @@ def _add_event_to_google_calendar(user, event):
     except Exception as e:
         logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
         return False
+
+def _send_rsvp_notification(event_creator, invitation, action):
+    """Send SMS notification to event creator when someone RSVPs"""
+    try:
+        logger.info(f"Attempting to send RSVP notification for invitation {invitation.id}, action: {action}")
+        
+        # Don't send notification if creator is responding to their own event
+        if event_creator.id == invitation.invitee_id:
+            logger.info("Skipping notification - creator is responding to their own event")
+            return
+            
+        # Check if creator has a phone number
+        if not event_creator.phone:
+            logger.warning(f"Event creator {event_creator.id} has no phone number for RSVP notification")
+            return
+        
+        # Format the event date and time
+        event = invitation.event
+        event_date = event.date.strftime('%B %d, %Y')
+        start_time_str = event.start_time.strftime('%I:%M %p').lstrip('0')
+        end_time_str = event.end_time.strftime('%I:%M %p').lstrip('0')
+        event_time = f"{start_time_str} - {end_time_str}"
+        
+        # Create the notification message
+        responder_name = invitation.invitee.get_full_name()
+        action_text = "accepted" if action == 'accepted' else "declined"
+        emoji = "✅" if action == 'accepted' else "❌"
+        
+        message = f"{emoji} RSVP Update: {responder_name} has {action_text} your event invitation for '{event.title}' on {event_date} at {event_time}."
+        
+        logger.info(f"Sending SMS to {event_creator.phone}: {message}")
+        
+        # Send the SMS
+        sms_service = SMSService()
+        success = sms_service.send_sms(event_creator.phone, message)
+        
+        if success:
+            logger.info(f"RSVP notification sent to event creator {event_creator.id} for invitation {invitation.id}")
+        else:
+            logger.error(f"Failed to send RSVP notification to event creator {event_creator.id}")
+            
+    except Exception as e:
+        logger.error(f"Error sending RSVP notification: {str(e)}")

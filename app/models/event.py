@@ -27,7 +27,9 @@ class Event(db.Model):
     
     def get_time_range(self):
         """Get formatted time range string"""
-        return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+        start_formatted = self.start_time.strftime('%I:%M %p').lstrip('0')
+        end_formatted = self.end_time.strftime('%I:%M %p').lstrip('0')
+        return f"{start_formatted} - {end_formatted}"
     
     def get_attendee_names(self):
         """Get list of attendee names"""

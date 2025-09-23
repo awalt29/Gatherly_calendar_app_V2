@@ -15,7 +15,7 @@
         {% if available_users %}
             <div class="available-users">
                 {% for user_data in available_users %}
-                    <div class="user-availability-card" data-user-id="{{ user_data.user.id }}" data-start-time="{{ user_data.time_range.start }}" data-end-time="{{ user_data.time_range.end }}" data-all-day="{{ user_data.time_range.all_day }}">
+                    <div class="user-availability-card" data-user-id="{{ user_data.user.id }}" data-time-ranges='{{ user_data.time_ranges | tojson }}'>
                         <div class="user-checkbox">
                             <input type="checkbox" id="user-{{ user_data.user.id }}" class="user-select-checkbox" {% if user_data.user.id == current_user.id %}checked{% endif %}>
                             <label for="user-{{ user_data.user.id }}" class="checkbox-label"></label>
@@ -34,13 +34,11 @@
                         </div>
                         
                         <div class="time-info">
-                            {% if user_data.time_range.all_day %}
-                                <span class="time-badge all-day">All Day</span>
-                            {% else %}
+                            {% for time_range in user_data.time_ranges %}
                                 <span class="time-badge">
-                                    {{ user_data.time_range.start }} - {{ user_data.time_range.end }}
+                                    {{ time_range.start }} - {{ time_range.end }}
                                 </span>
-                            {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
                 {% endfor %}
@@ -100,6 +98,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .user-availability-card:hover {
@@ -107,15 +106,62 @@
     border-color: var(--primary);
 }
 
+.user-availability-card.selected {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 104, 177, 0.1);
+}
+
 .user-checkbox {
     flex-shrink: 0;
 }
 
 .user-select-checkbox {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--primary);
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.user-select-checkbox:hover {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
+    transform: scale(1.05);
+}
+
+.user-select-checkbox:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 104, 177, 0.15);
+}
+
+.user-select-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.user-select-checkbox:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 104, 177, 0.25);
+}
+
+.user-select-checkbox:active {
+    transform: scale(0.95);
 }
 
 .checkbox-label {
@@ -283,6 +329,35 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--space-2);
+    gap: var(--space-3);
+}
+
+.editable-time-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.editable-time-section label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.time-input {
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--background);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.time-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .slot-time {
@@ -393,12 +468,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let selectedSlot = null;
     let selectedUsers = [];
+    const userCards = document.querySelectorAll('.user-availability-card');
     
-    // Update create event button state
+    // Update create event button state and card styling
     function updateCreateEventButton() {
         const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
         const count = checkedBoxes.length;
         
+        // Update button state
         if (count >= 2) {
             createEventBtn.disabled = false;
             selectedCount.textContent = `${count} people selected. Ready to create an event!`;
@@ -406,12 +483,69 @@ document.addEventListener('DOMContentLoaded', function() {
             createEventBtn.disabled = true;
             selectedCount.textContent = `Select at least 2 people to create an event.`;
         }
+        
+        // Update card styling
+        userCards.forEach(card => {
+            const checkbox = card.querySelector('.user-select-checkbox');
+            if (checkbox && checkbox.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
     }
     
     // Add event listeners to checkboxes
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateCreateEventButton);
     });
+    
+    // Add click event listeners to user cards
+    userCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking directly on the checkbox
+            if (e.target.classList.contains('user-select-checkbox')) {
+                return;
+            }
+            
+            // Find the checkbox within this card and toggle it
+            const checkbox = card.querySelector('.user-select-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                // Trigger the change event to update the create event button
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    
+    // Initialize styling on page load
+    updateCreateEventButton();
+    
+    // Format time displays to 12-hour format
+    formatTimeDisplays();
+    
+    // Function to format time displays from 24-hour to 12-hour format
+    function formatTimeDisplays() {
+        const timeBadges = document.querySelectorAll('.time-badge:not(.all-day)');
+        timeBadges.forEach(badge => {
+            const timeText = badge.textContent.trim();
+            if (timeText.includes(' - ')) {
+                const [startTime, endTime] = timeText.split(' - ');
+                const formattedStart = formatTime(startTime);
+                const formattedEnd = formatTime(endTime);
+                badge.textContent = `${formattedStart} - ${formattedEnd}`;
+            }
+        });
+    }
+    
+    // Format time helper function (convert 24-hour to 12-hour)
+    function formatTime(timeString) {
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+    }
     
     // Calculate overlapping time windows
     function calculateOverlaps() {
@@ -422,19 +556,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = checkbox.closest('.user-availability-card');
             const userId = card.dataset.userId;
             const userName = card.querySelector('h3').textContent;
-            const startTime = card.dataset.startTime;
-            const endTime = card.dataset.endTime;
-            const allDay = card.dataset.allDay === 'true';
+            const timeRangesStr = card.dataset.timeRanges;
             const avatarClass = card.querySelector('.friend-avatar').className;
             
-            users.push({
-                id: userId,
-                name: userName,
-                startTime: allDay ? '00:00' : startTime,
-                endTime: allDay ? '23:59' : endTime,
-                allDay: allDay,
-                avatarClass: avatarClass
-            });
+            try {
+                const timeRanges = JSON.parse(timeRangesStr);
+                users.push({
+                    id: userId,
+                    name: userName,
+                    timeRanges: timeRanges,
+                    avatarClass: avatarClass
+                });
+            } catch (e) {
+                console.error('Error parsing time ranges for user', userName, e);
+            }
         });
         
         selectedUsers = users;
@@ -446,6 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function findOverlappingWindows(users) {
         if (users.length < 2) return [];
+        
         
         // Convert times to minutes for easier comparison
         function timeToMinutes(timeStr) {
@@ -459,36 +595,79 @@ document.addEventListener('DOMContentLoaded', function() {
             return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
         }
         
-        // Find the latest start time and earliest end time
-        let latestStart = Math.max(...users.map(u => timeToMinutes(u.startTime)));
-        let earliestEnd = Math.min(...users.map(u => timeToMinutes(u.endTime)));
+        // Collect all time segments from all users
+        const allSegments = [];
         
-        if (latestStart >= earliestEnd) {
-            return []; // No overlap
+        users.forEach(user => {
+            user.timeRanges.forEach(range => {
+                allSegments.push({
+                    start: timeToMinutes(range.start),
+                    end: timeToMinutes(range.end),
+                    user: user
+                });
+            });
+        });
+        
+        // Sort segments by start time
+        allSegments.sort((a, b) => a.start - b.start);
+        
+        // Find overlapping periods where all users are available
+        const overlaps = [];
+        const totalUsers = users.length;
+        
+        // Create time points from all segment boundaries
+        const timePoints = new Set();
+        allSegments.forEach(seg => {
+            timePoints.add(seg.start);
+            timePoints.add(seg.end);
+        });
+        
+        const sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
+        
+        // Check each time interval between consecutive points
+        for (let i = 0; i < sortedPoints.length - 1; i++) {
+            const intervalStart = sortedPoints[i];
+            const intervalEnd = sortedPoints[i + 1];
+            
+            // Find which users are available during this interval
+            const availableUsers = [];
+            
+            users.forEach(user => {
+                const isAvailable = user.timeRanges.some(range => {
+                    const rangeStart = timeToMinutes(range.start);
+                    const rangeEnd = timeToMinutes(range.end);
+                    return rangeStart <= intervalStart && intervalEnd <= rangeEnd;
+                });
+                
+                if (isAvailable) {
+                    availableUsers.push(user);
+                }
+            });
+            
+            // If all users are available during this interval
+            if (availableUsers.length === totalUsers) {
+                const durationMinutes = intervalEnd - intervalStart;
+                
+                // Only include intervals of at least 2 hours
+                if (durationMinutes >= 120) {
+                    const durationHours = Math.floor(durationMinutes / 60);
+                    const remainingMinutes = durationMinutes % 60;
+                    let durationText = `${durationHours} hour${durationHours > 1 ? 's' : ''}`;
+                    if (remainingMinutes > 0) {
+                        durationText += ` ${remainingMinutes} min`;
+                    }
+                    
+                    overlaps.push({
+                        startTime: minutesToTime(intervalStart),
+                        endTime: minutesToTime(intervalEnd),
+                        duration: durationText,
+                        attendees: availableUsers
+                    });
+                }
+            }
         }
         
-        const totalOverlapMinutes = earliestEnd - latestStart;
-        
-        // Only proceed if there's at least 2 hours of overlap
-        if (totalOverlapMinutes < 120) {
-            return []; // Less than 2 hours of overlap
-        }
-        
-        // Create duration text
-        const durationHours = Math.floor(totalOverlapMinutes / 60);
-        const durationMinutes = totalOverlapMinutes % 60;
-        let durationText = `${durationHours} hour${durationHours > 1 ? 's' : ''}`;
-        if (durationMinutes > 0) {
-            durationText += ` ${durationMinutes} min`;
-        }
-        
-        // Return only the full overlap window
-        return [{
-            startTime: minutesToTime(latestStart),
-            endTime: minutesToTime(earliestEnd),
-            duration: durationText,
-            attendees: users
-        }];
+        return overlaps;
     }
     
     // Show modal with time slots
@@ -522,7 +701,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${overlaps.map((slot, index) => `
                         <div class="time-slot" data-slot-index="${index}">
                             <div class="slot-time-header">
-                                <span class="slot-time">${slot.startTime} - ${slot.endTime}</span>
+                                <div class="editable-time-section">
+                                    <label>Start Time:</label>
+                                    <input type="time" class="time-input start-time" value="${slot.startTime}" data-original="${slot.startTime}">
+                                </div>
+                                <div class="editable-time-section">
+                                    <label>End Time:</label>
+                                    <input type="time" class="time-input end-time" value="${slot.endTime}" data-original="${slot.endTime}">
+                                </div>
                                 <span class="slot-duration">${slot.duration}</span>
                             </div>
                             <div class="slot-attendees">
@@ -537,7 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Add click handlers to time slots
+            // Add click handlers to time slots and time validation
             document.querySelectorAll('.time-slot').forEach((slot, index) => {
                 slot.addEventListener('click', function() {
                     document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
@@ -546,7 +732,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     finalizeEvent.disabled = false;
                 });
                 
-                // Auto-select the first (and likely only) time slot
+                // Add time validation for inputs within this slot
+                const startInput = slot.querySelector('.start-time');
+                const endInput = slot.querySelector('.end-time');
+                
+                function validateTimes() {
+                    const startTime = startInput.value;
+                    const endTime = endInput.value;
+                    
+                    if (startTime && endTime) {
+                        const start = new Date(`2000-01-01T${startTime}`);
+                        const end = new Date(`2000-01-01T${endTime}`);
+                        
+                        if (start >= end) {
+                            alert('End time must be after start time');
+                            return false;
+                        }
+                        
+                        // Update the selectedSlot with new times if this slot is selected
+                        if (slot.classList.contains('selected')) {
+                            selectedSlot.startTime = startTime;
+                            selectedSlot.endTime = endTime;
+                        }
+                    }
+                    return true;
+                }
+                
+                startInput.addEventListener('change', validateTimes);
+                endInput.addEventListener('change', validateTimes);
+                
+                // Auto-select the first time slot
                 if (index === 0) {
                     slot.classList.add('selected');
                     selectedSlot = overlaps[0];
@@ -592,13 +807,32 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Get the current times from the selected slot's inputs
+        const selectedSlotElement = document.querySelector('.time-slot.selected');
+        const startTime = selectedSlotElement.querySelector('.start-time').value;
+        const endTime = selectedSlotElement.querySelector('.end-time').value;
+        
+        if (!startTime || !endTime) {
+            alert('Please set start and end times.');
+            return;
+        }
+        
+        // Validate times one more time
+        const start = new Date(`2000-01-01T${startTime}`);
+        const end = new Date(`2000-01-01T${endTime}`);
+        
+        if (start >= end) {
+            alert('End time must be after start time.');
+            return;
+        }
+        
         // Create the event
         const eventData = {
             title: title,
             description: description,
             date: '{{ date.strftime('%Y-%m-%d') }}',
-            start_time: selectedSlot.startTime,
-            end_time: selectedSlot.endTime,
+            start_time: startTime,
+            end_time: endTime,
             attendee_ids: selectedUsers.map(u => parseInt(u.id))
         };
         

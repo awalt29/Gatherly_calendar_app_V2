@@ -15,7 +15,13 @@ bp = Blueprint('calendar', __name__)
 @bp.route('/')
 @login_required
 def index():
-    """Main calendar page showing 2-week view with friend availability"""
+    """Main calendar page showing scrollable Apple Calendar-style view"""
+    return render_template('calendar/scrollable.html')
+
+@bp.route('/old-calendar')
+@login_required
+def old_calendar():
+    """Old 2-week view calendar (backup)"""
     return render_template('calendar/index.html')
 
 @bp.route('/api/week/<int:week_offset>')
@@ -111,10 +117,10 @@ def day_detail(date):
             )
             
             if user_availability and user_availability.is_available_on_day(day_name):
-                time_range = user_availability.get_time_range(day_name)
+                time_ranges = user_availability.get_time_ranges(day_name)
                 available_users.append({
                     'user': friend,
-                    'time_range': time_range
+                    'time_ranges': time_ranges
                 })
         
         return render_template('calendar/day_detail.html', 
@@ -123,3 +129,99 @@ def day_detail(date):
     
     except ValueError:
         return "Invalid date format", 400
+
+@bp.route('/api/months/<month_offset>')
+@login_required
+def get_month_data(month_offset):
+    """API endpoint to get calendar data for 2-week chunks"""
+    try:
+        # Convert month_offset to int and validate
+        try:
+            chunk_offset = int(month_offset)
+        except ValueError:
+            return jsonify({'error': 'Invalid chunk offset'}), 400
+            
+        # Calculate the start date for this 2-week chunk
+        today = datetime.now().date()
+        week_start_today = Availability.get_week_start(today)
+        
+        # Each chunk is 2 weeks (14 days)
+        chunk_start = week_start_today + timedelta(weeks=chunk_offset * 2)
+        chunk_end = chunk_start + timedelta(days=13)  # 2 weeks - 1 day
+        
+        # Get current user's friends
+        friends = current_user.get_friends()
+        friend_ids = [friend.id for friend in friends]
+        friend_ids.append(current_user.id)  # Include current user
+        
+        # Get the 2 weeks for this chunk
+        weeks = []
+        for week_num in range(2):
+            week_start = chunk_start + timedelta(weeks=week_num)
+            weeks.append({
+                'week_start': week_start,
+                'week_start_str': week_start.strftime('%Y-%m-%d')
+            })
+        
+        # Get availability data for both weeks
+        week_starts = [w['week_start'] for w in weeks]
+        availabilities = Availability.query.filter(
+            Availability.user_id.in_(friend_ids),
+            Availability.week_start_date.in_(week_starts)
+        ).all()
+        
+        # Organize data by weeks
+        chunk_data = {
+            'chunk_start': chunk_start.strftime('%Y-%m-%d'),
+            'chunk_name': f"{chunk_start.strftime('%b %d')} - {chunk_end.strftime('%b %d, %Y')}",
+            'weeks': []
+        }
+        
+        for week in weeks:
+            week_start = week['week_start']
+            week_data = {
+                'week_start': week_start.strftime('%Y-%m-%d'),
+                'days': []
+            }
+            
+            # Generate 7 days of the week
+            for day_offset in range(7):
+                current_date = week_start + timedelta(days=day_offset)
+                day_name = current_date.strftime('%A').lower()
+                
+                day_data = {
+                    'date': current_date.strftime('%Y-%m-%d'),
+                    'day_name': day_name,
+                    'day_short': current_date.strftime('%a').upper(),
+                    'day_number': current_date.day,
+                    'is_today': current_date == today,
+                    'is_current_month': True,  # All dates are relevant in 2-week chunks
+                    'users': []
+                }
+                
+                # Add availability for each friend
+                for friend in friends + [current_user]:
+                    user_availability = next(
+                        (av for av in availabilities if av.user_id == friend.id and av.week_start_date == week_start), 
+                        None
+                    )
+                    
+                    if user_availability and user_availability.is_available_on_day(day_name):
+                        time_range = user_availability.get_time_range(day_name)
+                        day_data['users'].append({
+                            'id': friend.id,
+                            'name': friend.get_full_name(),
+                            'initials': friend.get_initials(),
+                            'is_current_user': friend.id == current_user.id,
+                            'time_range': time_range
+                        })
+                
+                week_data['days'].append(day_data)
+            
+            chunk_data['weeks'].append(week_data)
+        
+        return jsonify(chunk_data)
+    
+    except Exception as e:
+        logger.error(f"Error loading chunk data: {str(e)}")
+        return jsonify({'error': str(e)}), 500

@@ -147,11 +147,11 @@
                                             data-event-id="{{ event.id }}">
                                         🗑️ Delete
                                     </button>
+                                    <button class="btn btn-primary btn-small send-reminders-btn" 
+                                            data-event-id="{{ event.id }}">
+                                        📱 Send RSVP Reminders
+                                    </button>
                                 {% endif %}
-                                <button class="btn btn-primary btn-small send-reminders-btn" 
-                                        data-event-id="{{ event.id }}">
-                                    📱 Send RSVP Reminders
-                                </button>
                             </div>
                             
                             {% if event.created_by_id == current_user.id %}

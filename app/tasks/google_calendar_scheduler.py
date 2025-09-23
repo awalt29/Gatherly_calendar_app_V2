@@ -102,8 +102,8 @@ class GoogleCalendarScheduler:
                         datetime.combine(week_end, datetime.max.time())
                     )
                     
-                # Convert busy times to availability data using the same logic as manual sync
-                availability_data = GoogleCalendarScheduler._convert_busy_times_to_availability_format(busy_times, week_start)
+                    # Convert busy times to availability data using enhanced logic
+                    availability_data = GoogleCalendarScheduler._convert_busy_times_to_availability_format(busy_times, week_start, user_id)
                     
                     # Update availability in database
                     availability = Availability.get_or_create_availability(user_id, week_start)
@@ -130,11 +130,13 @@ class GoogleCalendarScheduler:
             return False
     
     @staticmethod
-    def _convert_busy_times_to_availability_format(busy_times, week_start):
-        """Convert Google Calendar busy times to Gatherly availability format (matching manual sync)"""
-        # Default availability: 9 AM to 5 PM on weekdays (same as manual sync)
-        default_start = "09:00"
-        default_end = "17:00"
+    def _convert_busy_times_to_availability_format(busy_times, week_start, user_id):
+        """Convert Google Calendar busy times to Gatherly availability format with multiple time ranges"""
+        # Get existing user availability to preserve their preferences
+        existing_availability = Availability.query.filter_by(
+            user_id=user_id,
+            week_start_date=week_start
+        ).first()
         
         availability_data = {}
         day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -143,8 +145,10 @@ class GoogleCalendarScheduler:
             current_date = week_start + timedelta(days=day_offset)
             day_name = day_names[current_date.weekday()]  # Monday = 0
             
-            # Check if it's a weekday (default available) or weekend (default not available)
-            is_weekday = current_date.weekday() < 5
+            # Get existing availability for this day
+            existing_day_data = {}
+            if existing_availability:
+                existing_day_data = existing_availability.get_day_availability(day_name)
             
             # Find busy periods for this day
             day_busy_times = []
@@ -187,45 +191,118 @@ class GoogleCalendarScheduler:
                     logger.error(f"Error parsing busy period: {busy_period}, error: {str(e)}")
                     continue
             
-            # Determine availability based on busy times (same logic as manual sync)
-            if is_weekday and not day_busy_times:
-                # Weekday with no conflicts - available default hours
-                availability_data[day_name] = {
-                    'available': True,
-                    'start': default_start,
-                    'end': default_end,
-                    'all_day': False
-                }
-            elif is_weekday and day_busy_times:
-                # Weekday with conflicts - find largest available block
-                largest_block = GoogleCalendarScheduler._find_largest_available_block(day_busy_times)
+            # Process availability based on existing preferences and busy times
+            if existing_day_data.get('available', False):
+                # User had availability set - adjust it based on busy times
+                existing_time_ranges = existing_day_data.get('time_ranges', [])
+                if not existing_time_ranges:
+                    # Fallback to single time range
+                    existing_time_ranges = [{
+                        'start': existing_day_data.get('start', '09:00'),
+                        'end': existing_day_data.get('end', '17:00')
+                    }]
                 
-                if largest_block and largest_block[2] >= 2:  # At least 2 hours
-                    start_time, end_time, duration_hours = largest_block
+                # Remove busy times from existing availability
+                available_ranges = GoogleCalendarScheduler._subtract_busy_times_from_ranges(existing_time_ranges, day_busy_times)
+                
+                if available_ranges:
+                    # Update the first range for backward compatibility
+                    first_range = available_ranges[0]
                     availability_data[day_name] = {
                         'available': True,
-                        'start': start_time.strftime('%H:%M'),
-                        'end': end_time.strftime('%H:%M'),
+                        'start': first_range['start'],
+                        'end': first_range['end'],
+                        'time_ranges': available_ranges,
                         'all_day': False
                     }
                 else:
-                    # No suitable time block found
+                    # No available time left
                     availability_data[day_name] = {
                         'available': False,
-                        'start': default_start,
-                        'end': default_end,
+                        'start': existing_day_data.get('start', '09:00'),
+                        'end': existing_day_data.get('end', '17:00'),
+                        'time_ranges': [],
                         'all_day': False
                     }
             else:
-                # Weekend - default to not available
-                availability_data[day_name] = {
-                    'available': False,
-                    'start': default_start,
-                    'end': default_end,
-                    'all_day': False
-                }
+                # User didn't have availability set - use default logic
+                is_weekday = current_date.weekday() < 5
+                if is_weekday and not day_busy_times:
+                    # Weekday with no conflicts - available default hours
+                    availability_data[day_name] = {
+                        'available': True,
+                        'start': '09:00',
+                        'end': '17:00',
+                        'time_ranges': [{'start': '09:00', 'end': '17:00'}],
+                        'all_day': False
+                    }
+                else:
+                    # Weekend or has conflicts - not available
+                    availability_data[day_name] = {
+                        'available': False,
+                        'start': '09:00',
+                        'end': '17:00',
+                        'time_ranges': [],
+                        'all_day': False
+                    }
         
         return availability_data
+    
+    @staticmethod
+    def _subtract_busy_times_from_ranges(time_ranges, busy_times):
+        """Remove busy time periods from available time ranges"""
+        def time_to_minutes(time_str):
+            if isinstance(time_str, str):
+                hours, minutes = time_str.split(':')
+                return int(hours) * 60 + int(minutes)
+            else:  # time object
+                return time_str.hour * 60 + time_str.minute
+        
+        def minutes_to_time_str(minutes):
+            hours = minutes // 60
+            mins = minutes % 60
+            return f"{hours:02d}:{mins:02d}"
+        
+        available_ranges = []
+        
+        for time_range in time_ranges:
+            range_start = time_to_minutes(time_range['start'])
+            range_end = time_to_minutes(time_range['end'])
+            
+            # Start with the full range
+            current_ranges = [(range_start, range_end)]
+            
+            # Subtract each busy time
+            for busy_time in busy_times:
+                busy_start = time_to_minutes(busy_time['start'])
+                busy_end = time_to_minutes(busy_time['end'])
+                
+                new_ranges = []
+                for start, end in current_ranges:
+                    if busy_end <= start or busy_start >= end:
+                        # No overlap
+                        new_ranges.append((start, end))
+                    else:
+                        # There's overlap - split the range
+                        if start < busy_start:
+                            # Keep the part before the busy time
+                            new_ranges.append((start, busy_start))
+                        if busy_end < end:
+                            # Keep the part after the busy time
+                            new_ranges.append((busy_end, end))
+                
+                current_ranges = new_ranges
+            
+            # Convert back to time ranges and filter out short periods
+            for start_min, end_min in current_ranges:
+                duration_minutes = end_min - start_min
+                if duration_minutes >= 60:  # At least 1 hour
+                    available_ranges.append({
+                        'start': minutes_to_time_str(start_min),
+                        'end': minutes_to_time_str(end_min)
+                    })
+        
+        return available_ranges
     
     @staticmethod
     def _find_largest_available_block(busy_periods):

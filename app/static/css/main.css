@@ -1107,3 +1107,180 @@ body {
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }
+
+/* Scrollable Calendar Styles - 2 Week Chunks */
+.calendar-container-scrollable {
+    height: 100vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, var(--background) 0%, #0f1419 100%);
+    padding: var(--space-4);
+}
+
+.chunk-section {
+    margin-bottom: var(--space-6);
+    background: linear-gradient(135deg, var(--surface) 0%, #1e2332 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: 0 8px 32px rgba(0, 104, 177, 0.15), 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 104, 177, 0.1);
+}
+
+.chunk-header {
+    text-align: center;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+}
+
+.chunk-title {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.calendar-grid-scrollable {
+    background: transparent;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    height: auto;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 0;
+}
+
+.chunk-section .day-headers {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+}
+
+.chunk-section .day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-2);
+}
+
+.chunk-section .week-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    flex: 1;
+}
+
+.chunk-section .week-row:last-child {
+    border-bottom: none;
+}
+
+.chunk-section .day-column {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--border);
+    padding: var(--space-3);
+    min-height: 45vh;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.chunk-section .day-column:last-child {
+    border-right: none;
+}
+
+.chunk-section .day-column:hover {
+    background: rgba(0, 104, 177, 0.1);
+    transform: translateY(-1px);
+}
+
+.chunk-section .day-column.today {
+    background: rgba(0, 104, 177, 0.15);
+    border-color: var(--primary);
+}
+
+.chunk-section .date-number {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    width: 100%;
+    text-align: left;
+}
+
+.chunk-section .friend-block {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    margin-bottom: var(--space-2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    flex-shrink: 0;
+}
+
+.chunk-section .friend-block:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.chunk-section .friend-block.current-user {
+    background: white;
+    color: black;
+    border: 2px solid var(--primary);
+}
+
+/* Mobile responsive for chunks */
+@media (max-width: 768px) {
+    .chunk-section {
+        padding: var(--space-3);
+    }
+    
+    .chunk-section .day-column {
+        padding: var(--space-2);
+        min-height: 100px;
+    }
+    
+    .chunk-section .friend-block {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chunk-section {
+        padding: var(--space-2);
+    }
+    
+    .chunk-section .day-column {
+        padding: var(--space-1);
+        min-height: 80px;
+    }
+    
+    .chunk-section .friend-block {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+    }
+}

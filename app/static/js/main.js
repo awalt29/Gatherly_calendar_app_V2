@@ -27,7 +27,11 @@ function initializeApp() {
     
     switch(currentPage) {
         case 'calendar':
-            initializeCalendar();
+            if (window.location.pathname.includes('/scrollable')) {
+                initializeScrollableCalendar();
+            } else {
+                initializeCalendar();
+            }
             break;
         case 'availability':
             initializeAvailability();
@@ -455,35 +459,178 @@ function updateDayHeaders(weekData) {
 }
 
 function renderAvailabilityForm(weekData) {
-    const gridContainer = document.getElementById('availabilityGrid');
-    if (!gridContainer) return;
+    const daysListContainer = document.getElementById('availabilityDaysList');
+    if (!daysListContainer) return;
     
-    gridContainer.innerHTML = '';
+    daysListContainer.innerHTML = '';
     
-    // Update day headers with dates
-    updateDayHeaders(weekData);
-    
-    // Create the calendar grid layout
-    const gridBody = document.createElement('div');
-    gridBody.className = 'day-columns';
-    
-    // Both backend and display start with Monday - no mapping needed
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     
     days.forEach((dayName, index) => {
         const dayData = weekData.days[index];
         const availabilityData = weekData.availability_data[dayName] || {};
         
-        const dayColumn = createVerticalDayColumn(dayName, dayData, availabilityData);
-        gridBody.appendChild(dayColumn);
+        const dayItem = createCalendlyDayItem(dayName, dayNames[index], dayData, availabilityData);
+        daysListContainer.appendChild(dayItem);
     });
-    
-    gridContainer.appendChild(gridBody);
     
     // Set up save button handler
     const saveButton = document.getElementById('saveAvailability');
     if (saveButton) {
         saveButton.onclick = () => saveAvailability(weekData.week_start);
+    }
+}
+
+function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) {
+    const dayItem = document.createElement('div');
+    dayItem.className = 'availability-day-item';
+    dayItem.id = `${dayName}-item`;
+    
+    if (availabilityData.available) {
+        dayItem.classList.add('active');
+    }
+    
+    // Day header with checkbox and name
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'day-item-header';
+    
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.className = 'day-checkbox-container';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'day-checkbox';
+    checkbox.id = `${dayName}-available`;
+    checkbox.checked = availabilityData.available || false;
+    
+    const dayNameEl = document.createElement('span');
+    dayNameEl.className = 'day-name';
+    dayNameEl.textContent = displayName;
+    
+    const dayDateEl = document.createElement('span');
+    dayDateEl.className = 'day-date';
+    dayDateEl.textContent = dayData.date_formatted;
+    
+    checkboxContainer.appendChild(checkbox);
+    checkboxContainer.appendChild(dayNameEl);
+    
+    dayHeader.appendChild(checkboxContainer);
+    dayHeader.appendChild(dayDateEl);
+    
+    // Time ranges container
+    const timeRangesContainer = document.createElement('div');
+    timeRangesContainer.className = 'time-ranges-container';
+    timeRangesContainer.id = `${dayName}-time-ranges`;
+    
+    // Add existing time ranges or default one
+    const timeRanges = availabilityData.time_ranges || (availabilityData.available ? [{ start: '09:00', end: '17:00' }] : []);
+    
+    timeRanges.forEach((timeRange, index) => {
+        const timeRangeItem = createTimeRangeItem(dayName, timeRange, index);
+        timeRangesContainer.appendChild(timeRangeItem);
+    });
+    
+    // Add time range button
+    const addTimeBtn = document.createElement('button');
+    addTimeBtn.className = 'add-time-btn';
+    addTimeBtn.innerHTML = '<span>+</span> Add time range';
+    addTimeBtn.onclick = () => addTimeRange(dayName);
+    
+    timeRangesContainer.appendChild(addTimeBtn);
+    
+    // Checkbox event listener
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            dayItem.classList.add('active');
+            // Add default time range if none exist
+            if (timeRangesContainer.children.length === 1) { // Only the add button
+                addTimeRange(dayName, { start: '09:00', end: '17:00' });
+            }
+        } else {
+            dayItem.classList.remove('active');
+        }
+    });
+    
+    dayItem.appendChild(dayHeader);
+    dayItem.appendChild(timeRangesContainer);
+    
+    return dayItem;
+}
+
+function createTimeRangeItem(dayName, timeRange, index) {
+    const timeRangeItem = document.createElement('div');
+    timeRangeItem.className = 'time-range-item';
+    timeRangeItem.dataset.index = index;
+    
+    const startTimeInput = document.createElement('input');
+    startTimeInput.type = 'time';
+    startTimeInput.className = 'time-input';
+    startTimeInput.value = timeRange.start || '09:00';
+    startTimeInput.name = `${dayName}_start_${index}`;
+    
+    const separator = document.createElement('span');
+    separator.className = 'time-separator';
+    separator.textContent = '—';
+    
+    const endTimeInput = document.createElement('input');
+    endTimeInput.type = 'time';
+    endTimeInput.className = 'time-input';
+    endTimeInput.value = timeRange.end || '17:00';
+    endTimeInput.name = `${dayName}_end_${index}`;
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-time-btn';
+    removeBtn.innerHTML = '✕';
+    removeBtn.title = 'Remove time range';
+    removeBtn.onclick = () => removeTimeRange(dayName, index);
+    
+    timeRangeItem.appendChild(startTimeInput);
+    timeRangeItem.appendChild(separator);
+    timeRangeItem.appendChild(endTimeInput);
+    timeRangeItem.appendChild(removeBtn);
+    
+    return timeRangeItem;
+}
+
+function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) {
+    const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+    const addBtn = timeRangesContainer.querySelector('.add-time-btn');
+    
+    const currentRanges = timeRangesContainer.querySelectorAll('.time-range-item');
+    const newIndex = currentRanges.length;
+    
+    const newTimeRange = createTimeRangeItem(dayName, defaultRange, newIndex);
+    
+    // Insert before the add button
+    timeRangesContainer.insertBefore(newTimeRange, addBtn);
+}
+
+function removeTimeRange(dayName, index) {
+    const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+    const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+    
+    // Don't allow removing the last time range if day is active
+    const dayCheckbox = document.getElementById(`${dayName}-available`);
+    if (dayCheckbox.checked && timeRangeItems.length <= 1) {
+        showNotification('A day must have at least one time range when enabled', 'error');
+        return;
+    }
+    
+    // Remove the specific time range
+    const itemToRemove = timeRangesContainer.querySelector(`.time-range-item[data-index="${index}"]`);
+    if (itemToRemove) {
+        itemToRemove.remove();
+        
+        // Reindex remaining items
+        const remainingItems = timeRangesContainer.querySelectorAll('.time-range-item');
+        remainingItems.forEach((item, newIndex) => {
+            item.dataset.index = newIndex;
+            const startInput = item.querySelector('input[type="time"]:first-of-type');
+            const endInput = item.querySelector('input[type="time"]:last-of-type');
+            if (startInput) startInput.name = `${dayName}_start_${newIndex}`;
+            if (endInput) endInput.name = `${dayName}_end_${newIndex}`;
+        });
     }
 }
 
@@ -872,30 +1019,43 @@ function updateSliderValues(dayName, startTime, endTime) {
 }
 
 function saveAvailability(weekStart) {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const availabilityData = {};
     
     days.forEach(dayName => {
         const checkbox = document.getElementById(`${dayName}-available`);
-        const startHandle = document.getElementById(`${dayName}-start-handle-vertical`);
-        const endHandle = document.getElementById(`${dayName}-end-handle-vertical`);
+        const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
         
-        let startTime = '06:00';
-        let endTime = '23:00';
+        if (!checkbox) return;
         
-        // Get values from vertical slider handles if they exist
-        if (startHandle && startHandle.getValue) {
-            startTime = startHandle.getValue();
+        const isAvailable = checkbox.checked;
+        let timeRanges = [];
+        
+        if (isAvailable && timeRangesContainer) {
+            const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+            
+            timeRangeItems.forEach(item => {
+                const startInput = item.querySelector('input[type="time"]:first-of-type');
+                const endInput = item.querySelector('input[type="time"]:last-of-type');
+                
+                if (startInput && endInput && startInput.value && endInput.value) {
+                    timeRanges.push({
+                        start: startInput.value,
+                        end: endInput.value
+                    });
+                }
+            });
         }
-        if (endHandle && endHandle.getValue) {
-            endTime = endHandle.getValue();
-        }
+        
+        // Convert to old format for backend compatibility
+        const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
         
         availabilityData[dayName] = {
-            available: checkbox ? checkbox.checked : false,
-            start: startTime,
-            end: endTime,
-            all_day: false  // Remove all-day option for simplicity in vertical layout
+            available: isAvailable,
+            start: firstRange.start,
+            end: firstRange.end,
+            time_ranges: timeRanges,
+            all_day: false
         };
     });
     
@@ -1127,6 +1287,260 @@ function setupFriendActions() {
             });
         }
     });
+}
+
+// ============================================
+// SCROLLABLE CALENDAR PAGE
+// ============================================
+
+// Global state for scrollable calendar
+const ScrollableCalendar = {
+    loadedMonths: new Set(),
+    currentMonthOffset: 0,
+    isLoading: false,
+    observer: null
+};
+
+function initializeScrollableCalendar() {
+    console.log('Initializing scrollable calendar...');
+    
+    // Initialize with current month and surrounding months
+    loadInitialMonths();
+    
+    // Set up intersection observer for infinite scroll
+    setupInfiniteScroll();
+    
+    // Set up today button
+    setupTodayButton();
+    
+    // Set up scroll listener for month header updates
+    const container = document.getElementById('calendarScroll');
+    container.addEventListener('scroll', updateFloatingMonthHeader);
+}
+
+function loadInitialMonths() {
+    // Load first 4 chunks (8 weeks) initially for smooth scrolling
+    const monthsToLoad = [0, 1, 2, 3];
+    
+    monthsToLoad.forEach(offset => {
+        loadMonth(offset);
+    });
+}
+
+function loadMonth(monthOffset) {
+    if (ScrollableCalendar.loadedMonths.has(monthOffset) || ScrollableCalendar.isLoading) {
+        return;
+    }
+    
+    // Limit to current chunk and next 25 chunks (52 weeks = 12 months total)
+    if (monthOffset < 0 || monthOffset > 25) {
+        return;
+    }
+    
+    ScrollableCalendar.isLoading = true;
+    ScrollableCalendar.loadedMonths.add(monthOffset);
+    
+    showLoadingIndicator();
+    
+    fetch(`/api/months/${monthOffset}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            renderMonth(data, monthOffset);
+        })
+        .catch(error => {
+            console.error('Error loading month:', error);
+            showNotification(`Error loading calendar data: ${error.message}`, 'error');
+            ScrollableCalendar.loadedMonths.delete(monthOffset); // Allow retry
+        })
+        .finally(() => {
+            ScrollableCalendar.isLoading = false;
+            hideLoadingIndicator();
+        });
+}
+
+function renderMonth(chunkData, chunkOffset) {
+    const container = document.getElementById('calendarGrid');
+    
+    // Render 2 weeks directly into the continuous grid
+    chunkData.weeks.forEach(weekData => {
+        const weekRow = document.createElement('div');
+        weekRow.className = 'week-row';
+        weekRow.dataset.chunkOffset = chunkOffset;
+        
+        weekData.days.forEach(dayData => {
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+            dayColumn.dataset.date = dayData.date;
+            dayColumn.dataset.month = new Date(dayData.date).getMonth();
+            dayColumn.dataset.year = new Date(dayData.date).getFullYear();
+            
+            // Add classes
+            if (dayData.is_today) {
+                dayColumn.classList.add('today');
+            }
+            
+            // Day number
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'date-number';
+            dayNumber.textContent = dayData.day_number;
+            dayColumn.appendChild(dayNumber);
+            
+            // User availability circles - aligned in rows like current calendar
+            if (dayData.users && dayData.users.length > 0) {
+                dayData.users.forEach(user => {
+                    const friendBlock = document.createElement('div');
+                    friendBlock.className = 'friend-block';
+                    if (user.is_current_user) {
+                        friendBlock.classList.add('current-user');
+                    }
+                    friendBlock.textContent = user.initials;
+                    friendBlock.title = `${user.name} (${user.time_range})`;
+                    dayColumn.appendChild(friendBlock);
+                });
+            }
+            
+            // Click handler for day detail
+            dayColumn.addEventListener('click', () => {
+                window.location.href = `/day/${dayData.date}`;
+            });
+            
+            weekRow.appendChild(dayColumn);
+        });
+        
+        // Insert in correct position (sorted by chunk offset)
+        const existingRows = Array.from(container.querySelectorAll('.week-row'));
+        let inserted = false;
+        
+        for (let existingRow of existingRows) {
+            const existingOffset = parseInt(existingRow.dataset.chunkOffset);
+            if (chunkOffset < existingOffset) {
+                container.insertBefore(weekRow, existingRow);
+                inserted = true;
+                break;
+            }
+        }
+        
+        if (!inserted) {
+            container.appendChild(weekRow);
+        }
+        
+        // Observe the new week row for infinite scroll
+        if (ScrollableCalendar.observer) {
+            ScrollableCalendar.observer.observe(weekRow);
+        }
+    });
+    
+    // Update the floating month header
+    updateFloatingMonthHeader();
+}
+
+function setupInfiniteScroll() {
+    const container = document.getElementById('calendarScroll');
+    
+    ScrollableCalendar.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const weekRow = entry.target;
+                const chunkOffset = parseInt(weekRow.dataset.chunkOffset);
+                
+                // Only load next chunk when scrolling down (no previous chunks)
+                if (chunkOffset >= 0) {
+                    // Load next 2-week chunk
+                    loadMonth(chunkOffset + 1);
+                }
+            }
+        });
+    }, {
+        root: container,
+        rootMargin: '100px',
+        threshold: 0.3
+    });
+    
+    // Observe existing week rows
+    const calendarGrid = document.getElementById('calendarGrid');
+    calendarGrid.querySelectorAll('.week-row').forEach(row => {
+        ScrollableCalendar.observer.observe(row);
+    });
+}
+
+function updateFloatingMonthHeader() {
+    const container = document.getElementById('calendarScroll');
+    const monthHeader = document.getElementById('floatingMonthHeader');
+    
+    if (!monthHeader) return;
+    
+    // Get the first visible day column
+    const calendarGrid = document.getElementById('calendarGrid');
+    const dayColumns = calendarGrid.querySelectorAll('.day-column');
+    
+    let visibleColumn = null;
+    const containerRect = container.getBoundingClientRect();
+    const containerTop = containerRect.top + 100; // Account for header height
+    
+    for (let column of dayColumns) {
+        const columnRect = column.getBoundingClientRect();
+        if (columnRect.top <= containerTop && columnRect.bottom >= containerTop) {
+            visibleColumn = column;
+            break;
+        }
+    }
+    
+    if (visibleColumn) {
+        const month = parseInt(visibleColumn.dataset.month);
+        const year = parseInt(visibleColumn.dataset.year);
+        const date = new Date(year, month);
+        const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        monthHeader.textContent = monthName;
+    }
+}
+
+function setupTodayButton() {
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', scrollToToday);
+    }
+}
+
+function scrollToToday() {
+    const today = new Date().toISOString().split('T')[0];
+    const todayCell = document.querySelector(`[data-date="${today}"]`);
+    
+    if (todayCell) {
+        todayCell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+        
+        // Highlight today's cell briefly
+        todayCell.style.transform = 'scale(1.05)';
+        todayCell.style.transition = 'transform 0.3s ease';
+        
+        setTimeout(() => {
+            todayCell.style.transform = '';
+        }, 500);
+    }
+}
+
+function showLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.style.display = 'flex';
+    }
+}
+
+function hideLoadingIndicator() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
 }
 
 // ============================================

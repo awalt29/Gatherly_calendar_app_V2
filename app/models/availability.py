@@ -46,6 +46,22 @@ class Availability(db.Model):
                 'all_day': day_data.get('all_day', False)
             }
         return None
+    
+    def get_time_ranges(self, day_name):
+        """Get all time ranges for a specific day"""
+        day_data = self.get_day_availability(day_name)
+        if day_data.get('available', False):
+            # Check if we have multiple time ranges
+            time_ranges = day_data.get('time_ranges', [])
+            if time_ranges:
+                return time_ranges
+            else:
+                # Fall back to single time range for backward compatibility
+                return [{
+                    'start': day_data.get('start', '09:00'),
+                    'end': day_data.get('end', '17:00')
+                }]
+        return []
 
     @staticmethod
     def get_week_start(date):
