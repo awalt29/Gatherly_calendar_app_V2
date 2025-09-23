@@ -796,6 +796,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     showNotification('Availability synced successfully from Google Calendar!', 'success');
+                    
+                    // Refresh the availability calendar if we're on that page
+                    if (window.location.pathname === '/availability' && typeof loadAvailabilityWeek === 'function') {
+                        // Reload the current week to show updated availability
+                        if (typeof Gatherly !== 'undefined' && Gatherly.availabilityCurrentWeek !== undefined) {
+                            loadAvailabilityWeek(Gatherly.availabilityCurrentWeek);
+                        }
+                    }
                 } else {
                     throw new Error(data.error || 'Failed to sync availability');
                 }
@@ -828,6 +836,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     showNotification('Auto-sync test completed successfully!', 'success');
+                    
+                    // Refresh the availability calendar if we're on that page
+                    if (window.location.pathname === '/availability' && typeof loadAvailabilityWeek === 'function') {
+                        // Reload the current week to show updated availability
+                        if (typeof Gatherly !== 'undefined' && Gatherly.availabilityCurrentWeek !== undefined) {
+                            loadAvailabilityWeek(Gatherly.availabilityCurrentWeek);
+                        }
+                    }
                 } else {
                     throw new Error(data.error || 'Failed to test auto-sync');
                 }
