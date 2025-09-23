@@ -243,21 +243,24 @@ class GoogleCalendarService:
             from datetime import timezone
             
             busy_periods = []
+            # Assume Eastern Time (most US users) - in production, this should be user-configurable
+            eastern = pytz.timezone('America/New_York')
+            
             for period in busy_times:
                 # Parse UTC times
                 start_utc = datetime.fromisoformat(period['start'].replace('Z', '+00:00'))
                 end_utc = datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
                 
-                # Convert UTC to local time (assume user is in their local timezone)
-                # For now, we'll assume the server's timezone. In future, store user timezone.
-                start_local = start_utc.replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
-                end_local = end_utc.replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
+                # Convert UTC to Eastern Time, then remove timezone info
+                start_eastern = start_utc.replace(tzinfo=pytz.UTC).astimezone(eastern).replace(tzinfo=None)
+                end_eastern = end_utc.replace(tzinfo=pytz.UTC).astimezone(eastern).replace(tzinfo=None)
                 
-                busy_periods.append({'start': start_local, 'end': end_local})
-                logger.info(f"Converted busy period: {period['start']} -> {start_local}, {period['end']} -> {end_local}")
+                busy_periods.append({'start': start_eastern, 'end': end_eastern})
+                print(f"[GCAL] Converted busy period: {period['start']} UTC -> {start_eastern} ET, {period['end']} UTC -> {end_eastern} ET")
+                logger.info(f"Converted busy period: {period['start']} -> {start_eastern}, {period['end']} -> {end_eastern}")
             
-            print(f"[GCAL] Converted {len(busy_periods)} busy periods from UTC to local time")
-            logger.info(f"Converted {len(busy_periods)} busy periods from UTC to local time")
+            print(f"[GCAL] Converted {len(busy_periods)} busy periods from UTC to Eastern Time")
+            logger.info(f"Converted {len(busy_periods)} busy periods from UTC to Eastern Time")
             
             return busy_periods
             
