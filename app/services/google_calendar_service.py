@@ -221,12 +221,25 @@ class GoogleCalendarService:
             freebusy_result = service.freebusy().query(body=body).execute()
             busy_times = freebusy_result.get('calendars', {}).get(calendar_id, {}).get('busy', [])
             
-            # Convert to datetime objects
+            # Convert to datetime objects and handle timezone
+            import pytz
+            from datetime import timezone
+            
             busy_periods = []
             for period in busy_times:
-                start = datetime.fromisoformat(period['start'].replace('Z', '+00:00'))
-                end = datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
-                busy_periods.append({'start': start, 'end': end})
+                # Parse UTC times
+                start_utc = datetime.fromisoformat(period['start'].replace('Z', '+00:00'))
+                end_utc = datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
+                
+                # Convert UTC to local time (assume user is in their local timezone)
+                # For now, we'll assume the server's timezone. In future, store user timezone.
+                start_local = start_utc.replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
+                end_local = end_utc.replace(tzinfo=timezone.utc).astimezone().replace(tzinfo=None)
+                
+                busy_periods.append({'start': start_local, 'end': end_local})
+                logger.info(f"Converted busy period: {period['start']} -> {start_local}, {period['end']} -> {end_local}")
+            
+            logger.info(f"Converted {len(busy_periods)} busy periods from UTC to local time")
             
             return busy_periods
             
