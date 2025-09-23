@@ -208,14 +208,14 @@ class GoogleCalendarService:
     
     def get_busy_times(self, user_id, start_date, end_date):
         """Get busy times from Google Calendar"""
-        logger.info(f"Getting busy times for user {user_id} from {start_date} to {end_date}")
+        print(f"[GCAL] Getting busy times for user {user_id} from {start_date} to {end_date}")
         
         service = self.get_calendar_service(user_id)
         if not service:
-            logger.error(f"Failed to get calendar service for user {user_id}")
+            print(f"[GCAL] ERROR: Failed to get calendar service for user {user_id}")
             return []
         
-        logger.info(f"Successfully got calendar service for user {user_id}")
+        print(f"[GCAL] Successfully got calendar service for user {user_id}")
         
         try:
             # Get the user's calendar sync settings
@@ -229,8 +229,14 @@ class GoogleCalendarService:
                 "items": [{"id": calendar_id}]
             }
             
+            print(f"[GCAL] Querying freebusy API with timeMin: {start_date.isoformat() + 'Z'}, timeMax: {end_date.isoformat() + 'Z'}")
+            
             freebusy_result = service.freebusy().query(body=body).execute()
             busy_times = freebusy_result.get('calendars', {}).get(calendar_id, {}).get('busy', [])
+            
+            print(f"[GCAL] Raw API response - busy times: {busy_times}")
+            print(f"[GCAL] Calendar ID used: {calendar_id}")
+            print(f"[GCAL] Full freebusy result: {freebusy_result}")
             
             # Convert to datetime objects and handle timezone
             import pytz
