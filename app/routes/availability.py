@@ -18,6 +18,29 @@ def index():
     """Availability setting page"""
     return render_template('availability/index.html')
 
+@bp.route('/availability/google-status')
+@login_required
+def google_calendar_status():
+    """Check Google Calendar integration status"""
+    try:
+        status = {
+            'service_configured': google_calendar_service.is_configured(),
+            'user_connected': False,
+            'sync_enabled': False
+        }
+        
+        sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
+        if sync_record:
+            status['user_connected'] = True
+            status['sync_enabled'] = sync_record.sync_enabled
+            
+        logger.info(f"Google Calendar status for user {current_user.id}: {status}")
+        return jsonify(status)
+        
+    except Exception as e:
+        logger.error(f"Error checking Google Calendar status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/availability/api/<date>')
 @login_required
 def get_availability_data(date):
@@ -155,6 +178,13 @@ def sync_from_google_calendar():
     """Sync availability from Google Calendar"""
     try:
         logger.info(f"Starting Google Calendar sync for user {current_user.id}")
+        
+        # First, check if Google Calendar is configured at all
+        if not google_calendar_service.is_configured():
+            logger.error("Google Calendar service not configured - missing environment variables")
+            return jsonify({'success': False, 'error': 'Google Calendar integration not configured on server'}), 500
+        
+        logger.info("Google Calendar service is properly configured")
         
         # Check if user has Google Calendar connected
         sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
