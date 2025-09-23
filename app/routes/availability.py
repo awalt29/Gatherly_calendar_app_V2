@@ -176,8 +176,13 @@ def sync_from_google_calendar():
                     datetime.combine(week_end, datetime.max.time())
                 )
                 
+                # Debug logging
+                logger.info(f"Google Calendar sync for user {current_user.id}, week {week_start}")
+                logger.info(f"Found {len(busy_times)} busy periods: {busy_times}")
+                
                 # Convert busy times to availability data
                 availability_data = _convert_busy_times_to_availability(busy_times, week_start)
+                logger.info(f"Converted to availability data: {availability_data}")
                 
                 # Update availability in database
                 availability = Availability.get_or_create_availability(current_user.id, week_start)
