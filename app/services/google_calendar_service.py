@@ -130,13 +130,19 @@ class GoogleCalendarService:
     
     def get_credentials(self, user_id):
         """Get valid credentials for a user"""
+        logger.info(f"Getting credentials for user {user_id}")
+        
         sync_record = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
         if not sync_record:
+            logger.error(f"No sync record found for user {user_id}")
             return None
         
         refresh_token = sync_record.get_refresh_token()
         if not refresh_token:
+            logger.error(f"No refresh token found for user {user_id}")
             return None
+        
+        logger.info(f"Found refresh token for user {user_id}, creating credentials")
         
         credentials = Credentials(
             token=sync_record.access_token,
@@ -202,9 +208,14 @@ class GoogleCalendarService:
     
     def get_busy_times(self, user_id, start_date, end_date):
         """Get busy times from Google Calendar"""
+        logger.info(f"Getting busy times for user {user_id} from {start_date} to {end_date}")
+        
         service = self.get_calendar_service(user_id)
         if not service:
+            logger.error(f"Failed to get calendar service for user {user_id}")
             return []
+        
+        logger.info(f"Successfully got calendar service for user {user_id}")
         
         try:
             # Get the user's calendar sync settings

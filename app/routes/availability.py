@@ -154,10 +154,27 @@ def get_week_availability(week_offset):
 def sync_from_google_calendar():
     """Sync availability from Google Calendar"""
     try:
+        logger.info(f"Starting Google Calendar sync for user {current_user.id}")
+        
         # Check if user has Google Calendar connected
         sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
-        if not sync_record or not sync_record.sync_enabled:
-            return jsonify({'success': False, 'error': 'Google Calendar not connected or sync disabled'}), 400
+        if not sync_record:
+            logger.error(f"No Google Calendar sync record found for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Google Calendar not connected'}), 400
+        
+        if not sync_record.sync_enabled:
+            logger.error(f"Google Calendar sync disabled for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Google Calendar sync disabled'}), 400
+        
+        logger.info(f"Found Google Calendar sync record for user {current_user.id}, sync_enabled: {sync_record.sync_enabled}")
+        
+        # Test if we can get Google Calendar service
+        service = google_calendar_service.get_calendar_service(current_user.id)
+        if not service:
+            logger.error(f"Failed to get Google Calendar service for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Failed to connect to Google Calendar service'}), 400
+        
+        logger.info(f"Successfully got Google Calendar service for user {current_user.id}")
         
         # Sync availability for the next 4 weeks
         success_count = 0
