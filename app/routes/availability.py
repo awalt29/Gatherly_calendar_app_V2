@@ -287,19 +287,12 @@ def _convert_busy_times_to_availability(busy_times, week_start):
                     'all_day': False
                 }
         else:
-            # User didn't have availability set - use default logic
-            is_weekday = current_date.weekday() < 5
-            if is_weekday and not day_busy_times:
-                # Weekday with no conflicts - available default hours
-                availability_data[day_name] = {
-                    'available': True,
-                    'start': '09:00',
-                    'end': '17:00',
-                    'time_ranges': [{'start': '09:00', 'end': '17:00'}],
-                    'all_day': False
-                }
+            # User didn't have availability set - preserve their choice (don't add availability)
+            # Only copy existing data if it exists, otherwise leave the day unchanged
+            if existing_day_data:
+                availability_data[day_name] = existing_day_data
             else:
-                # Weekend or has conflicts - not available
+                # No existing data - keep as not available (don't auto-add weekday availability)
                 availability_data[day_name] = {
                     'available': False,
                     'start': '09:00',
