@@ -782,18 +782,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sync now button
     if (syncNowBtn) {
         syncNowBtn.addEventListener('click', function() {
+            console.log('Sync button clicked!');
             const originalText = this.textContent;
             this.disabled = true;
             this.textContent = 'Syncing...';
             
+            console.log('Making fetch request to /availability/sync-google');
             fetch('/availability/sync-google', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     showNotification('Availability synced successfully from Google Calendar!', 'success');
                     
@@ -809,7 +816,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error syncing availability:', error);
+                console.error('Detailed error syncing availability:', error);
+                console.error('Error stack:', error.stack);
                 showNotification('Failed to sync availability. Please try again.', 'error');
             })
             .finally(() => {
