@@ -177,26 +177,26 @@ def get_week_availability(week_offset):
 def sync_from_google_calendar():
     """Sync availability from Google Calendar"""
     try:
-        logger.info(f"Starting Google Calendar sync for user {current_user.id}")
+        print(f"[SYNC] Starting Google Calendar sync for user {current_user.id}")
         
         # First, check if Google Calendar is configured at all
         if not google_calendar_service.is_configured():
-            logger.error("Google Calendar service not configured - missing environment variables")
+            print("[SYNC] ERROR: Google Calendar service not configured - missing environment variables")
             return jsonify({'success': False, 'error': 'Google Calendar integration not configured on server'}), 500
         
-        logger.info("Google Calendar service is properly configured")
+        print("[SYNC] Google Calendar service is properly configured")
         
         # Check if user has Google Calendar connected
         sync_record = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
         if not sync_record:
-            logger.error(f"No Google Calendar sync record found for user {current_user.id}")
+            print(f"[SYNC] ERROR: No Google Calendar sync record found for user {current_user.id}")
             return jsonify({'success': False, 'error': 'Google Calendar not connected'}), 400
         
         if not sync_record.sync_enabled:
-            logger.error(f"Google Calendar sync disabled for user {current_user.id}")
+            print(f"[SYNC] ERROR: Google Calendar sync disabled for user {current_user.id}")
             return jsonify({'success': False, 'error': 'Google Calendar sync disabled'}), 400
         
-        logger.info(f"Found Google Calendar sync record for user {current_user.id}, sync_enabled: {sync_record.sync_enabled}")
+        print(f"[SYNC] Found Google Calendar sync record for user {current_user.id}, sync_enabled: {sync_record.sync_enabled}")
         
         # Test if we can get Google Calendar service
         service = google_calendar_service.get_calendar_service(current_user.id)
@@ -224,12 +224,12 @@ def sync_from_google_calendar():
                 )
                 
                 # Debug logging
-                logger.info(f"Google Calendar sync for user {current_user.id}, week {week_start}")
-                logger.info(f"Found {len(busy_times)} busy periods: {busy_times}")
+                print(f"[SYNC] Google Calendar sync for user {current_user.id}, week {week_start}")
+                print(f"[SYNC] Found {len(busy_times)} busy periods: {busy_times}")
                 
                 # Convert busy times to availability data
                 availability_data = _convert_busy_times_to_availability(busy_times, week_start)
-                logger.info(f"Converted to availability data: {availability_data}")
+                print(f"[SYNC] Converted to availability data: {availability_data}")
                 
                 # Update availability in database
                 availability = Availability.get_or_create_availability(current_user.id, week_start)

@@ -250,6 +250,7 @@ class GoogleCalendarService:
                 busy_periods.append({'start': start_local, 'end': end_local})
                 logger.info(f"Converted busy period: {period['start']} -> {start_local}, {period['end']} -> {end_local}")
             
+            print(f"[GCAL] Converted {len(busy_periods)} busy periods from UTC to local time")
             logger.info(f"Converted {len(busy_periods)} busy periods from UTC to local time")
             
             return busy_periods
