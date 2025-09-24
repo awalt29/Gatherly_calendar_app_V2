@@ -60,6 +60,43 @@ def run_weekly_reminders():
         logger.error(f"Error running weekly reminders: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@bp.route('/run-weekend-planning-reminders', methods=['POST'])
+@login_required
+def run_weekend_planning_reminders():
+    """Manually trigger weekend planning SMS reminders (for testing)"""
+    try:
+        stats = sms_scheduler.send_weekend_planning_reminders()
+        return jsonify({
+            'success': True,
+            'message': 'Weekend planning reminders sent successfully',
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Error running weekend planning reminders: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/test-weekend-planning-sms', methods=['POST'])
+@login_required
+def test_weekend_planning_sms():
+    """Test weekend planning SMS functionality by sending a test message to current user"""
+    try:
+        if not current_user.phone:
+            return jsonify({'error': 'No phone number configured for your account'}), 400
+        
+        success = sms_service.send_weekend_planning_reminder(current_user)
+        
+        if success:
+            return jsonify({
+                'success': True, 
+                'message': f'Test weekend planning SMS sent successfully to {current_user.phone}'
+            })
+        else:
+            return jsonify({'error': 'Failed to send test weekend planning SMS'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in test weekend planning SMS endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/sync-google-calendar', methods=['POST'])
 @login_required
 def sync_google_calendar():

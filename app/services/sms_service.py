@@ -73,6 +73,82 @@ class SMSService:
             logger.error(f"Failed to send SMS to {user.phone}: {str(e)}")
             return False
     
+    def send_weekend_planning_reminder(self, user):
+        """
+        Send weekend planning reminder to user
+        
+        Args:
+            user: User object
+        """
+        if not self.is_configured():
+            logger.error("SMS service not configured. Cannot send reminder.")
+            return False
+            
+        if not user.phone:
+            logger.warning(f"User {user.id} has no phone number. Cannot send SMS.")
+            return False
+            
+        if not user.sms_notifications:
+            logger.info(f"User {user.id} has SMS notifications disabled.")
+            return False
+        
+        try:
+            # Get app base URL for calendar link
+            base_url = os.environ.get('APP_BASE_URL', 'http://localhost:5005')
+            calendar_url = f"{base_url}/"
+            
+            # Create the weekend planning message
+            message_body = (
+                f"Hey {user.first_name or user.username}! 🎉\n\n"
+                f"Time to start planning your weekend! Check your schedule and see when your friends are free.\n\n"
+                f"View your calendar: {calendar_url}\n\n"
+                f"Don't miss out on fun plans! 📅\n"
+                f"- Gatherly"
+            )
+            
+            # Send the SMS
+            message = self.client.messages.create(
+                body=message_body,
+                from_=self.from_phone,
+                to=user.phone
+            )
+            
+            logger.info(f"Weekend planning SMS sent successfully to {user.phone}. Message SID: {message.sid}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send weekend planning SMS to {user.phone}: {str(e)}")
+            return False
+    
+    def send_bulk_weekend_planning_reminders(self, users):
+        """
+        Send weekend planning reminders to multiple users
+        
+        Args:
+            users: List of User objects
+            
+        Returns:
+            dict: Statistics about the sending process
+        """
+        if not self.is_configured():
+            logger.error("SMS service not configured. Cannot send bulk reminders.")
+            return {'success': 0, 'failed': 0, 'skipped': 0}
+        
+        stats = {'success': 0, 'failed': 0, 'skipped': 0}
+        
+        for user in users:
+            try:
+                if self.send_weekend_planning_reminder(user):
+                    stats['success'] += 1
+                else:
+                    stats['failed'] += 1
+            except Exception as e:
+                logger.error(f"Error sending weekend planning reminder to user {user.id}: {str(e)}")
+                stats['failed'] += 1
+        
+        logger.info(f"Bulk weekend planning reminders completed. Success: {stats['success']}, Failed: {stats['failed']}, Skipped: {stats['skipped']}")
+        return stats
+    
     def send_bulk_availability_reminders(self, users, week_offset=1):
         """
         Send availability reminders to multiple users

@@ -49,6 +49,44 @@ class SMSScheduler:
             raise
     
     @staticmethod
+    def send_weekend_planning_reminders():
+        """
+        Send weekend planning reminders to all users who have SMS enabled
+        This should be called every Wednesday at 5 PM to remind users to check their schedule
+        and start planning for the upcoming weekend
+        """
+        logger.info("Starting weekly weekend planning reminder job")
+        
+        if not sms_service.is_configured():
+            logger.error("SMS service not configured. Skipping weekend planning reminder job.")
+            return
+        
+        try:
+            # Get all users who have SMS notifications enabled and have phone numbers
+            users_to_notify = User.query.filter(
+                User.sms_notifications == True,
+                User.phone.isnot(None),
+                User.phone != '',
+                User.is_active == True
+            ).all()
+            
+            logger.info(f"Found {len(users_to_notify)} users eligible for weekend planning SMS reminders")
+            
+            if not users_to_notify:
+                logger.info("No users to notify. Weekend planning job completed.")
+                return
+            
+            # Send weekend planning reminders
+            stats = sms_service.send_bulk_weekend_planning_reminders(users_to_notify)
+            
+            logger.info(f"Weekend planning SMS reminder job completed. Stats: {stats}")
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error in weekend planning SMS reminder job: {str(e)}")
+            raise
+    
+    @staticmethod
     def send_test_reminder(user_id):
         """
         Send a test SMS reminder to a specific user
