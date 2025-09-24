@@ -1024,36 +1024,57 @@ function saveAvailability(weekStart) {
     
     days.forEach(dayName => {
         const checkbox = document.getElementById(`${dayName}-available`);
-        const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
         
         if (!checkbox) return;
         
         const isAvailable = checkbox.checked;
         let timeRanges = [];
+        let startTime = '09:00';
+        let endTime = '17:00';
         
-        if (isAvailable && timeRangesContainer) {
-            const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+        if (isAvailable) {
+            // Try to get times from slider handles first (vertical slider interface)
+            const startHandle = document.getElementById(`${dayName}-start-handle-vertical`);
+            const endHandle = document.getElementById(`${dayName}-end-handle-vertical`);
             
-            timeRangeItems.forEach(item => {
-                const startInput = item.querySelector('input[type="time"]:first-of-type');
-                const endInput = item.querySelector('input[type="time"]:last-of-type');
-                
-                if (startInput && endInput && startInput.value && endInput.value) {
-                    timeRanges.push({
-                        start: startInput.value,
-                        end: endInput.value
+            if (startHandle && startHandle.getValue && endHandle && endHandle.getValue) {
+                startTime = startHandle.getValue();
+                endTime = endHandle.getValue();
+            } else {
+                // Fall back to time input containers (Calendly-style interface)
+                const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+                if (timeRangesContainer) {
+                    const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+                    
+                    timeRangeItems.forEach(item => {
+                        const startInput = item.querySelector('input[type="time"]:first-of-type');
+                        const endInput = item.querySelector('input[type="time"]:last-of-type');
+                        
+                        if (startInput && endInput && startInput.value && endInput.value) {
+                            timeRanges.push({
+                                start: startInput.value,
+                                end: endInput.value
+                            });
+                        }
                     });
+                    
+                    if (timeRanges.length > 0) {
+                        startTime = timeRanges[0].start;
+                        endTime = timeRanges[0].end;
+                    }
                 }
-            });
+            }
+            
+            // Ensure we have at least one time range
+            if (timeRanges.length === 0) {
+                timeRanges = [{ start: startTime, end: endTime }];
+            }
         }
-        
-        // Convert to old format for backend compatibility
-        const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
         
         availabilityData[dayName] = {
             available: isAvailable,
-            start: firstRange.start,
-            end: firstRange.end,
+            start: startTime,
+            end: endTime,
             time_ranges: timeRanges,
             all_day: false
         };
