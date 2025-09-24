@@ -1,6 +1,6 @@
 {
   "deploy": {
-    "startCommand": "flask db upgrade && gunicorn -w 4 -b 0.0.0.0:$PORT 'app:create_app()'",
+    "startCommand": "if [ \"$CRON_JOB_TYPE\" ]; then python cron_jobs.py; else flask db upgrade && gunicorn -w 4 -b 0.0.0.0:$PORT 'app:create_app()'; fi",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
