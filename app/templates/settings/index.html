@@ -26,10 +26,6 @@
                     <div class="info-value">{{ user.get_full_name() }}</div>
                 </div>
                 <div class="info-group">
-                    <label class="info-label">Username</label>
-                    <div class="info-value">{{ user.username }}</div>
-                </div>
-                <div class="info-group">
                     <label class="info-label">Email</label>
                     <div class="info-value">{{ user.email }}</div>
                 </div>
@@ -39,10 +35,6 @@
                         <div class="info-value">{{ user.phone }}</div>
                     </div>
                 {% endif %}
-                <div class="info-group">
-                    <label class="info-label">Member Since</label>
-                    <div class="info-value">{{ user.created_at.strftime('%B %d, %Y') }}</div>
-                </div>
             </div>
         </div>
     </div>
