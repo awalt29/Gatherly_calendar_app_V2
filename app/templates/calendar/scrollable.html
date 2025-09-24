@@ -139,7 +139,7 @@
     background: rgba(255, 255, 255, 0.02);
     border-right: 1px solid var(--border);
     padding: var(--space-3);
-    min-height: 45vh; /* Make rows much taller - about half viewport height */
+    min-height: 22vh; /* Reduced from 45vh to about half */
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -266,7 +266,7 @@
 @media (max-width: 768px) {
     .calendar-grid-continuous .day-column {
         padding: var(--space-2);
-        min-height: 42vh; /* Slightly smaller on mobile but still tall */
+        min-height: 20vh; /* Reduced from 42vh to about half */
     }
     
     .calendar-grid-continuous .friend-block {
@@ -301,7 +301,7 @@
 @media (max-width: 480px) {
     .calendar-grid-continuous .day-column {
         padding: var(--space-1);
-        min-height: 40vh; /* Even smaller on very small screens */
+        min-height: 18vh; /* Reduced from 40vh to about half */
     }
     
     .calendar-grid-continuous .friend-block {
