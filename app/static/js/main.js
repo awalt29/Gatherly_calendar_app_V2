@@ -1118,10 +1118,14 @@ function saveAsDefaultSchedule() {
             endTime = endHandle.getValue();
         }
         
+        // Include both old format and new time_ranges format for compatibility
+        const timeRanges = checkbox && checkbox.checked ? [{ start: startTime, end: endTime }] : [];
+        
         availabilityData[dayName] = {
             available: checkbox ? checkbox.checked : false,
             start: startTime,
             end: endTime,
+            time_ranges: timeRanges,
             all_day: false
         };
     });
