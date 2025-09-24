@@ -634,116 +634,9 @@ function removeTimeRange(dayName, index) {
     }
 }
 
-function createVerticalDayColumn(dayName, dayData, availabilityData) {
-    const dayColumn = document.createElement('div');
-    dayColumn.className = 'day-column';
-    dayColumn.id = `${dayName}-column`;
-    
-    // Day checkbox toggle (will be ordered first via CSS)
-    const dayToggle = document.createElement('div');
-    dayToggle.className = 'day-toggle';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = `${dayName}-available`;
-    checkbox.checked = availabilityData.available || false;
-    
-    dayToggle.appendChild(checkbox);
-    dayColumn.appendChild(dayToggle);
-    
-    // Use consistent defaults for all days
-    const defaultStart = '06:00';  // Always start at 6:00 AM
-    const defaultEnd = '23:00';    // Always end at 11:00 PM
-    
-    // Top time display (shows start/early time)
-    const startDisplay = document.createElement('div');
-    startDisplay.className = 'time-display-vertical';
-    startDisplay.id = `${dayName}-start-display`;
-    
-    const startTimeText = minutesToTime12Hour(timeToMinutes(defaultStart));
-    const [startTime, startPeriod] = startTimeText.split(' ');
-    
-    const startTimeSpan = document.createElement('span');
-    startTimeSpan.textContent = startTime;
-    
-    const startPeriodSpan = document.createElement('span');
-    startPeriodSpan.textContent = startPeriod;
-    startPeriodSpan.style.fontSize = '8px';
-    startPeriodSpan.style.opacity = '0.8';
-    
-    startDisplay.appendChild(startTimeSpan);
-    startDisplay.appendChild(startPeriodSpan);
-    dayColumn.appendChild(startDisplay);
-    
-    // Vertical slider
-    const verticalSlider = createVerticalSlider(dayName, availabilityData);
-    dayColumn.appendChild(verticalSlider);
-    
-    // Bottom time display (shows end/late time)
-    const endDisplay = document.createElement('div');
-    endDisplay.className = 'time-display-vertical';
-    endDisplay.id = `${dayName}-end-display`;
-    
-    const endTimeText = minutesToTime12Hour(timeToMinutes(defaultEnd));
-    const [endTime, endPeriod] = endTimeText.split(' ');
-    
-    const endTimeSpan = document.createElement('span');
-    endTimeSpan.textContent = endTime;
-    
-    const endPeriodSpan = document.createElement('span');
-    endPeriodSpan.textContent = endPeriod;
-    endPeriodSpan.style.fontSize = '8px';
-    endPeriodSpan.style.opacity = '0.8';
-    
-    endDisplay.appendChild(endTimeSpan);
-    endDisplay.appendChild(endPeriodSpan);
-    dayColumn.appendChild(endDisplay);
-    
-    // Event listeners
-    checkbox.addEventListener('change', function() {
-        const isEnabled = this.checked;
-        
-        if (isEnabled) {
-            verticalSlider.classList.remove('disabled');
-        } else {
-            verticalSlider.classList.add('disabled');
-        }
-    });
-    
-    // Initialize slider after DOM is ready with consistent defaults
-    requestAnimationFrame(() => {
-        // Use stored data if available and the day is marked as available, otherwise use defaults
-        const startTime = (availabilityData.available && availabilityData.start) ? availabilityData.start : defaultStart;
-        const endTime = (availabilityData.available && availabilityData.end) ? availabilityData.end : defaultEnd;
-        setupVerticalSlider(dayName, startTime, endTime);
-    });
-    
-    return dayColumn;
-}
+// Removed createVerticalDayColumn - no longer needed
 
-function createVerticalSlider(dayName, availabilityData) {
-    const slider = document.createElement('div');
-    slider.className = 'vertical-slider';
-    slider.id = `${dayName}-vertical-slider`;
-    
-    const track = document.createElement('div');
-    track.className = 'slider-track-vertical';
-    track.id = `${dayName}-track-vertical`;
-    
-    const startHandle = document.createElement('div');
-    startHandle.className = 'slider-handle-vertical';
-    startHandle.id = `${dayName}-start-handle-vertical`;
-    
-    const endHandle = document.createElement('div');
-    endHandle.className = 'slider-handle-vertical';
-    endHandle.id = `${dayName}-end-handle-vertical`;
-    
-    slider.appendChild(track);
-    slider.appendChild(startHandle);
-    slider.appendChild(endHandle);
-    
-    return slider;
-}
+// Removed createVerticalSlider - no longer needed
 
 // Helper function to update time display with time on one line and AM/PM below
 function updateTimeDisplay(displayElement, timeString) {
@@ -766,230 +659,7 @@ function updateTimeDisplay(displayElement, timeString) {
     displayElement.appendChild(periodSpan);
 }
 
-function setupVerticalSlider(dayName, initialStart, initialEnd) {
-    const slider = document.getElementById(`${dayName}-vertical-slider`);
-    const track = document.getElementById(`${dayName}-track-vertical`);
-    const startHandle = document.getElementById(`${dayName}-start-handle-vertical`);
-    const endHandle = document.getElementById(`${dayName}-end-handle-vertical`);
-    const startDisplay = document.getElementById(`${dayName}-start-display`);
-    const endDisplay = document.getElementById(`${dayName}-end-display`);
-    
-    // Check if all elements exist
-    if (!slider || !track || !startHandle || !endHandle || !startDisplay || !endDisplay) {
-        console.error(`Missing slider elements for ${dayName}:`, {
-            slider: !!slider,
-            track: !!track,
-            startHandle: !!startHandle,
-            endHandle: !!endHandle,
-            startDisplay: !!startDisplay,
-            endDisplay: !!endDisplay
-        });
-        return;
-    }
-    
-    // Time range: 6:00 AM to 11:00 PM (17 hours)
-    const minTime = 6 * 60; // 6:00 AM in minutes
-    const maxTime = 23 * 60; // 11:00 PM in minutes
-    const totalRange = maxTime - minTime;
-    
-    let startMinutes = timeToMinutes(initialStart);
-    let endMinutes = timeToMinutes(initialEnd);
-    
-    // Ensure values are within range
-    startMinutes = Math.max(minTime, Math.min(maxTime, startMinutes));
-    endMinutes = Math.max(minTime, Math.min(maxTime, endMinutes));
-    
-    // Ensure start is always before end (swap if necessary)
-    if (startMinutes >= endMinutes) {
-        console.warn(`${dayName}: Start time (${startMinutes}) >= End time (${endMinutes}). Swapping values.`);
-        [startMinutes, endMinutes] = [endMinutes, startMinutes];
-    }
-    
-    // Debug logging
-    console.log(`Setting up slider for ${dayName}: start=${initialStart} (${startMinutes}min), end=${initialEnd} (${endMinutes}min), range=${minTime}-${maxTime}`);
-    
-    function updateSlider() {
-        const startPercent = ((startMinutes - minTime) / totalRange) * 100;
-        const endPercent = ((endMinutes - minTime) / totalRange) * 100;
-        
-        // For intuitive timeline: early time at top, late time at bottom
-        // startMinutes (early) should be at TOP (low percentage), endMinutes (late) at BOTTOM (high percentage)
-        const startHandleTop = `${startPercent}%`;        // Early time at top
-        const endHandleTop = `${endPercent}%`;            // Late time at bottom
-        
-        startHandle.style.top = startHandleTop;
-        endHandle.style.top = endHandleTop;
-        
-        // Track should span from start to end (top to bottom)
-        track.style.top = `${startPercent}%`;
-        track.style.height = `${endPercent - startPercent}%`;
-        
-        // For intuitive top-to-bottom timeline: top = early time, bottom = late time
-        // startDisplay is at TOP and should show the EARLY time (startMinutes)
-        // endDisplay is at BOTTOM and should show the LATE time (endMinutes)
-        updateTimeDisplay(startDisplay, minutesToTime12Hour(startMinutes));   // Top display = early time
-        updateTimeDisplay(endDisplay, minutesToTime12Hour(endMinutes));       // Bottom display = late time
-        
-        // Debug logging
-        console.log(`${dayName} slider update: start=${minutesToTime(startMinutes)} (${startPercent.toFixed(1)}% -> ${startHandleTop}), end=${minutesToTime(endMinutes)} (${endPercent.toFixed(1)}% -> ${endHandleTop})`);
-    }
-    
-    function handleMouseDown(handle, isStart) {
-        return function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Prevent slider click event
-            
-            console.log(`Mouse down on ${dayName} ${isStart ? 'start' : 'end'} handle`);
-            
-            if (handle.classList.contains('disabled')) {
-                console.log(`Handle is disabled for ${dayName}`);
-                return;
-            }
-            
-            // Add active class for visual feedback
-            handle.classList.add('active');
-            
-            function handleMouseMove(e) {
-                // Prevent scrolling only during actual dragging
-                if (!document.body.style.overflow) {
-                    const scrollY = window.scrollY;
-                    document.body.style.overflow = 'hidden';
-                    document.body.style.position = 'fixed';
-                    document.body.style.width = '100%';
-                    document.body.style.top = `-${scrollY}px`;
-                }
-                
-                const sliderRect = slider.getBoundingClientRect();
-                const y = e.clientY - sliderRect.top;
-                const percent = Math.max(0, Math.min(100, (y / sliderRect.height) * 100));
-                // For intuitive timeline: top = early time, bottom = late time
-                const minutes = minTime + (percent / 100) * totalRange;
-                
-                if (isStart) {
-                    startMinutes = Math.max(minTime, Math.min(endMinutes - 30, Math.round(minutes / 15) * 15));
-                } else {
-                    endMinutes = Math.max(startMinutes + 30, Math.min(maxTime, Math.round(minutes / 15) * 15));
-                }
-                
-                updateSlider();
-            }
-            
-            function handleMouseUp() {
-                handle.classList.remove('active');
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-                
-                // Restore page scrolling and position
-                if (document.body.style.position === 'fixed') {
-                    const scrollY = document.body.style.top;
-                    document.body.style.overflow = '';
-                    document.body.style.position = '';
-                    document.body.style.width = '';
-                    document.body.style.top = '';
-                    if (scrollY) {
-                        window.scrollTo(0, parseInt(scrollY.replace('-', '').replace('px', '')) || 0);
-                    }
-                }
-                
-                console.log(`Mouse up on ${dayName} ${isStart ? 'start' : 'end'} handle - Final time: ${isStart ? minutesToTime(startMinutes) : minutesToTime(endMinutes)}`);
-            }
-            
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        };
-    }
-    
-    // Touch support
-    function handleTouchStart(handle, isStart) {
-        return function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Prevent slider click event
-            
-            if (handle.classList.contains('disabled')) return;
-            
-            // Add active class for visual feedback
-            handle.classList.add('active');
-            
-            function handleTouchMove(e) {
-                // Prevent scrolling only during actual dragging
-                if (!document.body.style.overflow) {
-                    const scrollY = window.scrollY;
-                    document.body.style.overflow = 'hidden';
-                    document.body.style.position = 'fixed';
-                    document.body.style.width = '100%';
-                    document.body.style.top = `-${scrollY}px`;
-                }
-                
-                const touch = e.touches[0];
-                const sliderRect = slider.getBoundingClientRect();
-                const y = touch.clientY - sliderRect.top;
-                const percent = Math.max(0, Math.min(100, (y / sliderRect.height) * 100));
-                // For intuitive timeline: top = early time, bottom = late time
-                const minutes = minTime + (percent / 100) * totalRange;
-                
-                if (isStart) {
-                    startMinutes = Math.max(minTime, Math.min(endMinutes - 30, Math.round(minutes / 15) * 15));
-                } else {
-                    endMinutes = Math.max(startMinutes + 30, Math.min(maxTime, Math.round(minutes / 15) * 15));
-                }
-                
-                updateSlider();
-            }
-            
-            function handleTouchEnd() {
-                handle.classList.remove('active');
-                document.removeEventListener('touchmove', handleTouchMove);
-                document.removeEventListener('touchend', handleTouchEnd);
-                
-                // Restore page scrolling and position
-                if (document.body.style.position === 'fixed') {
-                    const scrollY = document.body.style.top;
-                    document.body.style.overflow = '';
-                    document.body.style.position = '';
-                    document.body.style.width = '';
-                    document.body.style.top = '';
-                    if (scrollY) {
-                        window.scrollTo(0, parseInt(scrollY.replace('-', '').replace('px', '')) || 0);
-                    }
-                }
-            }
-            
-            document.addEventListener('touchmove', handleTouchMove);
-            document.addEventListener('touchend', handleTouchEnd);
-        };
-    }
-    
-    // Removed automatic nearest handle click handler to prevent interference with direct handle dragging
-    
-    // Add event listeners with debugging
-    console.log(`Adding event listeners for ${dayName} handles:`, {startHandle: !!startHandle, endHandle: !!endHandle});
-    
-    if (startHandle) {
-        startHandle.addEventListener('mousedown', handleMouseDown(startHandle, true));
-        startHandle.addEventListener('touchstart', handleTouchStart(startHandle, true));
-        console.log(`Added mouse/touch events to start handle for ${dayName}`);
-    }
-    
-    if (endHandle) {
-        endHandle.addEventListener('mousedown', handleMouseDown(endHandle, false));
-        endHandle.addEventListener('touchstart', handleTouchStart(endHandle, false));
-        console.log(`Added mouse/touch events to end handle for ${dayName}`);
-    }
-    
-    // Initialize display
-    updateSlider();
-    
-    // Store getter functions for saving
-    startHandle.getValue = () => minutesToTime(startMinutes);
-    endHandle.getValue = () => minutesToTime(endMinutes);
-    
-    // Store update function for external use
-    slider.updateValues = function(newStart, newEnd) {
-        startMinutes = timeToMinutes(newStart);
-        endMinutes = timeToMinutes(newEnd);
-        updateSlider();
-    };
-}
+// Removed setupVerticalSlider - no longer needed
 
 function timeToMinutes(timeString) {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -1011,12 +681,7 @@ function minutesToTime12Hour(minutes) {
     return `${displayHours}:${minutesStr} ${period}`;
 }
 
-function updateSliderValues(dayName, startTime, endTime) {
-    const slider = document.getElementById(`${dayName}-vertical-slider`);
-    if (slider && slider.updateValues) {
-        slider.updateValues(startTime, endTime);
-    }
-}
+// Removed updateSliderValues - no longer needed
 
 function saveAvailability(weekStart) {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -1029,56 +694,40 @@ function saveAvailability(weekStart) {
         
         const isAvailable = checkbox.checked;
         let timeRanges = [];
-        let startTime = '09:00';
-        let endTime = '17:00';
         
         if (isAvailable) {
-            // Try to get times from slider handles first (vertical slider interface)
-            const startHandle = document.getElementById(`${dayName}-start-handle-vertical`);
-            const endHandle = document.getElementById(`${dayName}-end-handle-vertical`);
-            
-            if (startHandle && startHandle.getValue && endHandle && endHandle.getValue) {
-                startTime = startHandle.getValue();
-                endTime = endHandle.getValue();
-            } else {
-                // Fall back to time input containers (Calendly-style interface)
-                const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
-                if (timeRangesContainer) {
-                    const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+            // Get times from time input containers (Calendly-style interface)
+            const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+            if (timeRangesContainer) {
+                const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+                
+                timeRangeItems.forEach(item => {
+                    const startInput = item.querySelector('input[type="time"]:first-of-type');
+                    const endInput = item.querySelector('input[type="time"]:last-of-type');
                     
-                    timeRangeItems.forEach(item => {
-                        const startInput = item.querySelector('input[type="time"]:first-of-type');
-                        const endInput = item.querySelector('input[type="time"]:last-of-type');
-                        
-                        if (startInput && endInput && startInput.value && endInput.value) {
-                            timeRanges.push({
-                                start: startInput.value,
-                                end: endInput.value
-                            });
-                        }
-                    });
-                    
-                    if (timeRanges.length > 0) {
-                        startTime = timeRanges[0].start;
-                        endTime = timeRanges[0].end;
+                    if (startInput && endInput && startInput.value && endInput.value) {
+                        timeRanges.push({
+                            start: startInput.value,
+                            end: endInput.value
+                        });
                     }
-                }
-            }
-            
-            // Ensure we have at least one time range
-            if (timeRanges.length === 0) {
-                timeRanges = [{ start: startTime, end: endTime }];
+                });
             }
         }
         
+        // Use first time range for backward compatibility, or default times
+        const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
+        
         availabilityData[dayName] = {
             available: isAvailable,
-            start: startTime,
-            end: endTime,
+            start: firstRange.start,
+            end: firstRange.end,
             time_ranges: timeRanges,
             all_day: false
         };
     });
+    
+    console.log('Saving availability data:', availabilityData);
     
     const data = {
         week_start: weekStart,
@@ -1119,33 +768,42 @@ function initializeDefaultScheduleButtons() {
 }
 
 function saveAsDefaultSchedule() {
-    // Get current form data (same logic as saveAvailability)
+    // Get current form data from the Calendly-style interface
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const availabilityData = {};
     
     days.forEach(dayName => {
         const checkbox = document.getElementById(`${dayName}-available`);
-        const startHandle = document.getElementById(`${dayName}-start-handle-vertical`);
-        const endHandle = document.getElementById(`${dayName}-end-handle-vertical`);
+        const isAvailable = checkbox ? checkbox.checked : false;
+        let timeRanges = [];
         
-        let startTime = '06:00';
-        let endTime = '23:00';
-        
-        // Get values from vertical slider handles if they exist
-        if (startHandle && startHandle.getValue) {
-            startTime = startHandle.getValue();
+        if (isAvailable) {
+            // Get times from time input containers
+            const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+            if (timeRangesContainer) {
+                const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+                
+                timeRangeItems.forEach(item => {
+                    const startInput = item.querySelector('input[type="time"]:first-of-type');
+                    const endInput = item.querySelector('input[type="time"]:last-of-type');
+                    
+                    if (startInput && endInput && startInput.value && endInput.value) {
+                        timeRanges.push({
+                            start: startInput.value,
+                            end: endInput.value
+                        });
+                    }
+                });
+            }
         }
-        if (endHandle && endHandle.getValue) {
-            endTime = endHandle.getValue();
-        }
         
-        // Include both old format and new time_ranges format for compatibility
-        const timeRanges = checkbox && checkbox.checked ? [{ start: startTime, end: endTime }] : [];
+        // Use first time range for backward compatibility, or default times
+        const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
         
         availabilityData[dayName] = {
-            available: checkbox ? checkbox.checked : false,
-            start: startTime,
-            end: endTime,
+            available: isAvailable,
+            start: firstRange.start,
+            end: firstRange.end,
             time_ranges: timeRanges,
             all_day: false
         };
