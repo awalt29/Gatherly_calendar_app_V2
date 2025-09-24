@@ -139,7 +139,7 @@
     background: rgba(255, 255, 255, 0.02);
     border-right: 1px solid var(--border);
     padding: var(--space-3);
-    min-height: 120px; /* Sized for ~2 friend circles + padding */
+    min-height: calc((100vh - 200px) / 4 - 1px); /* 4 rows fit in viewport minus headers/padding */
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -266,7 +266,7 @@
 @media (max-width: 768px) {
     .calendar-grid-continuous .day-column {
         padding: var(--space-2);
-        min-height: 100px; /* Sized for ~2 friend circles + padding */
+        min-height: calc((100vh - 180px) / 4 - 1px); /* 4 rows fit in viewport minus headers/padding */
     }
     
     .calendar-grid-continuous .friend-block {
@@ -301,7 +301,7 @@
 @media (max-width: 480px) {
     .calendar-grid-continuous .day-column {
         padding: var(--space-1);
-        min-height: 80px; /* Sized for ~2 friend circles + padding */
+        min-height: calc((100vh - 160px) / 4 - 1px); /* 4 rows fit in viewport minus headers/padding */
     }
     
     .calendar-grid-continuous .friend-block {
