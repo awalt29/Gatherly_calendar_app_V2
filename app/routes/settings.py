@@ -13,10 +13,7 @@ def index():
     # Load Google Calendar sync data explicitly
     google_sync = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
     
-    # Attach to current_user for template access
-    current_user.google_calendar_sync = google_sync
-    
-    return render_template('settings/index.html', user=current_user)
+    return render_template('settings/index.html', user=current_user, google_calendar_sync=google_sync)
 
 @bp.route('/settings/update', methods=['POST'])
 @login_required

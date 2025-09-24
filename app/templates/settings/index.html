@@ -164,7 +164,7 @@
                     <p>Automatically update your Gatherly availability based on Google Calendar events</p>
                 </div>
                 <div class="setting-control">
-                    <input type="checkbox" id="auto-sync-availability" {% if user.google_calendar_sync and user.google_calendar_sync.auto_sync_availability %}checked{% endif %}>
+                    <input type="checkbox" id="auto-sync-availability" {% if google_calendar_sync and google_calendar_sync.auto_sync_availability %}checked{% endif %}>
                     <label for="auto-sync-availability" class="toggle-label"></label>
                 </div>
             </div>
