@@ -10,6 +10,12 @@ bp = Blueprint('settings', __name__)
 @login_required
 def index():
     """Settings page with profile information and account settings"""
+    # Load Google Calendar sync data explicitly
+    google_sync = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
+    
+    # Attach to current_user for template access
+    current_user.google_calendar_sync = google_sync
+    
     return render_template('settings/index.html', user=current_user)
 
 @bp.route('/settings/update', methods=['POST'])
