@@ -76,6 +76,36 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.nav-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 104, 177, 0.2);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 90px;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+    background: rgba(0, 104, 177, 0.1);
+    border-color: rgba(0, 104, 177, 0.4);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 #availabilityWeekDisplay {
     font-size: var(--font-size-lg);
     font-weight: 600;
