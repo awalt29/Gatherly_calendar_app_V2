@@ -27,10 +27,8 @@ function initializeApp() {
     
     switch(currentPage) {
         case 'calendar':
-            if (window.location.pathname.includes('/scrollable')) {
+            if (typeof initializeScrollableCalendar === 'function') {
                 initializeScrollableCalendar();
-            } else {
-                initializeCalendar();
             }
             break;
         case 'availability':
@@ -119,239 +117,18 @@ function setupFlashMessages() {
 // CALENDAR PAGE
 // ============================================
 
-function initializeCalendar() {
-    setupWeekNavigation();
-    
-    // Initialize week display
-    updateWeekDisplay();
-    
-    // Load current week and next week (2-week view)
-    loadCalendarWeek(0);
-    loadCalendarWeek(1);
-}
+// Removed initializeCalendar - only using scrollable calendar
 
-function setupWeekNavigation() {
-    const prevBtn = document.getElementById('prevWeek');
-    const nextBtn = document.getElementById('nextWeek');
-    
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => navigateWeek(-1));
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => navigateWeek(1));
-    }
-}
+// Removed old calendar functions - only using scrollable calendar:
+// - setupWeekNavigation
+// - navigateWeek  
+// - loadCalendarWeek
+// - renderCalendarWeek
+// - createDayColumn
+// - createFriendBlock
+// - updateWeekDisplay
 
-function navigateWeek(direction) {
-    const newWeekOffset = Gatherly.currentWeekOffset + direction;
-    
-    // Prevent going to negative weeks (past weeks)
-    if (newWeekOffset < 0) {
-        showNotification('Cannot navigate to past weeks', 'error');
-        return;
-    }
-    
-    // Optional: Prevent going too far into the future (e.g., more than 52 weeks)
-    if (newWeekOffset > 52) {
-        showNotification('Cannot navigate more than 1 year ahead', 'error');
-        return;
-    }
-    
-    Gatherly.currentWeekOffset = newWeekOffset;
-    
-    // Update week display first
-    updateWeekDisplay();
-    
-    // Load both weeks for the 2-week view
-    loadCalendarWeek(Gatherly.currentWeekOffset);
-    loadCalendarWeek(Gatherly.currentWeekOffset + 1);
-}
-
-function loadCalendarWeek(weekOffset) {
-    fetch(`/api/week/${weekOffset}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Response is not JSON');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            renderCalendarWeek(data, weekOffset);
-        })
-        .catch(error => {
-            console.error('Error loading calendar week:', error);
-            showNotification(`Error loading calendar data: ${error.message}`, 'error');
-        });
-}
-
-function renderCalendarWeek(weekData, weekOffset) {
-    // Map week offset to container index (0 or 1 for the 2-week view)
-    const containerIndex = weekOffset - Gatherly.currentWeekOffset;
-    
-    // Only render to valid containers (0 or 1)
-    if (containerIndex < 0 || containerIndex > 1) {
-        return; // Skip rendering for out-of-range containers
-    }
-    
-    const weekContainer = document.getElementById(`week-${containerIndex}`);
-    
-    if (!weekContainer) {
-        console.error(`Week container week-${containerIndex} not found for offset ${weekOffset}`);
-        return;
-    }
-    
-    // Validate weekData
-    if (!weekData || !weekData.days || !Array.isArray(weekData.days)) {
-        console.error('Invalid week data:', weekData);
-        weekContainer.innerHTML = '<div class="error-message">Error loading week data</div>';
-        return;
-    }
-    
-    // Clear existing content
-    weekContainer.innerHTML = '';
-    
-    // Create week row
-    const weekRow = document.createElement('div');
-    weekRow.className = 'week-row';
-    
-    weekData.days.forEach(day => {
-        const dayColumn = createDayColumn(day);
-        weekRow.appendChild(dayColumn);
-    });
-    
-    weekContainer.appendChild(weekRow);
-}
-
-function createDayColumn(dayData) {
-    const dayColumn = document.createElement('div');
-    dayColumn.className = 'day-column';
-    
-    // Ensure users array exists
-    const users = dayData.users || [];
-    
-    // Check if current user is available (for planner highlighting)
-    const currentUserAvailable = users.some(user => user.is_current_user);
-    if (currentUserAvailable) {
-        dayColumn.classList.add('planner-available');
-    }
-    
-    // Date number
-    const dateNumber = document.createElement('div');
-    dateNumber.className = 'date-number';
-    if (dayData.is_today) {
-        dateNumber.classList.add('today');
-    }
-    dateNumber.textContent = dayData.day_number;
-    dayColumn.appendChild(dateNumber);
-    
-    // Availability blocks
-    const availabilityBlocks = document.createElement('div');
-    availabilityBlocks.className = 'availability-blocks';
-    
-    users.forEach((user, index) => {
-        const friendBlock = createFriendBlock(user, index);
-        availabilityBlocks.appendChild(friendBlock);
-    });
-    
-    dayColumn.appendChild(availabilityBlocks);
-    
-    // Click handler for day details
-    dayColumn.addEventListener('click', () => {
-        window.location.href = `/day/${dayData.date}`;
-    });
-    
-    return dayColumn;
-}
-
-function createFriendBlock(user, index) {
-    const friendBlock = document.createElement('div');
-    friendBlock.className = 'friend-block';
-    
-    if (user.is_current_user) {
-        friendBlock.classList.add('current-user-block');
-    } else {
-        const colorIndex = user.id % Gatherly.friendColors.length;
-        friendBlock.classList.add(`friend-color-${colorIndex}`);
-    }
-    
-    friendBlock.textContent = user.initials || '?';
-    
-    // Create tooltip with time range info
-    let tooltip = user.name || 'Unknown User';
-    if (user.time_range) {
-        if (user.time_range.all_day) {
-            tooltip += ' (All Day)';
-        } else {
-            tooltip += ` (${user.time_range.start || '?'} - ${user.time_range.end || '?'})`;
-        }
-    }
-    friendBlock.title = tooltip;
-    
-    return friendBlock;
-}
-
-function updateWeekDisplay() {
-    const weekDisplay = document.getElementById('week-display');
-    if (weekDisplay) {
-        const today = new Date();
-        const weekStart = getWeekStart(today);
-        weekStart.setDate(weekStart.getDate() + (Gatherly.currentWeekOffset * 7));
-        
-        // Show the range for the 2-week view (current week + next week)
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 13); // 2 weeks - 1 day
-        
-        const options = { month: 'short', day: 'numeric' };
-        const startStr = weekStart.toLocaleDateString('en-US', options);
-        const endStr = weekEnd.toLocaleDateString('en-US', options);
-        
-        // Always show the year for clarity
-        const weekYear = weekStart.getFullYear();
-        weekDisplay.textContent = `${startStr} - ${endStr}, ${weekYear}`;
-    }
-    
-    // Update navigation button states
-    updateCalendarNavigationButtons();
-}
-
-function updateCalendarNavigationButtons() {
-    const prevBtn = document.getElementById('prevWeek');
-    const nextBtn = document.getElementById('nextWeek');
-    
-    if (prevBtn) {
-        // Disable previous button if we're at week 0 (current week)
-        if (Gatherly.currentWeekOffset <= 0) {
-            prevBtn.disabled = true;
-            prevBtn.style.opacity = '0.5';
-            prevBtn.style.cursor = 'not-allowed';
-        } else {
-            prevBtn.disabled = false;
-            prevBtn.style.opacity = '1';
-            prevBtn.style.cursor = 'pointer';
-        }
-    }
-    
-    if (nextBtn) {
-        // Disable next button if we're at the maximum week (52 weeks ahead)
-        if (Gatherly.currentWeekOffset >= 52) {
-            nextBtn.disabled = true;
-            nextBtn.style.opacity = '0.5';
-            nextBtn.style.cursor = 'not-allowed';
-        } else {
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = '1';
-            nextBtn.style.cursor = 'pointer';
-        }
-    }
-}
+// Removed updateCalendarNavigationButtons - only using scrollable calendar
 
 // ============================================
 // AVAILABILITY PAGE
