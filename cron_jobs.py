@@ -54,8 +54,21 @@ def weekly_availability_reminder():
 if __name__ == "__main__":
     # This allows you to test the cron jobs locally
     import sys
+    import os
     
-    if len(sys.argv) > 1:
+    # Check for Railway environment variable to determine which job to run
+    cron_job_type = os.environ.get('CRON_JOB_TYPE')
+    
+    if cron_job_type:
+        # Running on Railway with environment variable
+        if cron_job_type == "weekend_planning":
+            weekend_planning_reminder()
+        elif cron_job_type == "weekly_availability":
+            weekly_availability_reminder()
+        else:
+            print(f"Unknown CRON_JOB_TYPE: {cron_job_type}")
+    elif len(sys.argv) > 1:
+        # Running locally with command line argument
         job_name = sys.argv[1]
         if job_name == "weekend_planning":
             weekend_planning_reminder()
@@ -67,3 +80,4 @@ if __name__ == "__main__":
         print("Available cron jobs:")
         print("- weekend_planning")
         print("- weekly_availability")
+        print("Or set CRON_JOB_TYPE environment variable")
