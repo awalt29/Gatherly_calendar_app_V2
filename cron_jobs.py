@@ -9,6 +9,7 @@ import logging
 from flask import Flask
 from app import create_app
 from app.tasks.sms_scheduler import sms_scheduler
+from app.tasks.google_calendar_scheduler import GoogleCalendarScheduler
 
 # Set up logging
 logging.basicConfig(
@@ -51,6 +52,23 @@ def weekly_availability_reminder():
         logger.error(f"Error in weekly availability reminder cron job: {str(e)}")
         raise
 
+def google_calendar_sync():
+    """
+    Google Calendar sync cron job
+    Should be called every 2 hours to sync availability
+    """
+    logger.info("Starting Google Calendar availability sync cron job")
+    
+    try:
+        app = create_app()
+        with app.app_context():
+            stats = GoogleCalendarScheduler.sync_all_users_availability()
+            logger.info(f"Google Calendar sync completed: {stats}")
+            return stats
+    except Exception as e:
+        logger.error(f"Error in Google Calendar sync cron job: {str(e)}")
+        raise
+
 if __name__ == "__main__":
     # This allows you to test the cron jobs locally
     import sys
@@ -65,6 +83,8 @@ if __name__ == "__main__":
             weekend_planning_reminder()
         elif cron_job_type == "weekly_availability":
             weekly_availability_reminder()
+        elif cron_job_type == "google_calendar_sync":
+            google_calendar_sync()
         else:
             print(f"Unknown CRON_JOB_TYPE: {cron_job_type}")
     elif len(sys.argv) > 1:
@@ -74,10 +94,13 @@ if __name__ == "__main__":
             weekend_planning_reminder()
         elif job_name == "weekly_availability":
             weekly_availability_reminder()
+        elif job_name == "google_calendar_sync":
+            google_calendar_sync()
         else:
-            print("Usage: python cron_jobs.py [weekend_planning|weekly_availability]")
+            print("Usage: python cron_jobs.py [weekend_planning|weekly_availability|google_calendar_sync]")
     else:
         print("Available cron jobs:")
         print("- weekend_planning")
         print("- weekly_availability")
+        print("- google_calendar_sync")
         print("Or set CRON_JOB_TYPE environment variable")
