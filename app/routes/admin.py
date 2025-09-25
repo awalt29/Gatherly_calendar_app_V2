@@ -22,9 +22,13 @@ bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def is_admin():
     """Check if current user is admin"""
-    # Ensure the is_admin field exists
+    # Ensure the is_admin field exists and handle None values
     try:
-        return current_user.is_admin
+        admin_value = current_user.is_admin
+        # Handle None values - treat as False and fall back to user ID check
+        if admin_value is None:
+            return current_user.id == 1
+        return admin_value
     except AttributeError:
         # If is_admin field doesn't exist, fall back to user ID check
         return current_user.id == 1
