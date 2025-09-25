@@ -110,7 +110,8 @@
         </div>
         
         <!-- Mobile Users Cards -->
-        <div class="mobile-users">
+        <div class="mobile-users" style="background: red; padding: 10px;">
+            <p style="color: white;">Mobile Users Section - {{ user_stats|length }} users</p>
             {% for user_data in user_stats %}
             <div class="mobile-user-card" data-user-id="{{ user_data.user.id }}">
                 <div class="mobile-user-header">
@@ -530,11 +531,11 @@
     
     /* Hide the table and show mobile cards instead */
     .table-container {
-        display: none;
+        display: none !important;
     }
     
     .mobile-users {
-        display: block;
+        display: block !important;
     }
 }
 
