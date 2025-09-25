@@ -50,14 +50,14 @@
                     <tr class="user-row" data-user-id="{{ user_data.user.id }}">
                         <td class="user-info">
                             <div class="user-avatar">
-                                {{ (user_data.user.first_name or user_data.user.username)[0]|upper }}
+                                {{ (user_data.user.first_name or user_data.user.email)[0]|upper }}
                             </div>
                             <div class="user-details">
                                 <div class="user-name">
-                                    {{ user_data.user.first_name or user_data.user.username }}
+                                    {{ user_data.user.first_name or user_data.user.email }}
                                     {% if user_data.user.last_name %}{{ user_data.user.last_name }}{% endif %}
                                 </div>
-                                <div class="user-username">@{{ user_data.user.username }}</div>
+                                <div class="user-email">{{ user_data.user.email }}</div>
                                 <div class="user-id">ID: {{ user_data.user.id }}</div>
                             </div>
                         </td>
@@ -73,12 +73,8 @@
                         <td class="activity-info">
                             <div class="friend-count">👥 {{ user_data.friend_count }} friends</div>
                             <div class="availability-count">📅 {{ user_data.availability_count }} availability records</div>
-                            <div class="last-login">
-                                {% if user_data.last_login != 'Never' %}
-                                Last login: {{ user_data.last_login.strftime('%m/%d/%Y') if user_data.last_login != 'Never' else 'Never' }}
-                                {% else %}
-                                <span class="text-muted">Never logged in</span>
-                                {% endif %}
+                            <div class="created-date">
+                                Created: {{ user_data.user.created_at.strftime('%m/%d/%Y') if user_data.user.created_at else 'Unknown' }}
                             </div>
                         </td>
                         <td class="integrations">
@@ -265,9 +261,10 @@
     color: var(--text-primary);
 }
 
-.user-username {
+.user-email {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
+    font-style: italic;
 }
 
 .user-id {

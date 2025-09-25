@@ -110,7 +110,6 @@ def dashboard():
                     'availability_count': availability_count,
                     'has_google_calendar': has_google_calendar,
                     'has_default_schedule': has_default_schedule,
-                    'last_login': getattr(user, 'last_login', None) or 'Never',
                     'is_admin': is_user_admin
                 })
             except Exception as user_error:
@@ -122,7 +121,6 @@ def dashboard():
                     'availability_count': 0,
                     'has_google_calendar': False,
                     'has_default_schedule': False,
-                    'last_login': 'Unknown',
                     'is_admin': (user.id == 1)
                 })
         
