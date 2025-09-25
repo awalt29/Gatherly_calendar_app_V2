@@ -1,0 +1,646 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Gatherly{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="page-header">
+        <h1 class="page-title">🛠️ Admin Dashboard</h1>
+        <p class="page-description">
+            Manage user accounts and system overview
+        </p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ user_stats|selectattr('has_google_calendar')|list|length }}</div>
+            <div class="stat-label">Google Calendar Connected</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ user_stats|selectattr('user.sms_notifications')|list|length }}</div>
+            <div class="stat-label">SMS Notifications Enabled</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ user_stats|selectattr('has_default_schedule')|list|length }}</div>
+            <div class="stat-label">Have Default Schedule</div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-section">
+        <h2>User Management</h2>
+        <div class="table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Contact</th>
+                        <th>Activity</th>
+                        <th>Integrations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_data in user_stats %}
+                    <tr class="user-row" data-user-id="{{ user_data.user.id }}">
+                        <td class="user-info">
+                            <div class="user-avatar">
+                                {{ (user_data.user.first_name or user_data.user.username)[0]|upper }}
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name">
+                                    {{ user_data.user.first_name or user_data.user.username }}
+                                    {% if user_data.user.last_name %}{{ user_data.user.last_name }}{% endif %}
+                                </div>
+                                <div class="user-username">@{{ user_data.user.username }}</div>
+                                <div class="user-id">ID: {{ user_data.user.id }}</div>
+                            </div>
+                        </td>
+                        <td class="contact-info">
+                            <div class="email">{{ user_data.user.email }}</div>
+                            {% if user_data.user.phone %}
+                            <div class="phone">📱 {{ user_data.user.phone }}</div>
+                            {% endif %}
+                            {% if user_data.user.sms_notifications %}
+                            <span class="badge sms-enabled">SMS ✓</span>
+                            {% endif %}
+                        </td>
+                        <td class="activity-info">
+                            <div class="friend-count">👥 {{ user_data.friend_count }} friends</div>
+                            <div class="availability-count">📅 {{ user_data.availability_count }} availability records</div>
+                            <div class="last-login">
+                                {% if user_data.last_login != 'Never' %}
+                                Last login: {{ user_data.last_login.strftime('%m/%d/%Y') if user_data.last_login != 'Never' else 'Never' }}
+                                {% else %}
+                                <span class="text-muted">Never logged in</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="integrations">
+                            {% if user_data.has_google_calendar %}
+                            <span class="badge google-connected">📅 Google Calendar</span>
+                            {% endif %}
+                            {% if user_data.has_default_schedule %}
+                            <span class="badge default-schedule">⏰ Default Schedule</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-sm btn-outline view-details" data-user-id="{{ user_data.user.id }}">
+                                👁️ View Details
+                            </button>
+                            {% if user_data.user.id != current_user.id %}
+                            <button class="btn btn-sm btn-danger delete-user" data-user-id="{{ user_data.user.id }}" data-username="{{ user_data.user.username }}">
+                                🗑️ Delete
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>User Details</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="userDetailsContent">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ Confirm Deletion</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete user <strong id="deleteUsername"></strong>?</p>
+            <p class="text-danger">This will permanently delete:</p>
+            <ul>
+                <li>User account and profile</li>
+                <li>All friendships</li>
+                <li>All availability records</li>
+                <li>Default schedule</li>
+                <li>Google Calendar integration</li>
+            </ul>
+            <p class="text-danger"><strong>This action cannot be undone!</strong></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Delete User</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-6);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.page-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: var(--space-2);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.users-section h2 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.table-container {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.users-table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-username {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.user-id {
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.contact-info .email {
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.contact-info .phone {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-1);
+}
+
+.activity-info > div {
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+.badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    margin-right: var(--space-1);
+    margin-bottom: var(--space-1);
+}
+
+.sms-enabled {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.google-connected {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.default-schedule {
+    background: rgba(168, 85, 247, 0.1);
+    color: #7c3aed;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.btn-sm {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.close {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--space-4);
+}
+
+.modal-footer {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.text-danger {
+    color: #dc2626;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .users-table {
+        font-size: var(--font-size-sm);
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: var(--space-2);
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View Details functionality
+    document.querySelectorAll('.view-details').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            showUserDetails(userId);
+        });
+    });
+
+    // Delete User functionality
+    document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const username = this.getAttribute('data-username');
+            showDeleteConfirmation(userId, username);
+        });
+    });
+
+    // Close modal functionality
+    document.querySelectorAll('.close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
+        });
+    });
+
+    // Click outside modal to close
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+});
+
+function showUserDetails(userId) {
+    const modal = document.getElementById('userDetailsModal');
+    const content = document.getElementById('userDetailsContent');
+    
+    content.innerHTML = 'Loading...';
+    modal.style.display = 'flex';
+    
+    fetch(`/admin/user-details/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                content.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                return;
+            }
+            
+            const user = data.user;
+            const friendships = data.friendships || [];
+            const availability = data.recent_availability || [];
+            const googleCal = data.google_calendar;
+            
+            content.innerHTML = `
+                <div class="user-detail-section">
+                    <h4>User Information</h4>
+                    <div class="detail-grid">
+                        <div><strong>ID:</strong> ${user.id}</div>
+                        <div><strong>Username:</strong> ${user.username}</div>
+                        <div><strong>Email:</strong> ${user.email}</div>
+                        <div><strong>Name:</strong> ${user.first_name || ''} ${user.last_name || ''}</div>
+                        <div><strong>Phone:</strong> ${user.phone || 'Not provided'}</div>
+                        <div><strong>Created:</strong> ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</div>
+                        <div><strong>Last Login:</strong> ${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</div>
+                        <div><strong>SMS Notifications:</strong> ${user.sms_notifications ? 'Enabled' : 'Disabled'}</div>
+                        <div><strong>Active:</strong> ${user.is_active ? 'Yes' : 'No'}</div>
+                    </div>
+                </div>
+                
+                <div class="user-detail-section">
+                    <h4>Friends (${friendships.length})</h4>
+                    ${friendships.length > 0 ? 
+                        friendships.map(f => `
+                            <div class="friend-item">
+                                <strong>${f.friend_name}</strong> (${f.friend_email}) - ${f.status}
+                                <small>Added: ${new Date(f.created_at).toLocaleDateString()}</small>
+                            </div>
+                        `).join('') : 
+                        '<p>No friends yet</p>'
+                    }
+                </div>
+                
+                <div class="user-detail-section">
+                    <h4>Recent Availability</h4>
+                    ${availability.length > 0 ? 
+                        availability.map(a => `
+                            <div class="availability-item">
+                                ${a.date}: ${a.start_time} - ${a.end_time}
+                            </div>
+                        `).join('') : 
+                        '<p>No availability records</p>'
+                    }
+                </div>
+                
+                ${googleCal ? `
+                <div class="user-detail-section">
+                    <h4>Google Calendar</h4>
+                    <div class="detail-grid">
+                        <div><strong>Connected:</strong> ${googleCal.connected ? 'Yes' : 'No'}</div>
+                        <div><strong>Auto Sync:</strong> ${googleCal.auto_sync ? 'Enabled' : 'Disabled'}</div>
+                        <div><strong>Last Sync:</strong> ${googleCal.last_sync ? new Date(googleCal.last_sync).toLocaleDateString() : 'Never'}</div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = `<p class="text-danger">Error loading user details: ${error.message}</p>`;
+        });
+}
+
+function showDeleteConfirmation(userId, username) {
+    document.getElementById('deleteUsername').textContent = username;
+    document.getElementById('deleteConfirmModal').style.display = 'flex';
+    
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        deleteUser(userId, username);
+    };
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+}
+
+function deleteUser(userId, username) {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting...';
+    
+    fetch(`/admin/delete-user/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the user row from the table
+            document.querySelector(`[data-user-id="${userId}"]`).remove();
+            closeDeleteModal();
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error || 'Failed to delete user', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification(`Error: ${error.message}`, 'error');
+    })
+    .finally(() => {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Delete User';
+    });
+}
+
+function showNotification(message, type) {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 2000;
+        background: ${type === 'success' ? '#16a34a' : '#dc2626'};
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+</script>
+
+<style>
+.user-detail-section {
+    margin-bottom: var(--space-6);
+}
+
+.user-detail-section h4 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--space-2);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.friend-item, .availability-item {
+    padding: var(--space-2);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-2);
+}
+
+.friend-item small, .availability-item small {
+    display: block;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+}
+
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

@@ -1,17 +1,188 @@
 """
 Admin routes for testing and management
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, render_template, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app.tasks.sms_scheduler import sms_scheduler
 from app.services.sms_service import sms_service
 from app.tasks.google_calendar_scheduler import google_calendar_scheduler
 from app.services.google_calendar_service import google_calendar_service
+from app.models.user import User
+from app.models.friendship import Friendship
+from app.models.availability import Availability
+from app.models.default_schedule import DefaultSchedule
+from app.models.google_calendar_sync import GoogleCalendarSync
+from app import db
 # Group availability service temporarily disabled
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+def is_admin():
+    """Check if current user is admin (you can customize this logic)"""
+    # For now, let's make the first user or users with specific emails admin
+    return current_user.id == 1 or current_user.email in ['aaronwalters@gmail.com', 'admin@trygatherly.com']
+
+@bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Admin dashboard showing all users"""
+    if not is_admin():
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('main.index'))
+    
+    try:
+        # Get all users with related data
+        users = User.query.all()
+        
+        # Get user stats
+        user_stats = []
+        for user in users:
+            # Count friendships
+            friend_count = Friendship.query.filter(
+                (Friendship.user_id == user.id) | (Friendship.friend_id == user.id),
+                Friendship.status == 'accepted'
+            ).count()
+            
+            # Count availability records
+            availability_count = Availability.query.filter_by(user_id=user.id).count()
+            
+            # Check Google Calendar connection
+            google_sync = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
+            has_google_calendar = bool(google_sync and google_sync.access_token)
+            
+            # Check if user has default schedule
+            has_default_schedule = bool(DefaultSchedule.query.filter_by(user_id=user.id).first())
+            
+            user_stats.append({
+                'user': user,
+                'friend_count': friend_count,
+                'availability_count': availability_count,
+                'has_google_calendar': has_google_calendar,
+                'has_default_schedule': has_default_schedule,
+                'last_login': user.last_login or 'Never'
+            })
+        
+        # Sort by most recent activity
+        user_stats.sort(key=lambda x: x['user'].created_at or datetime.min, reverse=True)
+        
+        return render_template('admin/dashboard.html', 
+                             user_stats=user_stats,
+                             total_users=len(users))
+    
+    except Exception as e:
+        logger.error(f"Error loading admin dashboard: {str(e)}")
+        flash('Error loading dashboard', 'error')
+        return redirect(url_for('main.index'))
+
+@bp.route('/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    """Delete a user and all their data"""
+    if not is_admin():
+        return jsonify({'error': 'Access denied'}), 403
+    
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        username = user.username
+        
+        # Delete all user-related data
+        # 1. Delete friendships
+        Friendship.query.filter(
+            (Friendship.user_id == user_id) | (Friendship.friend_id == user_id)
+        ).delete()
+        
+        # 2. Delete availability records
+        Availability.query.filter_by(user_id=user_id).delete()
+        
+        # 3. Delete default schedule
+        DefaultSchedule.query.filter_by(user_id=user_id).delete()
+        
+        # 4. Delete Google Calendar sync
+        GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
+        
+        # 5. Delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        logger.info(f"Admin {current_user.username} deleted user {username} (ID: {user_id})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'User {username} and all associated data deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting user {user_id}: {str(e)}")
+        return jsonify({'error': f'Failed to delete user: {str(e)}'}), 500
+
+@bp.route('/user-details/<int:user_id>')
+@login_required
+def user_details(user_id):
+    """Get detailed information about a specific user"""
+    if not is_admin():
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Get friendships
+        friendships = db.session.query(Friendship, User).join(
+            User, 
+            (User.id == Friendship.friend_id) if Friendship.user_id == user_id else (User.id == Friendship.user_id)
+        ).filter(
+            (Friendship.user_id == user_id) | (Friendship.friend_id == user_id)
+        ).all()
+        
+        # Get recent availability
+        recent_availability = Availability.query.filter_by(user_id=user_id).order_by(
+            Availability.date.desc()
+        ).limit(5).all()
+        
+        # Get Google Calendar info
+        google_sync = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
+        
+        return jsonify({
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'phone': user.phone,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_login.isoformat() if user.last_login else None,
+                'is_active': user.is_active,
+                'sms_notifications': user.sms_notifications,
+                'google_calendar_enabled': user.google_calendar_enabled
+            },
+            'friendships': [{
+                'friend_name': friendship[1].username,
+                'friend_email': friendship[1].email,
+                'status': friendship[0].status,
+                'created_at': friendship[0].created_at.isoformat() if friendship[0].created_at else None
+            } for friendship in friendships],
+            'recent_availability': [{
+                'date': av.date.isoformat(),
+                'start_time': av.start_time,
+                'end_time': av.end_time
+            } for av in recent_availability],
+            'google_calendar': {
+                'connected': bool(google_sync and google_sync.access_token),
+                'auto_sync': google_sync.auto_sync_availability if google_sync else False,
+                'last_sync': google_sync.last_sync.isoformat() if google_sync and google_sync.last_sync else None
+            } if google_sync else None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting user details for {user_id}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/test-sms', methods=['POST'])
 @login_required
