@@ -110,8 +110,7 @@
         </div>
         
         <!-- Mobile Users Cards -->
-        <div class="mobile-users" style="background: red; padding: 10px;">
-            <p style="color: white;">Mobile Users Section - {{ user_stats|length }} users</p>
+        <div class="mobile-users">
             {% for user_data in user_stats %}
             <div class="mobile-user-card" data-user-id="{{ user_data.user.id }}">
                 <div class="mobile-user-header">
