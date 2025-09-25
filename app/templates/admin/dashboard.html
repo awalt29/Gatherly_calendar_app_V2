@@ -82,7 +82,7 @@
                             </div>
                         </td>
                         <td class="integrations">
-                            {% if user_data.user.is_admin %}
+                            {% if user_data.is_admin %}
                             <span class="badge admin-badge">👑 Admin</span>
                             {% endif %}
                             {% if user_data.has_google_calendar %}
@@ -97,11 +97,11 @@
                                 👁️ View Details
                             </button>
                             {% if user_data.user.id != current_user.id %}
-                            <button class="btn btn-sm {% if user_data.user.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
+                            <button class="btn btn-sm {% if user_data.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
                                     data-user-id="{{ user_data.user.id }}" 
                                     data-username="{{ user_data.user.username }}"
-                                    data-is-admin="{{ user_data.user.is_admin|lower }}">
-                                {% if user_data.user.is_admin %}👑 Remove Admin{% else %}👑 Make Admin{% endif %}
+                                    data-is-admin="{{ user_data.is_admin|lower }}">
+                                {% if user_data.is_admin %}👑 Remove Admin{% else %}👑 Make Admin{% endif %}
                             </button>
                             <button class="btn btn-sm btn-danger delete-user" data-user-id="{{ user_data.user.id }}" data-username="{{ user_data.user.username }}">
                                 🗑️ Delete
