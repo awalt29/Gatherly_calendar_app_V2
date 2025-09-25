@@ -29,6 +29,24 @@ def is_admin():
         # If is_admin field doesn't exist, fall back to user ID check
         return current_user.id == 1
 
+@bp.route('/debug')
+@login_required
+def debug():
+    """Debug admin status"""
+    try:
+        user_info = {
+            'user_id': current_user.id,
+            'email': current_user.email,
+            'username': getattr(current_user, 'username', 'None'),
+            'has_is_admin_field': hasattr(current_user, 'is_admin'),
+            'is_admin_value': getattr(current_user, 'is_admin', 'Field not found'),
+            'fallback_check': current_user.id == 1,
+            'is_admin_function_result': is_admin()
+        }
+        return f"<h1>Admin Debug</h1><pre>{user_info}</pre>"
+    except Exception as e:
+        return f"<h1>Debug Error</h1><p>{str(e)}</p>"
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
