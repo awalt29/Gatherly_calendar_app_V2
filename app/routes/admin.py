@@ -51,6 +51,20 @@ def debug():
     except Exception as e:
         return f"<h1>Debug Error</h1><p>{str(e)}</p>"
 
+@bp.route('/fix-admin')
+@login_required
+def fix_admin():
+    """Fix admin status for user ID 1"""
+    if current_user.id != 1:
+        return "Only user ID 1 can use this fix"
+    
+    try:
+        current_user.is_admin = True
+        db.session.commit()
+        return f"<h1>Fixed!</h1><p>User {current_user.email} (ID: {current_user.id}) is now properly set as admin.</p><p><a href='/admin/debug'>Check debug</a></p>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{str(e)}</p>"
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
