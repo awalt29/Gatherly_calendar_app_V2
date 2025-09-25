@@ -22,7 +22,12 @@ bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def is_admin():
     """Check if current user is admin"""
-    return current_user.is_admin
+    # Ensure the is_admin field exists
+    try:
+        return current_user.is_admin
+    except AttributeError:
+        # If is_admin field doesn't exist, fall back to user ID check
+        return current_user.id == 1
 
 @bp.route('/dashboard')
 @login_required
