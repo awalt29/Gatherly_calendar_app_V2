@@ -108,6 +108,76 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Mobile Users Cards -->
+        <div class="mobile-users">
+            {% for user_data in user_stats %}
+            <div class="mobile-user-card" data-user-id="{{ user_data.user.id }}">
+                <div class="mobile-user-header">
+                    <div class="user-avatar">
+                        {{ (user_data.user.first_name or user_data.user.email)[0]|upper }}
+                    </div>
+                    <div class="mobile-user-info">
+                        <h3>{{ user_data.user.first_name or user_data.user.email }}
+                            {% if user_data.user.last_name %}{{ user_data.user.last_name }}{% endif %}</h3>
+                        <p>{{ user_data.user.email }}</p>
+                        <p>ID: {{ user_data.user.id }}</p>
+                    </div>
+                </div>
+                
+                <div class="mobile-user-details">
+                    <div class="mobile-user-detail">
+                        <strong>Phone:</strong><br>
+                        {{ user_data.user.phone or 'Not provided' }}
+                    </div>
+                    <div class="mobile-user-detail">
+                        <strong>Friends:</strong><br>
+                        👥 {{ user_data.friend_count }}
+                    </div>
+                    <div class="mobile-user-detail">
+                        <strong>Availability:</strong><br>
+                        📅 {{ user_data.availability_count }} records
+                    </div>
+                    <div class="mobile-user-detail">
+                        <strong>Created:</strong><br>
+                        {{ user_data.user.created_at.strftime('%m/%d/%Y') if user_data.user.created_at else 'Unknown' }}
+                    </div>
+                </div>
+                
+                <div class="mobile-badges">
+                    {% if user_data.is_admin %}
+                    <span class="badge admin-badge">👑 Admin</span>
+                    {% endif %}
+                    {% if user_data.has_google_calendar %}
+                    <span class="badge google-connected">📅 Google Calendar</span>
+                    {% endif %}
+                    {% if user_data.has_default_schedule %}
+                    <span class="badge default-schedule">⏰ Default Schedule</span>
+                    {% endif %}
+                    {% if user_data.user.sms_notifications %}
+                    <span class="badge sms-enabled">SMS ✓</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mobile-actions">
+                    <button class="btn btn-sm btn-outline view-details" data-user-id="{{ user_data.user.id }}">
+                        👁️ Details
+                    </button>
+                    {% if user_data.user.id != current_user.id %}
+                    <button class="btn btn-sm {% if user_data.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
+                            data-user-id="{{ user_data.user.id }}" 
+                            data-username="{{ user_data.user.username }}"
+                            data-is-admin="{{ user_data.is_admin|lower }}">
+                        {% if user_data.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-user" data-user-id="{{ user_data.user.id }}" data-username="{{ user_data.user.username }}">
+                        🗑️ Delete
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -435,20 +505,109 @@
     color: var(--text-muted);
 }
 
-/* Responsive */
+/* Mobile Responsive */
 @media (max-width: 768px) {
-    .users-table {
-        font-size: var(--font-size-sm);
+    .admin-dashboard {
+        padding: var(--space-4);
     }
     
-    .users-table th,
-    .users-table td {
-        padding: var(--space-2);
+    .page-title {
+        font-size: 2rem;
     }
     
-    .actions {
-        flex-direction: column;
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-2);
     }
+    
+    .stat-card {
+        padding: var(--space-4);
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    /* Hide the table and show mobile cards instead */
+    .table-container {
+        display: none;
+    }
+    
+    .mobile-users {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-users {
+        display: none;
+    }
+}
+
+/* Mobile user cards */
+.mobile-users {
+    display: none;
+}
+
+.mobile-user-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-user-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.mobile-user-info h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+}
+
+.mobile-user-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.mobile-user-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.mobile-user-detail {
+    color: var(--text-secondary);
+}
+
+.mobile-user-detail strong {
+    color: var(--text-primary);
+}
+
+.mobile-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+}
+
+.mobile-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.mobile-actions .btn {
+    flex: 1;
+    min-width: 120px;
 }
 </style>
 
