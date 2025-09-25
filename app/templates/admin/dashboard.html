@@ -82,6 +82,9 @@
                             </div>
                         </td>
                         <td class="integrations">
+                            {% if user_data.user.is_admin %}
+                            <span class="badge admin-badge">👑 Admin</span>
+                            {% endif %}
                             {% if user_data.has_google_calendar %}
                             <span class="badge google-connected">📅 Google Calendar</span>
                             {% endif %}
@@ -94,6 +97,12 @@
                                 👁️ View Details
                             </button>
                             {% if user_data.user.id != current_user.id %}
+                            <button class="btn btn-sm {% if user_data.user.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
+                                    data-user-id="{{ user_data.user.id }}" 
+                                    data-username="{{ user_data.user.username }}"
+                                    data-is-admin="{{ user_data.user.is_admin|lower }}">
+                                {% if user_data.user.is_admin %}👑 Remove Admin{% else %}👑 Make Admin{% endif %}
+                            </button>
                             <button class="btn btn-sm btn-danger delete-user" data-user-id="{{ user_data.user.id }}" data-username="{{ user_data.user.username }}">
                                 🗑️ Delete
                             </button>
@@ -307,6 +316,11 @@
     color: #7c3aed;
 }
 
+.admin-badge {
+    background: rgba(251, 191, 36, 0.1);
+    color: #d97706;
+}
+
 .actions {
     display: flex;
     flex-direction: column;
@@ -337,6 +351,26 @@
 
 .btn-danger:hover {
     background: #b91c1c;
+}
+
+.btn-success {
+    background: #16a34a;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #15803d;
+}
+
+.btn-warning {
+    background: #d97706;
+    color: white;
+    border: none;
+}
+
+.btn-warning:hover {
+    background: #b45309;
 }
 
 /* Modal styles */
@@ -438,6 +472,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.getAttribute('data-user-id');
             const username = this.getAttribute('data-username');
             showDeleteConfirmation(userId, username);
+        });
+    });
+
+    // Toggle Admin functionality
+    document.querySelectorAll('.toggle-admin').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const username = this.getAttribute('data-username');
+            const isAdmin = this.getAttribute('data-is-admin') === 'true';
+            toggleAdminStatus(userId, username, isAdmin, this);
         });
     });
 
@@ -577,6 +621,64 @@ function deleteUser(userId, username) {
     .finally(() => {
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Delete User';
+    });
+}
+
+function toggleAdminStatus(userId, username, isCurrentlyAdmin, buttonElement) {
+    const action = isCurrentlyAdmin ? 'revoke' : 'grant';
+    const confirmMessage = `Are you sure you want to ${action} admin privileges for ${username}?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    buttonElement.disabled = true;
+    buttonElement.textContent = isCurrentlyAdmin ? 'Removing...' : 'Granting...';
+    
+    fetch(`/admin/toggle-admin/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the button
+            const newIsAdmin = data.is_admin;
+            buttonElement.setAttribute('data-is-admin', newIsAdmin);
+            buttonElement.textContent = newIsAdmin ? '👑 Remove Admin' : '👑 Make Admin';
+            buttonElement.className = buttonElement.className.replace(
+                newIsAdmin ? 'btn-success' : 'btn-warning',
+                newIsAdmin ? 'btn-warning' : 'btn-success'
+            );
+            
+            // Update the admin badge in the integrations column
+            const userRow = buttonElement.closest('tr');
+            const integrationsCell = userRow.querySelector('.integrations');
+            const existingAdminBadge = integrationsCell.querySelector('.admin-badge');
+            
+            if (newIsAdmin && !existingAdminBadge) {
+                // Add admin badge
+                const adminBadge = document.createElement('span');
+                adminBadge.className = 'badge admin-badge';
+                adminBadge.textContent = '👑 Admin';
+                integrationsCell.insertBefore(adminBadge, integrationsCell.firstChild);
+            } else if (!newIsAdmin && existingAdminBadge) {
+                // Remove admin badge
+                existingAdminBadge.remove();
+            }
+            
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error || 'Failed to update admin status', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification(`Error: ${error.message}`, 'error');
+    })
+    .finally(() => {
+        buttonElement.disabled = false;
     });
 }
 

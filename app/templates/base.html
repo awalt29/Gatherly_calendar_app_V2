@@ -54,7 +54,7 @@
                         <a href="{{ url_for('settings.index') }}" class="nav-link {% if request.endpoint == 'settings.index' %}active{% endif %}">
                             Settings
                         </a>
-                        {% if current_user.id == 1 or current_user.email in ['aaronwalters@gmail.com', 'admin@trygatherly.com'] %}
+                        {% if current_user.is_admin %}
                         <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
                             🛠️ Admin
                         </a>

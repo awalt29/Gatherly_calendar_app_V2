@@ -8,7 +8,7 @@ from app.services.sms_service import sms_service
 from app.tasks.google_calendar_scheduler import google_calendar_scheduler
 from app.services.google_calendar_service import google_calendar_service
 from app.models.user import User
-from app.models.friendship import Friendship
+from app.models.friend import Friend
 from app.models.availability import Availability
 from app.models.default_schedule import DefaultSchedule
 from app.models.google_calendar_sync import GoogleCalendarSync
@@ -21,9 +21,8 @@ logger = logging.getLogger(__name__)
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def is_admin():
-    """Check if current user is admin (you can customize this logic)"""
-    # For now, let's make the first user or users with specific emails admin
-    return current_user.id == 1 or current_user.email in ['aaronwalters@gmail.com', 'admin@trygatherly.com']
+    """Check if current user is admin"""
+    return current_user.is_admin
 
 @bp.route('/dashboard')
 @login_required
@@ -41,9 +40,9 @@ def dashboard():
         user_stats = []
         for user in users:
             # Count friendships
-            friend_count = Friendship.query.filter(
-                (Friendship.user_id == user.id) | (Friendship.friend_id == user.id),
-                Friendship.status == 'accepted'
+            friend_count = Friend.query.filter(
+                (Friend.user_id == user.id) | (Friend.friend_id == user.id),
+                Friend.status == 'accepted'
             ).count()
             
             # Count availability records
@@ -93,8 +92,8 @@ def delete_user(user_id):
         
         # Delete all user-related data
         # 1. Delete friendships
-        Friendship.query.filter(
-            (Friendship.user_id == user_id) | (Friendship.friend_id == user_id)
+        Friend.query.filter(
+            (Friend.user_id == user_id) | (Friend.friend_id == user_id)
         ).delete()
         
         # 2. Delete availability records
@@ -133,11 +132,11 @@ def user_details(user_id):
         user = User.query.get_or_404(user_id)
         
         # Get friendships
-        friendships = db.session.query(Friendship, User).join(
+        friendships = db.session.query(Friend, User).join(
             User, 
-            (User.id == Friendship.friend_id) if Friendship.user_id == user_id else (User.id == Friendship.user_id)
+            (User.id == Friend.friend_id) if Friend.user_id == user_id else (User.id == Friend.user_id)
         ).filter(
-            (Friendship.user_id == user_id) | (Friendship.friend_id == user_id)
+            (Friend.user_id == user_id) | (Friend.friend_id == user_id)
         ).all()
         
         # Get recent availability
@@ -183,6 +182,35 @@ def user_details(user_id):
     except Exception as e:
         logger.error(f"Error getting user details for {user_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/toggle-admin/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_admin(user_id):
+    """Toggle admin status for a user"""
+    if not is_admin():
+        return jsonify({'error': 'Access denied'}), 403
+    
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot modify your own admin status'}), 400
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        user.is_admin = not user.is_admin
+        db.session.commit()
+        
+        action = 'granted' if user.is_admin else 'revoked'
+        logger.info(f"Admin {current_user.username} {action} admin privileges for user {user.username} (ID: {user_id})")
+        
+        return jsonify({
+            'success': True,
+            'is_admin': user.is_admin,
+            'message': f'Admin privileges {action} for {user.username}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error toggling admin status for user {user_id}: {str(e)}")
+        return jsonify({'error': f'Failed to update admin status: {str(e)}'}), 500
 
 @bp.route('/test-sms', methods=['POST'])
 @login_required

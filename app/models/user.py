@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(64))
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
     sms_notifications = db.Column(db.Boolean, default=False)
     
     # Google Calendar integration
