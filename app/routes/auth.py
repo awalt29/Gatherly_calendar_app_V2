@@ -158,9 +158,9 @@ def forgot_password():
                 base_url = os.environ.get('APP_BASE_URL', 'https://web-production-b922e.up.railway.app')
                 reset_url = f"{base_url}/auth/reset-password/{token}"
                 
-                # For now, show the reset link directly (temporary solution)
-                flash(f'Email service is temporarily unavailable. Use this reset link: {reset_url}', 'info')
-                logger.info(f"Password reset token generated for {email}. Direct link provided.")
+                # Email service unavailable - don't expose reset tokens
+                flash('Password reset is temporarily unavailable. Please contact support for assistance.', 'error')
+                logger.info(f"Password reset requested for {email} but email service unavailable")
             else:
                 # For security, don't reveal if email exists or not
                 flash('If an account with that email exists, password reset instructions would be provided.', 'info')
