@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.models.user import User
@@ -91,6 +91,23 @@ def signup():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
+
+@bp.route('/test-email-config')
+def test_email_config():
+    """Test endpoint to check email configuration"""
+    try:
+        config_status = {
+            'is_configured': is_email_configured(),
+            'mail_server': current_app.config.get('MAIL_SERVER'),
+            'mail_port': current_app.config.get('MAIL_PORT'),
+            'mail_use_tls': current_app.config.get('MAIL_USE_TLS'),
+            'mail_username': current_app.config.get('MAIL_USERNAME'),
+            'mail_default_sender': current_app.config.get('MAIL_DEFAULT_SENDER'),
+            'has_mail_password': bool(current_app.config.get('MAIL_PASSWORD'))
+        }
+        return f"<pre>{config_status}</pre>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{str(e)}</p>"
 
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
