@@ -9,6 +9,9 @@ class Group(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Group type: 'private' or 'shared'
+    group_type = db.Column(db.String(20), default='private')
+    
     # Settings for notifications
     notifications_enabled = db.Column(db.Boolean, default=True)
     
@@ -48,6 +51,14 @@ class Group(db.Model):
             db.session.delete(membership)
             return True
         return False
+    
+    def is_shared(self):
+        """Check if this is a shared group"""
+        return self.group_type == 'shared'
+    
+    def can_member_leave(self, user_id):
+        """Check if a user can leave the group (everyone except creator)"""
+        return user_id != self.created_by_id
     
     def to_dict(self):
         """Convert group to dictionary for JSON responses"""

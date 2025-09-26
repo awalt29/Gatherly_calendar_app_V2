@@ -13,14 +13,14 @@ bp = Blueprint('groups', __name__)  # Changed from 'preferences' to 'groups'
 @login_required
 def index():
     """Groups page - manage friend groups and availability alerts"""
-    # Get user's groups (both created and member of)
+    # Get user's created groups (private and shared)
     created_groups = Group.query.filter_by(created_by_id=current_user.id).all()
     
-    # Get groups user is a member of (but didn't create)
+    # Get shared groups user is a member of (includes created and joined)
     member_group_ids = [m.group_id for m in current_user.group_memberships if m.status == 'active']
-    member_groups = Group.query.filter(
+    shared_groups = Group.query.filter(
         Group.id.in_(member_group_ids),
-        Group.created_by_id != current_user.id
+        Group.group_type == 'shared'
     ).all() if member_group_ids else []
     
     # Get user's friends for adding to groups
@@ -28,7 +28,7 @@ def index():
     
     return render_template('groups/index.html', 
                          created_groups=created_groups,
-                         member_groups=member_groups,
+                         shared_groups=shared_groups,
                          friends=friends)
 
 @bp.route('/groups/create', methods=['POST'])
@@ -39,6 +39,7 @@ def create_group():
         data = request.get_json() if request.is_json else request.form
         
         name = data.get('name', '').strip()
+        group_type = data.get('group_type', 'private').strip()
         member_ids = data.getlist('member_ids') if hasattr(data, 'getlist') else data.get('member_ids', [])
         
         # Validation
@@ -58,10 +59,15 @@ def create_group():
                 flash(error_msg, 'error')
                 return redirect(url_for('groups.index'))
         
+        # Validate group_type
+        if group_type not in ['private', 'shared']:
+            group_type = 'private'
+        
         # Create the group
         group = Group(
             name=name,
-            created_by_id=current_user.id
+            created_by_id=current_user.id,
+            group_type=group_type
         )
         db.session.add(group)
         db.session.flush()  # Get the group ID
