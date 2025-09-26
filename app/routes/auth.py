@@ -122,30 +122,59 @@ def forgot_password():
             return render_template('auth/forgot_password.html')
         
         try:
+            logger.info(f"Password reset form submitted for email: {email}")
+            
             # Check if email is configured
             if not is_email_configured():
                 flash('Email service is not configured. Please add email settings to Railway.', 'error')
                 logger.error("Email service not configured - missing MAIL_USERNAME or MAIL_PASSWORD")
                 return render_template('auth/forgot_password.html')
             
+            logger.info("Email service is configured, proceeding with user lookup")
+            
             user = User.query.filter_by(email=email).first()
             logger.info(f"Password reset requested for email: {email}, user found: {bool(user)}")
             
             if user:
+                logger.info(f"Generating reset token for user {user.id}")
+                # Generate token first
+                try:
+                    token = user.generate_reset_token()
+                    logger.info(f"Reset token generated: {token[:10]}...")
+                except Exception as token_error:
+                    logger.error(f"Error generating reset token: {str(token_error)}")
+                    raise token_error
+                
+                # Save token to database
+                try:
+                    db.session.commit()
+                    logger.info("Reset token saved to database")
+                except Exception as db_error:
+                    logger.error(f"Error saving reset token to database: {str(db_error)}")
+                    raise db_error
+                
                 # Send password reset email
-                if send_password_reset_email(user):
-                    db.session.commit()  # Save the reset token
-                    flash('Password reset instructions have been sent to your email.', 'success')
-                    logger.info(f"Password reset email sent successfully to {email}")
-                else:
+                logger.info("Attempting to send password reset email")
+                try:
+                    email_sent = send_password_reset_email(user)
+                    if email_sent:
+                        flash('Password reset instructions have been sent to your email.', 'success')
+                        logger.info(f"Password reset email sent successfully to {email}")
+                    else:
+                        flash('Failed to send reset email. Please try again later.', 'error')
+                        logger.error(f"Failed to send password reset email to {email}")
+                except Exception as email_error:
+                    logger.error(f"Error in send_password_reset_email: {str(email_error)}")
                     flash('Failed to send reset email. Please try again later.', 'error')
-                    logger.error(f"Failed to send password reset email to {email}")
             else:
                 # For security, don't reveal if email exists or not
                 flash('If an account with that email exists, password reset instructions have been sent.', 'info')
                 logger.info(f"Password reset requested for non-existent email: {email}")
         except Exception as e:
             logger.error(f"Error in forgot password: {str(e)}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             flash('An error occurred. Please try again later.', 'error')
             return render_template('auth/forgot_password.html')
         
