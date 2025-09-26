@@ -3,6 +3,9 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.models.user import User
 from app.services.email_service import send_password_reset_email, is_email_configured
+import logging
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('auth', __name__)
 
@@ -104,24 +107,28 @@ def forgot_password():
         try:
             # Check if email is configured
             if not is_email_configured():
-                flash('Email service is not configured. Please contact support.', 'error')
+                flash('Email service is not configured. Please add email settings to Railway.', 'error')
+                logger.error("Email service not configured - missing MAIL_USERNAME or MAIL_PASSWORD")
                 return render_template('auth/forgot_password.html')
             
             user = User.query.filter_by(email=email).first()
+            logger.info(f"Password reset requested for email: {email}, user found: {bool(user)}")
             
             if user:
                 # Send password reset email
                 if send_password_reset_email(user):
                     db.session.commit()  # Save the reset token
                     flash('Password reset instructions have been sent to your email.', 'success')
+                    logger.info(f"Password reset email sent successfully to {email}")
                 else:
                     flash('Failed to send reset email. Please try again later.', 'error')
+                    logger.error(f"Failed to send password reset email to {email}")
             else:
                 # For security, don't reveal if email exists or not
                 flash('If an account with that email exists, password reset instructions have been sent.', 'info')
+                logger.info(f"Password reset requested for non-existent email: {email}")
         except Exception as e:
-            import logging
-            logging.error(f"Error in forgot password: {str(e)}")
+            logger.error(f"Error in forgot password: {str(e)}")
             flash('An error occurred. Please try again later.', 'error')
             return render_template('auth/forgot_password.html')
         
