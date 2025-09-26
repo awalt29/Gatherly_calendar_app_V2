@@ -109,6 +109,25 @@ def test_email_config():
     except Exception as e:
         return f"<h1>Error</h1><p>{str(e)}</p>"
 
+@bp.route('/test-send-email')
+def test_send_email():
+    """Test endpoint to try sending a simple email"""
+    try:
+        from app.services.email_service import send_email
+        
+        # Try to send a simple test email
+        success = send_email(
+            to=current_app.config.get('MAIL_USERNAME'),  # Send to self
+            subject='Gatherly Email Test',
+            template='email/test_email.html',
+            test_message='This is a test email from Gatherly'
+        )
+        
+        return f"<h1>Email Test</h1><p>Success: {success}</p><p>Check logs for details</p>"
+    except Exception as e:
+        import traceback
+        return f"<h1>Email Test Error</h1><p>{str(e)}</p><pre>{traceback.format_exc()}</pre>"
+
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if current_user.is_authenticated:

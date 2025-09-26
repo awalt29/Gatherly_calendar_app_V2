@@ -8,17 +8,41 @@ logger = logging.getLogger(__name__)
 def send_email(to, subject, template, **kwargs):
     """Send an email using Flask-Mail"""
     try:
+        logger.info(f"Attempting to send email to {to} with subject: {subject}")
         msg = Message(
             subject=subject,
             recipients=[to],
             sender=current_app.config['MAIL_DEFAULT_SENDER']
         )
+        logger.info("Message object created, rendering template...")
         msg.html = render_template(template, **kwargs)
-        mail.send(msg)
-        logger.info(f"Email sent successfully to {to}")
-        return True
+        logger.info("Template rendered, sending email...")
+        
+        # Add timeout handling
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Email sending timed out after 15 seconds")
+        
+        # Set timeout for email sending
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(15)  # 15 second timeout
+        
+        try:
+            mail.send(msg)
+            signal.alarm(0)  # Cancel timeout
+            logger.info(f"Email sent successfully to {to}")
+            return True
+        except TimeoutError as te:
+            signal.alarm(0)  # Cancel timeout
+            logger.error(f"Email sending timed out for {to}: {str(te)}")
+            return False
+            
     except Exception as e:
         logger.error(f"Failed to send email to {to}: {str(e)}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Email error traceback: {traceback.format_exc()}")
         return False
 
 def send_password_reset_email(user):
