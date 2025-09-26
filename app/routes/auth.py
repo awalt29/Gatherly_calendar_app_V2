@@ -101,23 +101,29 @@ def forgot_password():
             flash('Please enter your email address.', 'error')
             return render_template('auth/forgot_password.html')
         
-        # Check if email is configured
-        if not is_email_configured():
-            flash('Email service is not configured. Please contact support.', 'error')
-            return render_template('auth/forgot_password.html')
-        
-        user = User.query.filter_by(email=email).first()
-        
-        if user:
-            # Send password reset email
-            if send_password_reset_email(user):
-                db.session.commit()  # Save the reset token
-                flash('Password reset instructions have been sent to your email.', 'success')
+        try:
+            # Check if email is configured
+            if not is_email_configured():
+                flash('Email service is not configured. Please contact support.', 'error')
+                return render_template('auth/forgot_password.html')
+            
+            user = User.query.filter_by(email=email).first()
+            
+            if user:
+                # Send password reset email
+                if send_password_reset_email(user):
+                    db.session.commit()  # Save the reset token
+                    flash('Password reset instructions have been sent to your email.', 'success')
+                else:
+                    flash('Failed to send reset email. Please try again later.', 'error')
             else:
-                flash('Failed to send reset email. Please try again later.', 'error')
-        else:
-            # For security, don't reveal if email exists or not
-            flash('If an account with that email exists, password reset instructions have been sent.', 'info')
+                # For security, don't reveal if email exists or not
+                flash('If an account with that email exists, password reset instructions have been sent.', 'info')
+        except Exception as e:
+            import logging
+            logging.error(f"Error in forgot password: {str(e)}")
+            flash('An error occurred. Please try again later.', 'error')
+            return render_template('auth/forgot_password.html')
         
         return redirect(url_for('auth.login'))
     

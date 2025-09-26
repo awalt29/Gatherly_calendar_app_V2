@@ -23,19 +23,25 @@ def send_email(to, subject, template, **kwargs):
 
 def send_password_reset_email(user):
     """Send password reset email to user"""
-    token = user.generate_reset_token()
-    
-    # For development, we'll use localhost. In production, use your domain
-    reset_url = f"http://localhost:5004/auth/reset-password/{token}"
-    
-    return send_email(
-        to=user.email,
-        subject='Reset Your Gatherly Password',
-        template='email/password_reset.html',
-        user=user,
-        reset_url=reset_url,
-        token=token
-    )
+    try:
+        token = user.generate_reset_token()
+        
+        # Use the appropriate domain based on environment
+        import os
+        base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
+        reset_url = f"{base_url}/auth/reset-password/{token}"
+        
+        return send_email(
+            to=user.email,
+            subject='Reset Your Gatherly Password',
+            template='email/password_reset.html',
+            user=user,
+            reset_url=reset_url,
+            token=token
+        )
+    except Exception as e:
+        logger.error(f"Error in send_password_reset_email: {str(e)}")
+        return False
 
 def is_email_configured():
     """Check if email is properly configured"""
