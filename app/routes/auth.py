@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.models.user import User
 from app.services.email_service import send_password_reset_email, is_email_configured
+from app.services.sendgrid_service import sendgrid_service
 import logging
 import os
 
@@ -129,6 +130,35 @@ def test_send_email():
         import traceback
         return f"<h1>Email Test Error</h1><p>{str(e)}</p><pre>{traceback.format_exc()}</pre>"
 
+@bp.route('/test-sendgrid')
+def test_sendgrid():
+    """Test SendGrid email service"""
+    try:
+        config_status = {
+            'is_configured': sendgrid_service.is_configured(),
+            'has_api_key': bool(sendgrid_service.api_key),
+            'from_email': sendgrid_service.from_email,
+            'api_key_preview': sendgrid_service.api_key[:10] + '...' if sendgrid_service.api_key else None
+        }
+        
+        # Try sending a test email if configured
+        if sendgrid_service.is_configured():
+            test_email = sendgrid_service.from_email
+            html_content = "<h1>SendGrid Test</h1><p>This is a test email from Gatherly using SendGrid!</p>"
+            
+            success = sendgrid_service.send_email(
+                to_email=test_email,
+                subject='Gatherly SendGrid Test',
+                html_content=html_content
+            )
+            
+            config_status['test_email_sent'] = success
+        
+        return f"<h1>SendGrid Test</h1><pre>{config_status}</pre>"
+    except Exception as e:
+        import traceback
+        return f"<h1>SendGrid Test Error</h1><p>{str(e)}</p><pre>{traceback.format_exc()}</pre>"
+
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if current_user.is_authenticated:
@@ -149,18 +179,36 @@ def forgot_password():
             
             if user:
                 logger.info(f"Generating reset token for user {user.id}")
-                # Generate token and save to database
-                token = user.generate_reset_token()
-                db.session.commit()
-                logger.info(f"Reset token generated and saved: {token[:10]}...")
                 
-                # Since email is not working, provide the reset link directly
-                base_url = os.environ.get('APP_BASE_URL', 'https://web-production-b922e.up.railway.app')
-                reset_url = f"{base_url}/auth/reset-password/{token}"
-                
-                # Email service unavailable - don't expose reset tokens
-                flash('Password reset is temporarily unavailable. Please contact support for assistance.', 'error')
-                logger.info(f"Password reset requested for {email} but email service unavailable")
+                # Try SendGrid first, then fall back to SMTP
+                if sendgrid_service.is_configured():
+                    logger.info("Using SendGrid for password reset email")
+                    email_sent = sendgrid_service.send_password_reset_email(user)
+                    
+                    if email_sent:
+                        db.session.commit()  # Save the reset token
+                        flash('Password reset instructions have been sent to your email.', 'success')
+                        logger.info(f"Password reset email sent successfully via SendGrid to {email}")
+                    else:
+                        flash('Failed to send reset email. Please try again later.', 'error')
+                        logger.error(f"Failed to send password reset email via SendGrid to {email}")
+                        
+                elif is_email_configured():
+                    logger.info("Using SMTP for password reset email")
+                    # Generate token and save to database
+                    token = user.generate_reset_token()
+                    db.session.commit()
+                    
+                    email_sent = send_password_reset_email(user)
+                    if email_sent:
+                        flash('Password reset instructions have been sent to your email.', 'success')
+                        logger.info(f"Password reset email sent successfully via SMTP to {email}")
+                    else:
+                        flash('Failed to send reset email. Please try again later.', 'error')
+                        logger.error(f"Failed to send password reset email via SMTP to {email}")
+                else:
+                    flash('Email service is not configured. Please contact support for assistance.', 'error')
+                    logger.error("Neither SendGrid nor SMTP email service is configured")
             else:
                 # For security, don't reveal if email exists or not
                 flash('If an account with that email exists, password reset instructions would be provided.', 'info')
