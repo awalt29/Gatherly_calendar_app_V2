@@ -70,7 +70,7 @@
             <h2 class="section-title">Shared Groups</h2>
             <div class="groups-list">
                 {% for group in shared_groups %}
-                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }})">
+                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="console.log('Card clicked!'); openGroupModal({{ group.id }});">
                         <div class="shared-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
                         </div>
@@ -1186,7 +1186,7 @@
 }
 
 .group-modal-content {
-    background: var(--card-bg);
+    background: var(--card-background);
     border-radius: 16px;
     width: 90%;
     max-width: 600px;
@@ -1199,7 +1199,7 @@
 
 .modal-header {
     padding: 24px 24px 16px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1223,7 +1223,7 @@
 }
 
 .modal-close-btn:hover {
-    background: var(--hover-bg);
+    background: var(--background-secondary);
 }
 
 .modal-body {
@@ -1265,7 +1265,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    background: var(--hover-bg);
+    background: var(--background-secondary);
     border-radius: 8px;
     font-size: 0.9rem;
 }
@@ -1277,7 +1277,7 @@
 }
 
 .modal-activity-section {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
     padding-top: 24px;
 }
 
@@ -1292,8 +1292,8 @@
 
 .modal-footer {
     padding: 16px 24px;
-    border-top: 1px solid var(--border-color);
-    background: var(--hover-bg);
+    border-top: 1px solid var(--border);
+    background: var(--background-secondary);
 }
 
 .modal-actions {
@@ -1747,6 +1747,7 @@ let currentModalGroupData = null;
 // Open group modal
 function openGroupModal(groupId) {
     console.log('Opening modal for group:', groupId);
+    console.log('Modal element:', document.getElementById('groupModal'));
     currentModalGroupId = groupId;
     
     // Fetch group details
