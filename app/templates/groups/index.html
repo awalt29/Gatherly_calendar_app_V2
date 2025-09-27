@@ -64,22 +64,24 @@
         </div>
     {% endif %}
     
-    <!-- Groups You're In -->
-    {% if member_groups %}
+    <!-- Shared Groups -->
+    {% if shared_groups %}
         <div class="friends-section">
-            <h2 class="section-title">Groups You're In</h2>
+            <h2 class="section-title">Shared Groups</h2>
             <div class="groups-list">
-                {% for group in member_groups %}
-                    <div class="group-card member-group" data-group-id="{{ group.id }}">
+                {% for group in shared_groups %}
+                    <div class="group-card shared-group" data-group-id="{{ group.id }}">
                         <div class="group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
                             <div class="group-creator">
                                 Created by {{ group.created_by.get_full_name() }}
                             </div>
+                            {% if group.created_by_id != current_user.id %}
                             <button class="btn btn-small btn-secondary leave-group-btn" 
                                     data-group-id="{{ group.id }}">
                                 Leave
                             </button>
+                            {% endif %}
                         </div>
                         
                         {% if group.description %}
@@ -92,10 +94,26 @@
                                 <span class="stat-value">{{ group.get_member_count() }}</span>
                             </div>
                             <div class="group-stat">
-                                <span class="stat-label">Alerts:</span>
-                                <span class="stat-value">
-                                    {% if group.notifications_enabled %}✅ On{% else %}❌ Off{% endif %}
-                                </span>
+                                <span class="stat-label">Type:</span>
+                                <span class="stat-value">Shared</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity Queue for Shared Groups -->
+                        <div class="activity-queue">
+                            <h4 class="activity-title">🍽️ Activity Queue</h4>
+                            <div class="add-activity">
+                                <input type="text" 
+                                       class="activity-input" 
+                                       placeholder="Add a venue (e.g., Joe's Pizza)"
+                                       data-group-id="{{ group.id }}">
+                                <button class="btn btn-small btn-primary add-activity-btn" 
+                                        data-group-id="{{ group.id }}">
+                                    Add
+                                </button>
+                            </div>
+                            <div class="activity-list" data-group-id="{{ group.id }}">
+                                <!-- Activities will be loaded here via JavaScript -->
                             </div>
                         </div>
                         
@@ -157,6 +175,37 @@
                         </label>
                         <input type="text" id="group_name" name="name" class="form-input modern-input" 
                                placeholder="e.g., College Friends, Work Buddies, Gaming Squad" required maxlength="100">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon">⚙️</span>
+                            Group Type
+                        </label>
+                        <div class="group-type-options">
+                            <label class="group-type-option">
+                                <input type="radio" name="group_type" value="private" checked class="group-type-radio">
+                                <div class="group-type-card">
+                                    <div class="group-type-icon">🔒</div>
+                                    <div class="group-type-info">
+                                        <h4 class="group-type-title">Private</h4>
+                                        <p class="group-type-desc">Only you can see and manage this group</p>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="group-type-option">
+                                <input type="radio" name="group_type" value="shared" class="group-type-radio">
+                                <div class="group-type-card">
+                                    <div class="group-type-icon">🤝</div>
+                                    <div class="group-type-info">
+                                        <h4 class="group-type-title">Shared</h4>
+                                        <p class="group-type-desc">All members can see and add activities</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 
@@ -884,6 +933,159 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Group Type Selection */
+.group-type-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+}
+
+.group-type-option {
+    cursor: pointer;
+}
+
+.group-type-radio {
+    display: none;
+}
+
+.group-type-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    background: var(--card-background);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.group-type-option:hover .group-type-card {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
+}
+
+.group-type-radio:checked + .group-type-card {
+    border-color: var(--primary);
+    background: rgba(0, 104, 177, 0.1);
+}
+
+.group-type-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.group-type-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.group-type-desc {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Activity Queue */
+.activity-queue {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    background: rgba(0, 104, 177, 0.05);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 104, 177, 0.1);
+}
+
+.activity-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-3) 0;
+}
+
+.add-activity {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.activity-input {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card-background);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.activity-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 104, 177, 0.1);
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.activity-venue {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.activity-meta {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+.activity-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.activity-status {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.activity-status.pending {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.activity-status.completed {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+}
+
+@media (max-width: 768px) {
+    .group-type-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .add-activity {
+        flex-direction: column;
+    }
+}
+
 </style>
 
 <script>
