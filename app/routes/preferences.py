@@ -266,14 +266,12 @@ def get_group_details(group_id):
         
         # Get all group members
         members = []
-        for membership in group.group_memberships:
-            if membership.status == 'active':
-                user = membership.user
-                members.append({
-                    'id': user.id,
-                    'name': user.get_full_name(),
-                    'initials': user.get_initials()
-                })
+        for user in group.get_members():
+            members.append({
+                'id': user.id,
+                'name': user.get_full_name(),
+                'initials': user.get_initials()
+            })
         
         group_data = {
             'id': group.id,
