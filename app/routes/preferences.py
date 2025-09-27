@@ -276,7 +276,6 @@ def get_group_details(group_id):
         group_data = {
             'id': group.id,
             'name': group.name,
-            'description': group.description,
             'group_type': group.group_type,
             'created_by': {
                 'id': group.created_by.id,
