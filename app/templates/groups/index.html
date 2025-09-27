@@ -75,7 +75,7 @@
                             <h3 class="group-name">{{ group.name }}</h3>
                         </div>
                         
-                        <div class="group-members">
+                        <div class="group-members centered-members">
                             {% for member in group.get_members() %}
                                 <div class="member-avatar" title="{{ member.get_full_name() }}">
                                     {{ member.get_initials() }}
@@ -1164,6 +1164,15 @@
 .shared-group-header .group-name {
     margin: 0;
     font-size: 1.1rem;
+}
+
+/* Center friend bubbles in shared group cards */
+.centered-members {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
 }
 
 /* Group Modal Styles */
