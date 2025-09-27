@@ -39,6 +39,9 @@ def create_app(config_class=Config):
 
     from app.routes.preferences import bp as groups_bp
     app.register_blueprint(groups_bp)
+    
+    from app.routes.activities import bp as activities_bp
+    app.register_blueprint(activities_bp)
 
     from app.routes.settings import bp as settings_bp
     app.register_blueprint(settings_bp)
