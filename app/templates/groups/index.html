@@ -14,7 +14,7 @@
     <!-- Your Groups -->
     {% if created_groups %}
         <div class="friends-section">
-            <h2 class="section-title">Your Groups</h2>
+            <h2 class="section-title">Your Private Groups</h2>
             <div class="groups-list">
                 {% for group in created_groups %}
                     <div class="group-card" data-group-id="{{ group.id }}">
@@ -1094,8 +1094,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Create group form submission
     if (createGroupForm) {
+        let isSubmitting = false; // Prevent double submission
+        
         createGroupForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Prevent double submission
+            if (isSubmitting) {
+                console.log('Already submitting, ignoring duplicate submission');
+                return;
+            }
+            
+            isSubmitting = true;
+            console.log('Starting group creation...');
             
             const formData = new FormData(this);
             const submitBtn = document.getElementById('submitCreateGroup');
@@ -1107,6 +1118,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 group_type: formData.get('group_type'),
                 member_ids: formData.getAll('member_ids')
             };
+            
+            console.log('Sending data:', data);
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Creating...';
@@ -1138,6 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('Error creating group. Please try again.', 'error');
             })
             .finally(() => {
+                isSubmitting = false; // Reset submission flag
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             });

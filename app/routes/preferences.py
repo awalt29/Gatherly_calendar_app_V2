@@ -13,8 +13,11 @@ bp = Blueprint('groups', __name__)  # Changed from 'preferences' to 'groups'
 @login_required
 def index():
     """Groups page - manage friend groups and availability alerts"""
-    # Get user's created groups (private and shared)
-    created_groups = Group.query.filter_by(created_by_id=current_user.id).all()
+    # Get user's created PRIVATE groups only
+    created_groups = Group.query.filter_by(
+        created_by_id=current_user.id,
+        group_type='private'
+    ).all()
     
     # Get shared groups user is a member of (includes created and joined)
     member_group_ids = [m.group_id for m in current_user.group_memberships if m.status == 'active']
