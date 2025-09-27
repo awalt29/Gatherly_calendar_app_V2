@@ -324,3 +324,43 @@ def leave_group(group_id):
         db.session.rollback()
         logger.error(f'Error leaving group: {str(e)}')
         return jsonify({'success': False, 'error': 'Error leaving group'}), 500
+
+@bp.route('/groups/<int:group_id>/update', methods=['POST'])
+@login_required
+def update_group(group_id):
+    """Update group details (name, etc.)"""
+    try:
+        group = Group.query.get_or_404(group_id)
+        
+        # Only group creator can update
+        if group.created_by_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Only group creator can update the group'}), 403
+        
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        
+        if not name:
+            return jsonify({'success': False, 'error': 'Group name is required'}), 400
+        
+        if len(name) > 100:
+            return jsonify({'success': False, 'error': 'Group name must be 100 characters or less'}), 400
+        
+        old_name = group.name
+        group.name = name
+        db.session.commit()
+        
+        logger.info(f'User {current_user.id} updated group {group_id} name from "{old_name}" to "{name}"')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Group name updated to "{name}"',
+            'group': {
+                'id': group.id,
+                'name': group.name
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error updating group: {str(e)}')
+        return jsonify({'success': False, 'error': 'Error updating group'}), 500

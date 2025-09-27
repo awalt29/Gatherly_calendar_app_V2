@@ -118,12 +118,22 @@
             
             <div class="modal-footer">
                 <div class="modal-actions">
-                    <button id="modalLeaveGroupBtn" class="btn btn-secondary" style="display: none;">
-                        Leave Group
-                    </button>
-                    <button class="btn btn-secondary" onclick="closeGroupModal()">
-                        Close
-                    </button>
+                    <div class="modal-actions-left">
+                        <button id="modalLeaveGroupBtn" class="btn btn-secondary" style="display: none;">
+                            Leave Group
+                        </button>
+                    </div>
+                    <div class="modal-actions-right">
+                        <button id="modalEditGroupBtn" class="btn btn-primary" style="display: none;">
+                            Edit Group
+                        </button>
+                        <button id="modalDeleteGroupBtn" class="btn btn-danger" style="display: none;">
+                            Delete Group
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeGroupModal()">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1317,6 +1327,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+}
+
+.modal-actions-left,
+.modal-actions-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
 /* Mobile Responsive for Modal */
@@ -1338,12 +1356,19 @@
     }
     
     .modal-actions {
-        flex-direction: column-reverse;
+        flex-direction: column;
         gap: 12px;
     }
     
-    .modal-actions button {
+    .modal-actions-left,
+    .modal-actions-right {
         width: 100%;
+        justify-content: center;
+    }
+    
+    .modal-actions button {
+        flex: 1;
+        min-width: 0;
     }
 }
 
@@ -1837,13 +1862,26 @@ function populateModal(group) {
         membersList.appendChild(memberItem);
     });
     
-    // Show/hide leave button (hide for group creator)
+    // Show/hide buttons based on user permissions
     const leaveBtn = document.getElementById('modalLeaveGroupBtn');
-    if (group.created_by.id !== {{ current_user.id }}) {
-        leaveBtn.style.display = 'block';
-        leaveBtn.onclick = () => leaveGroup(group.id);
-    } else {
+    const editBtn = document.getElementById('modalEditGroupBtn');
+    const deleteBtn = document.getElementById('modalDeleteGroupBtn');
+    
+    if (group.created_by.id === {{ current_user.id }}) {
+        // User is the creator - show edit and delete buttons
         leaveBtn.style.display = 'none';
+        editBtn.style.display = 'block';
+        deleteBtn.style.display = 'block';
+        
+        editBtn.onclick = () => editGroup(group.id);
+        deleteBtn.onclick = () => deleteGroup(group.id);
+    } else {
+        // User is a member - show leave button only
+        leaveBtn.style.display = 'block';
+        editBtn.style.display = 'none';
+        deleteBtn.style.display = 'none';
+        
+        leaveBtn.onclick = () => leaveGroup(group.id);
     }
     
     // Show/hide activity queue for shared groups only
@@ -2036,6 +2074,68 @@ function leaveGroup(groupId) {
     .catch(error => {
         console.error('Error leaving group:', error);
         alert('Error leaving group');
+    });
+}
+
+// Edit group function
+function editGroup(groupId) {
+    // For now, let's implement a simple prompt-based edit
+    // Later this could be expanded to a proper edit modal
+    const newName = prompt('Enter new group name:', currentModalGroupData.name);
+    if (newName && newName.trim() && newName.trim() !== currentModalGroupData.name) {
+        updateGroupName(groupId, newName.trim());
+    }
+}
+
+// Delete group function
+function deleteGroup(groupId) {
+    const groupName = currentModalGroupData.name;
+    if (!confirm(`Are you sure you want to delete the group "${groupName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    fetch(`/groups/${groupId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeGroupModal();
+            location.reload(); // Refresh page to update groups list
+        } else {
+            alert(data.error || 'Failed to delete group');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting group:', error);
+        alert('Error deleting group');
+    });
+}
+
+// Update group name function
+function updateGroupName(groupId, newName) {
+    fetch(`/groups/${groupId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the modal title
+            document.getElementById('modalGroupName').textContent = newName;
+            currentModalGroupData.name = newName;
+            // Could also update the card in the background, but reload is simpler
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert(data.error || 'Failed to update group name');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating group name:', error);
+        alert('Error updating group name');
     });
 }
 
