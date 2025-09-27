@@ -20,18 +20,6 @@
                     <div class="group-card private-group-card" data-group-id="{{ group.id }}" onclick="console.log('Private group clicked!'); openGroupModal({{ group.id }});">
                         <div class="private-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
-                            <div class="private-group-actions" onclick="event.stopPropagation();">
-                                <label class="toggle-switch" data-group-id="{{ group.id }}">
-                                    <input type="checkbox" 
-                                           {{ 'checked' if group.notifications_enabled else '' }}
-                                           data-group-id="{{ group.id }}">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <button class="btn btn-small btn-danger group-delete-btn" 
-                                        data-group-id="{{ group.id }}">
-                                    🗑️
-                                </button>
-                            </div>
                         </div>
                         
                         <div class="group-members centered-members">
@@ -1184,8 +1172,8 @@
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     padding: 8px 12px;
 }
 
@@ -1193,14 +1181,6 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    flex: 1;
-}
-
-.private-group-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: 12px;
 }
 
 /* Group Modal Styles */
