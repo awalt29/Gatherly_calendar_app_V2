@@ -1206,6 +1206,8 @@
     align-items: center;
     z-index: 10000;
     backdrop-filter: blur(4px);
+    overscroll-behavior: contain;
+    touch-action: none;
 }
 
 .modal-overlay.active {
@@ -1222,6 +1224,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .modal-header {
@@ -1257,6 +1260,8 @@
     padding: 24px;
     overflow-y: auto;
     flex: 1;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .group-info-section {
@@ -1805,7 +1810,11 @@ function openGroupModal(groupId) {
                 currentModalGroupData = data.group;
                 populateModal(data.group);
                 document.getElementById('groupModal').classList.add('active');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                // Prevent background scrolling while allowing modal scroll
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${window.scrollY}px`;
+                document.body.style.width = '100%';
             } else {
                 console.error('Failed to fetch group details:', data.error);
                 alert('Failed to load group details');
@@ -1824,7 +1833,15 @@ function closeGroupModal(event) {
     }
     
     document.getElementById('groupModal').classList.remove('active');
-    document.body.style.overflow = ''; // Restore scrolling
+    // Restore scrolling and position
+    const scrollY = document.body.style.top;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
     currentModalGroupId = null;
     currentModalGroupData = null;
 }
