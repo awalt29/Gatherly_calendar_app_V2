@@ -154,7 +154,8 @@
         </div>
     </div>
     
-    <!-- How it works -->
+    <!-- How it works (only show if user has no groups) -->
+    {% if not created_groups and not shared_groups %}
     <div class="how-it-works-section">
         <h2 class="how-it-works-title">How Group Alerts Work</h2>
         <div class="steps-container">
@@ -180,6 +181,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     
     <!-- Create Group Form -->
     <div class="create-group-section">
