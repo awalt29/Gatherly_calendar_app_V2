@@ -277,6 +277,7 @@ def get_group_details(group_id):
             'id': group.id,
             'name': group.name,
             'group_type': group.group_type,
+            'notifications_enabled': group.notifications_enabled,
             'created_by': {
                 'id': group.created_by.id,
                 'name': group.created_by.get_full_name()

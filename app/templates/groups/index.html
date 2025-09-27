@@ -17,10 +17,10 @@
             <h2 class="section-title">Your Private Groups</h2>
             <div class="groups-list">
                 {% for group in created_groups %}
-                    <div class="group-card" data-group-id="{{ group.id }}">
-                        <div class="group-header">
+                    <div class="group-card private-group-card" data-group-id="{{ group.id }}" onclick="console.log('Private group clicked!'); openGroupModal({{ group.id }});">
+                        <div class="private-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
-                            <div class="group-actions">
+                            <div class="private-group-actions" onclick="event.stopPropagation();">
                                 <label class="toggle-switch" data-group-id="{{ group.id }}">
                                     <input type="checkbox" 
                                            {{ 'checked' if group.notifications_enabled else '' }}
@@ -34,24 +34,7 @@
                             </div>
                         </div>
                         
-                        {% if group.description %}
-                            <p class="group-description">{{ group.description }}</p>
-                        {% endif %}
-                        
-                        <div class="group-info">
-                            <div class="group-stat">
-                                <span class="stat-label">Members:</span>
-                                <span class="stat-value">{{ group.get_member_count() }}</span>
-                            </div>
-                            <div class="group-stat">
-                                <span class="stat-label">Alerts:</span>
-                                <span class="stat-value">
-                                    {% if group.notifications_enabled %}✅ On{% else %}❌ Off{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="group-members">
+                        <div class="group-members centered-members">
                             {% for member in group.get_members() %}
                                 <div class="member-avatar" title="{{ member.get_full_name() }}">
                                     {{ member.get_initials() }}
@@ -110,7 +93,11 @@
                         </div>
                         <div class="group-stat">
                             <span class="stat-label">Type:</span>
-                            <span class="stat-value">Shared</span>
+                            <span id="modalGroupType" class="stat-value">-</span>
+                        </div>
+                        <div id="modalAlertsStatus" class="group-stat" style="display: none;">
+                            <span class="stat-label">Alerts:</span>
+                            <span id="modalAlertsValue" class="stat-value">-</span>
                         </div>
                     </div>
                     
@@ -1178,6 +1165,44 @@
     padding: 6px 12px 12px;
 }
 
+/* Private Group Cards - Match Shared Group Style */
+.private-group-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.private-group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.private-group-header {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 8px 12px;
+}
+
+.private-group-header .group-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.private-group-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 12px;
+}
+
 /* Group Modal Styles */
 .modal-overlay {
     position: fixed;
@@ -1804,6 +1829,17 @@ function populateModal(group) {
     document.getElementById('modalGroupName').textContent = group.name;
     document.getElementById('modalGroupCreator').textContent = group.created_by.name;
     document.getElementById('modalMemberCount').textContent = group.member_count;
+    document.getElementById('modalGroupType').textContent = group.group_type === 'shared' ? 'Shared' : 'Private';
+    
+    // Show/hide alerts status for private groups
+    const alertsStatus = document.getElementById('modalAlertsStatus');
+    const alertsValue = document.getElementById('modalAlertsValue');
+    if (group.group_type === 'private') {
+        alertsStatus.style.display = 'block';
+        alertsValue.textContent = group.notifications_enabled ? '✅ On' : '❌ Off';
+    } else {
+        alertsStatus.style.display = 'none';
+    }
     
     // Populate members list
     const membersList = document.getElementById('modalMembersList');
@@ -1830,8 +1866,15 @@ function populateModal(group) {
         leaveBtn.style.display = 'none';
     }
     
-    // Load activities
-    loadModalActivities(group.id);
+    // Show/hide activity queue for shared groups only
+    const activitySection = document.querySelector('.modal-activity-section');
+    if (group.group_type === 'shared') {
+        activitySection.style.display = 'block';
+        // Load activities
+        loadModalActivities(group.id);
+    } else {
+        activitySection.style.display = 'none';
+    }
     
     // Set up activity input
     const activityInput = document.getElementById('modalActivityInput');
