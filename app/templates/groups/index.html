@@ -70,51 +70,9 @@
             <h2 class="section-title">Shared Groups</h2>
             <div class="groups-list">
                 {% for group in shared_groups %}
-                    <div class="group-card shared-group" data-group-id="{{ group.id }}">
-                        <div class="group-header">
+                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }})">
+                        <div class="shared-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
-                            <div class="group-creator">
-                                Created by {{ group.created_by.get_full_name() }}
-                            </div>
-                            {% if group.created_by_id != current_user.id %}
-                            <button class="btn btn-small btn-secondary leave-group-btn" 
-                                    data-group-id="{{ group.id }}">
-                                Leave
-                            </button>
-                            {% endif %}
-                        </div>
-                        
-                        {% if group.description %}
-                            <p class="group-description">{{ group.description }}</p>
-                        {% endif %}
-                        
-                        <div class="group-info">
-                            <div class="group-stat">
-                                <span class="stat-label">Members:</span>
-                                <span class="stat-value">{{ group.get_member_count() }}</span>
-                            </div>
-                            <div class="group-stat">
-                                <span class="stat-label">Type:</span>
-                                <span class="stat-value">Shared</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Activity Queue for Shared Groups -->
-                        <div class="activity-queue">
-                            <h4 class="activity-title">🍽️ Activity Queue</h4>
-                            <div class="add-activity">
-                                <input type="text" 
-                                       class="activity-input" 
-                                       placeholder="Add a venue (e.g., Joe's Pizza)"
-                                       data-group-id="{{ group.id }}">
-                                <button class="btn btn-small btn-primary add-activity-btn" 
-                                        data-group-id="{{ group.id }}">
-                                    Add
-                                </button>
-                            </div>
-                            <div class="activity-list" data-group-id="{{ group.id }}">
-                                <!-- Activities will be loaded here via JavaScript -->
-                            </div>
                         </div>
                         
                         <div class="group-members">
@@ -130,6 +88,71 @@
         </div>
     {% endif %}
     
+    <!-- Group Details Modal -->
+    <div id="groupModal" class="modal-overlay" onclick="closeGroupModal(event)">
+        <div class="modal-content group-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modalGroupName" class="modal-title">Group Details</h2>
+                <button class="modal-close-btn" onclick="closeGroupModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Group Info Section -->
+                <div class="group-info-section">
+                    <div class="group-meta">
+                        <div class="group-stat">
+                            <span class="stat-label">Created by:</span>
+                            <span id="modalGroupCreator" class="stat-value">-</span>
+                        </div>
+                        <div class="group-stat">
+                            <span class="stat-label">Members:</span>
+                            <span id="modalMemberCount" class="stat-value">-</span>
+                        </div>
+                        <div class="group-stat">
+                            <span class="stat-label">Type:</span>
+                            <span class="stat-value">Shared</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Member List -->
+                    <div class="modal-members-section">
+                        <h3 class="section-subtitle">Members</h3>
+                        <div id="modalMembersList" class="modal-members-list">
+                            <!-- Members will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Queue Section -->
+                <div class="modal-activity-section">
+                    <h3 class="section-subtitle">🍽️ Activity Queue</h3>
+                    <div class="add-activity modal-add-activity">
+                        <input type="text" 
+                               id="modalActivityInput" 
+                               class="activity-input" 
+                               placeholder="Add a venue (e.g., Joe's Pizza)">
+                        <button id="modalAddActivityBtn" class="btn btn-primary">
+                            Add
+                        </button>
+                    </div>
+                    <div id="modalActivityList" class="activity-list modal-activity-list">
+                        <!-- Activities will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="modal-actions">
+                    <button id="modalLeaveGroupBtn" class="btn btn-secondary" style="display: none;">
+                        Leave Group
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeGroupModal()">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- How it works -->
     <div class="how-it-works-section">
@@ -1114,6 +1137,199 @@
     }
 }
 
+/* Simplified Shared Group Cards */
+.shared-group-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.shared-group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.shared-group-header {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 15px;
+}
+
+.shared-group-header .group-name {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Group Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.group-modal-content {
+    background: var(--card-bg);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: var(--hover-bg);
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.group-info-section {
+    margin-bottom: 32px;
+}
+
+.group-meta {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.section-subtitle {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin: 0 0 16px 0;
+    font-weight: 600;
+}
+
+.modal-members-section {
+    margin-top: 24px;
+}
+
+.modal-members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.modal-member-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--hover-bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.modal-member-item .member-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+}
+
+.modal-activity-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 24px;
+}
+
+.modal-add-activity {
+    margin-bottom: 20px;
+}
+
+.modal-activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--hover-bg);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Mobile Responsive for Modal */
+@media (max-width: 768px) {
+    .group-modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 16px;
+    }
+    
+    .group-meta {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 12px;
+    }
+    
+    .modal-actions button {
+        width: 100%;
+    }
+}
+
 </style>
 
 <script>
@@ -1523,5 +1739,275 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Global variables for modal
+let currentModalGroupId = null;
+let currentModalGroupData = null;
+
+// Open group modal
+function openGroupModal(groupId) {
+    console.log('Opening modal for group:', groupId);
+    currentModalGroupId = groupId;
+    
+    // Fetch group details
+    fetch(`/groups/${groupId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                currentModalGroupData = data.group;
+                populateModal(data.group);
+                document.getElementById('groupModal').classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            } else {
+                console.error('Failed to fetch group details:', data.error);
+                alert('Failed to load group details');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching group details:', error);
+            alert('Error loading group details');
+        });
+}
+
+// Close group modal
+function closeGroupModal(event) {
+    if (event && event.target !== event.currentTarget && !event.target.classList.contains('modal-close-btn')) {
+        return; // Only close if clicking overlay or close button
+    }
+    
+    document.getElementById('groupModal').classList.remove('active');
+    document.body.style.overflow = ''; // Restore scrolling
+    currentModalGroupId = null;
+    currentModalGroupData = null;
+}
+
+// Populate modal with group data
+function populateModal(group) {
+    document.getElementById('modalGroupName').textContent = group.name;
+    document.getElementById('modalGroupCreator').textContent = group.created_by.name;
+    document.getElementById('modalMemberCount').textContent = group.member_count;
+    
+    // Populate members list
+    const membersList = document.getElementById('modalMembersList');
+    membersList.innerHTML = '';
+    
+    group.members.forEach(member => {
+        const memberItem = document.createElement('div');
+        memberItem.className = 'modal-member-item';
+        memberItem.innerHTML = `
+            <div class="member-avatar" title="${escapeHtml(member.name)}">
+                ${escapeHtml(member.initials)}
+            </div>
+            <span>${escapeHtml(member.name)}</span>
+        `;
+        membersList.appendChild(memberItem);
+    });
+    
+    // Show/hide leave button (hide for group creator)
+    const leaveBtn = document.getElementById('modalLeaveGroupBtn');
+    if (group.created_by.id !== {{ current_user.id }}) {
+        leaveBtn.style.display = 'block';
+        leaveBtn.onclick = () => leaveGroup(group.id);
+    } else {
+        leaveBtn.style.display = 'none';
+    }
+    
+    // Load activities
+    loadModalActivities(group.id);
+    
+    // Set up activity input
+    const activityInput = document.getElementById('modalActivityInput');
+    const addBtn = document.getElementById('modalAddActivityBtn');
+    
+    // Clear previous event listeners
+    activityInput.replaceWith(activityInput.cloneNode(true));
+    addBtn.replaceWith(addBtn.cloneNode(true));
+    
+    // Get fresh references
+    const newActivityInput = document.getElementById('modalActivityInput');
+    const newAddBtn = document.getElementById('modalAddActivityBtn');
+    
+    // Add event listeners
+    newAddBtn.addEventListener('click', () => {
+        const venue = newActivityInput.value.trim();
+        if (venue) {
+            addModalActivity(group.id, venue, newActivityInput);
+        }
+    });
+    
+    newActivityInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const venue = newActivityInput.value.trim();
+            if (venue) {
+                addModalActivity(group.id, venue, newActivityInput);
+            }
+        }
+    });
+}
+
+// Load activities for modal
+function loadModalActivities(groupId) {
+    fetch(`/activities/group/${groupId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderModalActivities(data.activities);
+            } else {
+                console.error('Failed to load activities:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading activities:', error);
+        });
+}
+
+// Render activities in modal
+function renderModalActivities(activities) {
+    const activityList = document.getElementById('modalActivityList');
+    
+    if (!activities || activities.length === 0) {
+        activityList.innerHTML = '<div class="no-activities">No activities yet. Add one above!</div>';
+        return;
+    }
+    
+    activityList.innerHTML = activities.map(activity => `
+        <div class="activity-item" data-activity-id="${activity.id}">
+            <div class="activity-info">
+                <div class="activity-venue">${escapeHtml(activity.venue)}</div>
+                <div class="activity-meta">
+                    Suggested by ${escapeHtml(activity.suggested_by.name)}
+                </div>
+            </div>
+            <div class="activity-actions">
+                <span class="activity-status ${activity.status}">${activity.status}</span>
+                ${activity.can_complete ? 
+                    `<button class="btn btn-small ${activity.status === 'pending' ? 'btn-success' : 'btn-warning'}" 
+                             onclick="toggleModalActivityStatus(${activity.id}, '${activity.status}')">
+                        ${activity.status === 'pending' ? 'Mark Complete' : 'Mark Pending'}
+                     </button>` : ''}
+                ${activity.can_delete ? 
+                    `<button class="btn btn-small btn-danger" onclick="deleteModalActivity(${activity.id})">
+                        Delete
+                     </button>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Add activity in modal
+function addModalActivity(groupId, venue, inputElement) {
+    if (!venue.trim()) return;
+    
+    const addBtn = document.getElementById('modalAddActivityBtn');
+    const originalText = addBtn.textContent;
+    addBtn.disabled = true;
+    addBtn.textContent = 'Adding...';
+    
+    fetch(`/activities/group/${groupId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ venue: venue.trim() })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            inputElement.value = '';
+            loadModalActivities(groupId); // Reload activities
+        } else {
+            alert(data.error || 'Failed to add activity');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding activity:', error);
+        alert('Error adding activity');
+    })
+    .finally(() => {
+        addBtn.disabled = false;
+        addBtn.textContent = originalText;
+    });
+}
+
+// Toggle activity status in modal
+function toggleModalActivityStatus(activityId, currentStatus) {
+    fetch(`/activities/${activityId}/complete`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadModalActivities(currentModalGroupId); // Reload activities
+        } else {
+            alert(data.error || 'Failed to update activity status');
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling activity status:', error);
+        alert('Error updating activity status');
+    });
+}
+
+// Delete activity in modal
+function deleteModalActivity(activityId) {
+    if (!confirm('Are you sure you want to delete this activity?')) {
+        return;
+    }
+    
+    fetch(`/activities/${activityId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadModalActivities(currentModalGroupId); // Reload activities
+        } else {
+            alert(data.error || 'Failed to delete activity');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting activity:', error);
+        alert('Error deleting activity');
+    });
+}
+
+// Leave group function
+function leaveGroup(groupId) {
+    if (!confirm('Are you sure you want to leave this group?')) {
+        return;
+    }
+    
+    fetch(`/groups/${groupId}/leave`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeGroupModal();
+            location.reload(); // Refresh page to update groups list
+        } else {
+            alert(data.error || 'Failed to leave group');
+        }
+    })
+    .catch(error => {
+        console.error('Error leaving group:', error);
+        alert('Error leaving group');
+    });
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('groupModal').classList.contains('active')) {
+        closeGroupModal();
+    }
+});
 </script>
 {% endblock %}

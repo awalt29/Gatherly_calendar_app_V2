@@ -252,3 +252,77 @@ def delete_group(group_id):
         db.session.rollback()
         logger.error(f'Error deleting group: {str(e)}')
         return jsonify({'success': False, 'error': 'Error deleting group'}), 500
+
+@bp.route('/groups/<int:group_id>/details', methods=['GET'])
+@login_required
+def get_group_details(group_id):
+    """Get detailed information about a group for the modal"""
+    try:
+        group = Group.query.get_or_404(group_id)
+        
+        # Check if user is a member
+        if not group.is_member(current_user.id):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
+        # Get all group members
+        members = []
+        for membership in group.group_memberships:
+            if membership.status == 'active':
+                user = membership.user
+                members.append({
+                    'id': user.id,
+                    'name': user.get_full_name(),
+                    'initials': user.get_initials()
+                })
+        
+        group_data = {
+            'id': group.id,
+            'name': group.name,
+            'description': group.description,
+            'group_type': group.group_type,
+            'created_by': {
+                'id': group.created_by.id,
+                'name': group.created_by.get_full_name()
+            },
+            'member_count': len(members),
+            'members': members
+        }
+        
+        return jsonify({
+            'success': True,
+            'group': group_data
+        })
+        
+    except Exception as e:
+        logger.error(f'Error fetching group details: {str(e)}')
+        return jsonify({'success': False, 'error': 'Error loading group details'}), 500
+
+@bp.route('/groups/<int:group_id>/leave', methods=['POST'])
+@login_required
+def leave_group(group_id):
+    """Leave a group (members only, not creator)"""
+    try:
+        group = Group.query.get_or_404(group_id)
+        
+        # Check if user is a member
+        if not group.is_member(current_user.id):
+            return jsonify({'success': False, 'error': 'You are not a member of this group'}), 400
+        
+        # Group creator cannot leave their own group
+        if group.created_by_id == current_user.id:
+            return jsonify({'success': False, 'error': 'Group creator cannot leave the group. Delete the group instead.'}), 400
+        
+        # Remove the user from the group
+        if group.remove_member(current_user.id):
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': f'You have left the group "{group.name}"'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to leave group'}), 500
+            
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error leaving group: {str(e)}')
+        return jsonify({'success': False, 'error': 'Error leaving group'}), 500
