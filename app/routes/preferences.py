@@ -37,10 +37,13 @@ def create_group():
     """Create a new friend group"""
     try:
         data = request.get_json() if request.is_json else request.form
+        logger.info(f"Group creation request - is_json: {request.is_json}, data: {data}")
         
         name = data.get('name', '').strip()
         group_type = data.get('group_type', 'private').strip()
         member_ids = data.getlist('member_ids') if hasattr(data, 'getlist') else data.get('member_ids', [])
+        
+        logger.info(f"Parsed data - name: '{name}', group_type: '{group_type}', member_ids: {member_ids}")
         
         # Validation
         if not name:

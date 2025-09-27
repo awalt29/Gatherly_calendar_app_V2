@@ -1101,15 +1101,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = document.getElementById('submitCreateGroup');
             const originalText = submitBtn.textContent;
             
+            // Convert FormData to JSON
+            const data = {
+                name: formData.get('name'),
+                group_type: formData.get('group_type'),
+                member_ids: formData.getAll('member_ids')
+            };
+            
             submitBtn.disabled = true;
             submitBtn.textContent = 'Creating...';
             
             fetch('/groups/create', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     showNotification(data.message, 'success');
                     setTimeout(() => {
