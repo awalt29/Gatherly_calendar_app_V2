@@ -1205,6 +1205,8 @@
     backdrop-filter: blur(4px);
     overscroll-behavior: contain;
     touch-action: none;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .modal-overlay.active {
@@ -1214,9 +1216,9 @@
 .group-modal-content {
     background: var(--card-background);
     border-radius: 16px;
-    width: 90%;
+    width: 100%;
     max-width: 600px;
-    max-height: 90vh;
+    max-height: calc(100vh - 40px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1341,9 +1343,13 @@
 
 /* Mobile Responsive for Modal */
 @media (max-width: 768px) {
+    .modal-overlay {
+        padding: 10px;
+    }
+    
     .group-modal-content {
-        width: 95%;
-        max-height: 95vh;
+        width: 100%;
+        max-height: calc(100vh - 20px);
     }
     
     .modal-header,
