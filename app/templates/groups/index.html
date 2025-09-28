@@ -17,7 +17,7 @@
             <h2 class="section-title">Your Private Groups</h2>
             <div class="groups-list">
                 {% for group in created_groups %}
-                    <div class="group-card private-group-card" data-group-id="{{ group.id }}" onclick="console.log('Private group clicked!'); openGroupModal({{ group.id }});">
+                    <div class="group-card private-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
                         <div class="private-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
                         </div>
@@ -41,7 +41,7 @@
             <h2 class="section-title">Shared Groups</h2>
             <div class="groups-list">
                 {% for group in shared_groups %}
-                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="console.log('Card clicked!'); openGroupModal({{ group.id }});">
+                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
                         <div class="shared-group-header">
                             <h3 class="group-name">{{ group.name }}</h3>
                         </div>
@@ -1796,8 +1796,6 @@ let currentModalGroupData = null;
 
 // Open group modal
 function openGroupModal(groupId) {
-    console.log('Opening modal for group:', groupId);
-    console.log('Modal element:', document.getElementById('groupModal'));
     currentModalGroupId = groupId;
     
     // Fetch group details
