@@ -1200,12 +1200,12 @@
     background: rgba(0, 0, 0, 0.85);
     display: none;
     justify-content: center;
-    align-items: center;
+    align-items: flex-end;
     z-index: 10000;
     backdrop-filter: blur(4px);
     overscroll-behavior: contain;
     touch-action: none;
-    padding: 20px;
+    padding: 0;
     box-sizing: border-box;
     isolation: isolate;
 }
@@ -1216,10 +1216,10 @@
 
 .group-modal-content {
     background: var(--card-background);
-    border-radius: 16px;
+    border-radius: 16px 16px 0 0;
     width: 100%;
     max-width: 600px;
-    max-height: 85vh;
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1227,6 +1227,8 @@
     position: relative;
     z-index: 10001;
     isolation: isolate;
+    margin-top: 0;
+    align-self: flex-end;
 }
 
 .modal-header {
@@ -1349,12 +1351,13 @@
 /* Mobile Responsive for Modal */
 @media (max-width: 768px) {
     .modal-overlay {
-        padding: 10px;
+        padding: 0;
     }
     
     .group-modal-content {
         width: 100%;
-        max-height: 90vh;
+        height: 100vh;
+        border-radius: 0;
     }
     
     .modal-header,
