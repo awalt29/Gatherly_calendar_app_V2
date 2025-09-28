@@ -398,15 +398,6 @@ body.modal-open {
     color: var(--text-primary);
 }
 
-.slot-duration {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    background: var(--background);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    font-weight: 500;
-}
 
 .slot-attendees {
     display: flex;
@@ -682,17 +673,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Only include intervals of at least 2 hours
                 if (durationMinutes >= 120) {
-                    const durationHours = Math.floor(durationMinutes / 60);
-                    const remainingMinutes = durationMinutes % 60;
-                    let durationText = `${durationHours} hour${durationHours > 1 ? 's' : ''}`;
-                    if (remainingMinutes > 0) {
-                        durationText += ` ${remainingMinutes} min`;
-                    }
-                    
                     overlaps.push({
                         startTime: minutesToTime(intervalStart),
                         endTime: minutesToTime(intervalEnd),
-                        duration: durationText,
                         attendees: availableUsers
                     });
                 }
@@ -741,7 +724,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <label>End Time:</label>
                                     <input type="time" class="time-input end-time" value="${slot.endTime}" data-original="${slot.endTime}">
                                 </div>
-                                <span class="slot-duration">${slot.duration}</span>
                             </div>
                             <div class="slot-attendees">
                                 ${slot.attendees.map(user => `
