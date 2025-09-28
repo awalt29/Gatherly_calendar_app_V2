@@ -760,7 +760,7 @@ const ScrollableCalendar = {
 };
 
 function initializeScrollableCalendar() {
-    console.log('Initializing scrollable calendar...');
+    console.log('Initializing scrollable calendar - NO INFINITE SCROLL VERSION');
     
     // Load all months upfront
     loadAllMonths();
@@ -771,6 +771,8 @@ function initializeScrollableCalendar() {
     // Set up scroll listener for month header updates
     const container = document.getElementById('calendarScroll');
     container.addEventListener('scroll', updateFloatingMonthHeader);
+    
+    console.log('Calendar initialization complete - no observers set up');
 }
 
 function loadAllMonths() {
