@@ -263,18 +263,26 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal.show {
+    display: flex;
 }
 
 .modal-content {
     background-color: var(--background);
-    margin: 5% auto;
     padding: var(--space-6);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    width: 90%;
+    width: 100%;
     max-width: 600px;
-    max-height: 80dvh;
+    max-height: calc(100dvh - 40px);
     overflow-y: auto;
+    margin: 0;
 }
 
 .modal-header {
@@ -770,12 +778,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        modal.style.display = 'block';
+        modal.classList.add('show');
     }
     
     // Close modal
     function closeEventModal() {
-        modal.style.display = 'none';
+        modal.classList.remove('show');
         selectedSlot = null;
         finalizeEvent.disabled = true;
     }
