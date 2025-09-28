@@ -1207,6 +1207,7 @@
     touch-action: none;
     padding: 20px;
     box-sizing: border-box;
+    isolation: isolate;
 }
 
 .modal-overlay.active {
@@ -1224,6 +1225,8 @@
     flex-direction: column;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     position: relative;
+    z-index: 10001;
+    isolation: isolate;
 }
 
 .modal-header {
