@@ -756,9 +756,7 @@ function setupFriendActions() {
 // Global state for scrollable calendar
 const ScrollableCalendar = {
     loadedMonths: new Set(),
-    currentMonthOffset: 0,
-    isLoading: false,
-    observer: null
+    currentMonthOffset: 0
 };
 
 function initializeScrollableCalendar() {
@@ -776,21 +774,21 @@ function initializeScrollableCalendar() {
 }
 
 function loadAllMonths() {
-    // Load all months upfront (0 to 25 chunks = ~12 months)
-    console.log('Loading all months...');
+    // Load 12 months upfront (0 to 11 chunks = ~12 months)
+    console.log('Loading 12 months...');
     showLoadingIndicator();
     
-    const allMonths = [];
-    for (let i = 0; i <= 25; i++) {
-        allMonths.push(i);
+    const monthsToLoad = [];
+    for (let i = 0; i <= 11; i++) {
+        monthsToLoad.push(i);
     }
     
     // Load all months in parallel
-    const loadPromises = allMonths.map(offset => loadMonthPromise(offset));
+    const loadPromises = monthsToLoad.map(offset => loadMonthPromise(offset));
     
     Promise.all(loadPromises)
         .then(() => {
-            console.log('All months loaded successfully');
+            console.log('12 months loaded successfully');
             hideLoadingIndicator();
         })
         .catch(error => {
@@ -897,45 +895,12 @@ function renderMonth(chunkData, chunkOffset) {
         if (!inserted) {
             container.appendChild(weekRow);
         }
-        
-        // Observe the new week row for infinite scroll
-        if (ScrollableCalendar.observer) {
-            ScrollableCalendar.observer.observe(weekRow);
-        }
     });
     
     // Update the floating month header
     updateFloatingMonthHeader();
 }
 
-function setupInfiniteScroll() {
-    const container = document.getElementById('calendarScroll');
-    
-    ScrollableCalendar.observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const weekRow = entry.target;
-                const chunkOffset = parseInt(weekRow.dataset.chunkOffset);
-                
-                // Only load next chunk when scrolling down (no previous chunks)
-                if (chunkOffset >= 0) {
-                    // Load next 2-week chunk
-                    loadMonth(chunkOffset + 1);
-                }
-            }
-        });
-    }, {
-        root: container,
-        rootMargin: '100px',
-        threshold: 0.3
-    });
-    
-    // Observe existing week rows
-    const calendarGrid = document.getElementById('calendarGrid');
-    calendarGrid.querySelectorAll('.week-row').forEach(row => {
-        ScrollableCalendar.observer.observe(row);
-    });
-}
 
 function updateFloatingMonthHeader() {
     const container = document.getElementById('calendarScroll');
