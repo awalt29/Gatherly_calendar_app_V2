@@ -1219,7 +1219,7 @@
     border-radius: 16px 16px 0 0;
     width: 100%;
     max-width: 600px;
-    height: calc(100vh - env(safe-area-inset-top));
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1227,8 +1227,11 @@
     position: relative;
     z-index: 10001;
     isolation: isolate;
-    margin-top: env(safe-area-inset-top);
+    margin-top: 0;
     align-self: flex-end;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
 }
 
 .modal-header {
@@ -1356,9 +1359,12 @@
     
     .group-modal-content {
         width: 100%;
-        height: calc(100vh - env(safe-area-inset-top));
+        height: 100vh;
         border-radius: 0;
-        margin-top: env(safe-area-inset-top);
+        margin-top: 0;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        box-sizing: border-box;
     }
     
     .modal-header,
