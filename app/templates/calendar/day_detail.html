@@ -268,13 +268,13 @@
     padding: 20px;
     box-sizing: border-box;
     overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 /* Prevent body scroll when modal is open */
 body.modal-open {
     overflow: hidden;
-    position: fixed;
-    width: 100%;
+    touch-action: none;
 }
 
 .modal.show {
