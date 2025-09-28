@@ -1219,7 +1219,7 @@
     border-radius: 16px 16px 0 0;
     width: 100%;
     max-width: 600px;
-    height: 100vh;
+    height: calc(100vh - env(safe-area-inset-top));
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1227,7 +1227,7 @@
     position: relative;
     z-index: 10001;
     isolation: isolate;
-    margin-top: 0;
+    margin-top: env(safe-area-inset-top);
     align-self: flex-end;
 }
 
@@ -1356,8 +1356,9 @@
     
     .group-modal-content {
         width: 100%;
-        height: 100vh;
+        height: calc(100vh - env(safe-area-inset-top));
         border-radius: 0;
+        margin-top: env(safe-area-inset-top);
     }
     
     .modal-header,
