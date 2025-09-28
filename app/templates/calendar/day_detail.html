@@ -270,6 +270,13 @@
     overflow: hidden;
 }
 
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
 .modal.show {
     display: flex;
 }
@@ -796,11 +803,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         modal.classList.add('show');
+        document.body.classList.add('modal-open');
     }
     
     // Close modal
     function closeEventModal() {
         modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
         selectedSlot = null;
         finalizeEvent.disabled = true;
     }
@@ -813,6 +822,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close modal when clicking outside
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
+            closeEventModal();
+        }
+    });
+    
+    // Close modal when pressing escape
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('show')) {
             closeEventModal();
         }
     });
