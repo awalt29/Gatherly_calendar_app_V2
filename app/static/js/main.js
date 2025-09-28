@@ -776,12 +776,12 @@ function initializeScrollableCalendar() {
 }
 
 function loadAllMonths() {
-    // Load 12 months upfront (0 to 11 chunks = ~12 months)
-    console.log('Loading 12 months...');
+    // Load full year upfront (0 to 25 chunks = ~12 months, each chunk is 2 weeks)
+    console.log('Loading full year (26 chunks)...');
     showLoadingIndicator();
     
     const monthsToLoad = [];
-    for (let i = 0; i <= 11; i++) {
+    for (let i = 0; i <= 25; i++) {
         monthsToLoad.push(i);
     }
     
@@ -790,7 +790,7 @@ function loadAllMonths() {
     
     Promise.all(loadPromises)
         .then(() => {
-            console.log('12 months loaded successfully');
+            console.log('Full year loaded successfully (26 chunks)');
             hideLoadingIndicator();
         })
         .catch(error => {
