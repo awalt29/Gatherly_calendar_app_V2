@@ -764,11 +764,8 @@ const ScrollableCalendar = {
 function initializeScrollableCalendar() {
     console.log('Initializing scrollable calendar...');
     
-    // Initialize with current month and surrounding months
-    loadInitialMonths();
-    
-    // Set up intersection observer for infinite scroll
-    setupInfiniteScroll();
+    // Load all months upfront
+    loadAllMonths();
     
     // Set up today button
     setupTodayButton();
@@ -778,31 +775,44 @@ function initializeScrollableCalendar() {
     container.addEventListener('scroll', updateFloatingMonthHeader);
 }
 
-function loadInitialMonths() {
-    // Load first 4 chunks (8 weeks) initially for smooth scrolling
-    const monthsToLoad = [0, 1, 2, 3];
+function loadAllMonths() {
+    // Load all months upfront (0 to 25 chunks = ~12 months)
+    console.log('Loading all months...');
+    showLoadingIndicator();
     
-    monthsToLoad.forEach(offset => {
-        loadMonth(offset);
-    });
+    const allMonths = [];
+    for (let i = 0; i <= 25; i++) {
+        allMonths.push(i);
+    }
+    
+    // Load all months in parallel
+    const loadPromises = allMonths.map(offset => loadMonthPromise(offset));
+    
+    Promise.all(loadPromises)
+        .then(() => {
+            console.log('All months loaded successfully');
+            hideLoadingIndicator();
+        })
+        .catch(error => {
+            console.error('Error loading some months:', error);
+            hideLoadingIndicator();
+            showNotification('Some calendar data failed to load', 'warning');
+        });
 }
 
-function loadMonth(monthOffset) {
-    if (ScrollableCalendar.loadedMonths.has(monthOffset) || ScrollableCalendar.isLoading) {
-        return;
+function loadMonthPromise(monthOffset) {
+    if (ScrollableCalendar.loadedMonths.has(monthOffset)) {
+        return Promise.resolve();
     }
     
     // Limit to current chunk and next 25 chunks (52 weeks = 12 months total)
     if (monthOffset < 0 || monthOffset > 25) {
-        return;
+        return Promise.resolve();
     }
     
-    ScrollableCalendar.isLoading = true;
     ScrollableCalendar.loadedMonths.add(monthOffset);
     
-    showLoadingIndicator();
-    
-    fetch(`/api/months/${monthOffset}`)
+    return fetch(`/api/months/${monthOffset}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -816,13 +826,9 @@ function loadMonth(monthOffset) {
             renderMonth(data, monthOffset);
         })
         .catch(error => {
-            console.error('Error loading month:', error);
-            showNotification(`Error loading calendar data: ${error.message}`, 'error');
+            console.error(`Error loading month ${monthOffset}:`, error);
             ScrollableCalendar.loadedMonths.delete(monthOffset); // Allow retry
-        })
-        .finally(() => {
-            ScrollableCalendar.isLoading = false;
-            hideLoadingIndicator();
+            throw error; // Re-throw to be caught by Promise.all
         });
 }
 
