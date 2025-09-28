@@ -1218,7 +1218,7 @@
     border-radius: 16px;
     width: 100%;
     max-width: 600px;
-    max-height: calc(100vh - 40px);
+    max-height: 85vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1349,7 +1349,7 @@
     
     .group-modal-content {
         width: 100%;
-        max-height: calc(100vh - 20px);
+        max-height: 90vh;
     }
     
     .modal-header,
@@ -1815,9 +1815,6 @@ function openGroupModal(groupId) {
                 document.getElementById('groupModal').classList.add('active');
                 // Prevent background scrolling while allowing modal scroll
                 document.body.style.overflow = 'hidden';
-                document.body.style.position = 'fixed';
-                document.body.style.top = `-${window.scrollY}px`;
-                document.body.style.width = '100%';
             } else {
                 console.error('Failed to fetch group details:', data.error);
                 alert('Failed to load group details');
@@ -1836,15 +1833,8 @@ function closeGroupModal(event) {
     }
     
     document.getElementById('groupModal').classList.remove('active');
-    // Restore scrolling and position
-    const scrollY = document.body.style.top;
+    // Restore scrolling
     document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    }
     currentModalGroupId = null;
     currentModalGroupData = null;
 }
