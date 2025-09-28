@@ -261,12 +261,13 @@
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
     background-color: rgba(0, 0, 0, 0.5);
     align-items: center;
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .modal.show {
@@ -275,21 +276,37 @@
 
 .modal-content {
     background-color: var(--background);
-    padding: var(--space-6);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 600px;
-    max-height: calc(100dvh - 40px);
-    overflow-y: auto;
+    height: calc(100dvh - 40px);
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6);
+}
+
+.modal-header {
+    flex-shrink: 0;
+    padding: var(--space-6) var(--space-6) 0;
+}
+
+.modal-footer {
+    flex-shrink: 0;
+    padding: 0 var(--space-6) var(--space-6);
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-4);
 }
 
 .modal-title {
@@ -452,7 +469,7 @@
             <button class="close" id="close-modal">&times;</button>
         </div>
         
-        <div id="modal-body">
+        <div id="modal-body" class="modal-body">
             <!-- Content will be populated by JavaScript -->
         </div>
         
