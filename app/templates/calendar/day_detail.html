@@ -3,12 +3,13 @@
 {% block title %}{{ date.strftime('%B %d, %Y') }} - Gatherly{% endblock %}
 
 {% block content %}
+<!-- Sticky header outside of container -->
+<div class="day-detail-header sticky-header">
+    <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">←</a>
+    <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
+</div>
+
 <div class="day-detail-container">
-    <div class="day-detail-header sticky-header">
-        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">←</a>
-        <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
-    </div>
-    
     <div class="friends-section">
         <h2 class="section-title">Available Friends</h2>
         
@@ -68,7 +69,7 @@
     background: var(--background);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    z-index: 100;
+    z-index: 1000;
     padding: var(--space-3) var(--space-4);
 }
 
@@ -80,6 +81,7 @@
     max-width: 800px;
     margin: 0 auto;
     position: relative;
+    width: 100%;
 }
 
 .back-btn {
@@ -259,8 +261,8 @@
         padding-top: 115px; /* Minimal space for mobile */
     }
     
-    .day-detail-header {
-        padding: var(--space-3);
+    .sticky-header {
+        padding: var(--space-2) var(--space-3);
     }
     
     .day-title {
