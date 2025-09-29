@@ -53,14 +53,14 @@
                         <a href="{{ url_for('availability.index') }}" class="nav-link {% if request.endpoint == 'availability.index' %}active{% endif %}">
                             Availability
                         </a>
+                        <a href="{{ url_for('groups.index') }}" class="nav-link {% if request.endpoint == 'groups.index' %}active{% endif %}">
+                            Groups
+                        </a>
                         <a href="{{ url_for('friends.index') }}" class="nav-link {% if request.endpoint == 'friends.index' %}active{% endif %}">
                             Friends
                         </a>
                         <a href="{{ url_for('events.index') }}" class="nav-link {% if request.endpoint == 'events.index' %}active{% endif %}">
                             Events
-                        </a>
-                        <a href="{{ url_for('groups.index') }}" class="nav-link {% if request.endpoint == 'groups.index' %}active{% endif %}">
-                            Groups
                         </a>
                         <a href="{{ url_for('settings.index') }}" class="nav-link {% if request.endpoint == 'settings.index' %}active{% endif %}">
                             Settings
