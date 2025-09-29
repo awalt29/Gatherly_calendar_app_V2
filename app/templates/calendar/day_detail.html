@@ -5,8 +5,8 @@
 {% block content %}
 <div class="day-detail-container">
     <div class="day-detail-header sticky-header">
-        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary">← Back to Calendar</a>
         <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
+        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">← Back</a>
     </div>
     
     <div class="friends-section">
@@ -47,12 +47,7 @@
     </div>
     
     {% if available_users|length > 1 %}
-        <div class="friends-section">
-            <h2 class="section-title">Plan an Event</h2>
-            <p class="text-secondary mb-4" id="selected-count">
-                {{ available_users|length }} people are available on this day. 
-                Select friends above and create an event!
-            </p>
+        <div class="friends-section create-event-section">
             <button id="create-event-btn" class="btn btn-primary" disabled>Create Event</button>
         </div>
     {% endif %}
@@ -79,11 +74,19 @@
 
 .day-detail-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     max-width: 800px;
     margin: 0 auto;
+    position: relative;
+}
+
+.back-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .day-title {
@@ -235,21 +238,33 @@
     font-size: var(--font-size-lg);
 }
 
+.create-event-section {
+    text-align: center;
+    margin-top: var(--space-6);
+}
+
+.create-event-section .btn {
+    margin: 0 auto;
+}
+
 @media (max-width: 768px) {
     .day-detail-container {
         padding-top: 160px; /* More space for mobile: top nav + sticky header */
     }
     
     .day-detail-header {
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-2);
+        padding: var(--space-3);
     }
     
     .day-title {
         font-size: var(--font-size-lg);
         text-align: center;
         margin: 0;
+    }
+    
+    .back-btn {
+        font-size: var(--font-size-sm);
+        padding: var(--space-2) var(--space-3);
     }
     
     .user-availability-card {
