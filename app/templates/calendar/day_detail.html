@@ -57,19 +57,19 @@
 .day-detail-container {
     max-width: 800px;
     margin: 0 auto;
-    padding-top: 140px; /* Space for top nav + sticky header */
+    padding-top: 110px; /* Minimal space to clear sticky header */
 }
 
 .sticky-header {
     position: fixed;
-    top: 60px; /* Position below the top navigation */
+    top: 55px; /* Position closer to the top navigation */
     left: 0;
     right: 0;
     background: var(--background);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     z-index: 100;
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-4);
 }
 
 .day-detail-header {
@@ -256,7 +256,7 @@
 
 @media (max-width: 768px) {
     .day-detail-container {
-        padding-top: 160px; /* More space for mobile: top nav + sticky header */
+        padding-top: 115px; /* Minimal space for mobile */
     }
     
     .day-detail-header {
