@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="day-detail-container">
-    <div class="day-detail-header">
+    <div class="day-detail-header sticky-header">
         <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary">← Back to Calendar</a>
         <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
     </div>
@@ -21,16 +21,11 @@
                             <label for="user-{{ user_data.user.id }}" class="checkbox-label"></label>
                         </div>
                         
-                        <div class="user-info">
-                            <div class="friend-avatar {% if user_data.user.id == current_user.id %}current-user-block{% else %}friend-color-{{ user_data.user.id % 8 }}{% endif %}">
-                                {{ user_data.user.get_initials() }}
-                            </div>
-                            <div class="user-details">
-                                <h3>{{ user_data.user.get_full_name() }}</h3>
-                                {% if user_data.user.id == current_user.id %}
-                                    <span class="user-badge">You</span>
-                                {% endif %}
-                            </div>
+                        <div class="user-name">
+                            <span class="name-text">{{ user_data.user.get_full_name() }}</span>
+                            {% if user_data.user.id == current_user.id %}
+                                <span class="user-badge">You</span>
+                            {% endif %}
                         </div>
                         
                         <div class="time-info">
@@ -67,13 +62,28 @@
 .day-detail-container {
     max-width: 800px;
     margin: 0 auto;
+    padding-top: 80px; /* Space for sticky header */
+}
+
+.sticky-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--background);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: var(--space-4);
 }
 
 .day-detail-header {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-4);
-    margin-bottom: var(--space-6);
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .day-title {
@@ -93,12 +103,13 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-4);
+    padding: var(--space-3);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     transition: all 0.2s ease;
     cursor: pointer;
+    min-height: 50px;
 }
 
 .user-availability-card:hover {
@@ -168,36 +179,31 @@
     cursor: pointer;
 }
 
-.user-info {
+.user-name {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     flex: 1;
+    min-width: 0; /* Allow text truncation */
 }
 
-.friend-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    color: white;
+.name-text {
     font-size: var(--font-size-base);
-}
-
-.user-details h3 {
-    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 var(--space-1) 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-badge {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--primary);
     font-weight: 500;
+    background: rgba(0, 104, 177, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
 }
 
 .time-info {
@@ -230,26 +236,38 @@
 }
 
 @media (max-width: 768px) {
+    .day-detail-container {
+        padding-top: 100px; /* More space for mobile header */
+    }
+    
     .day-detail-header {
         flex-direction: column;
-        align-items: stretch;
-        gap: var(--space-3);
+        align-items: center;
+        gap: var(--space-2);
     }
     
     .day-title {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-lg);
         text-align: center;
+        margin: 0;
     }
     
     .user-availability-card {
-        flex-direction: column;
-        gap: var(--space-3);
-        text-align: center;
+        gap: var(--space-2);
+        padding: var(--space-2);
     }
     
-    .user-info {
-        flex-direction: column;
-        text-align: center;
+    .user-name {
+        gap: var(--space-1);
+    }
+    
+    .name-text {
+        font-size: var(--font-size-sm);
+    }
+    
+    .time-badge {
+        font-size: var(--font-size-xs);
+        padding: var(--space-1) var(--space-2);
     }
 }
 
