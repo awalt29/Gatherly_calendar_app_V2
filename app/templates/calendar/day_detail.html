@@ -519,14 +519,21 @@ body.modal-open {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing day detail page...');
+    
     const checkboxes = document.querySelectorAll('.user-select-checkbox');
     const createEventBtn = document.getElementById('create-event-btn');
-    // selectedCount element removed from simplified layout
     const modal = document.getElementById('event-modal');
     const closeModal = document.getElementById('close-modal');
     const cancelEvent = document.getElementById('cancel-event');
     const finalizeEvent = document.getElementById('finalize-event');
     const modalBody = document.getElementById('modal-body');
+    
+    console.log('Found elements:', {
+        checkboxes: checkboxes.length,
+        createEventBtn: !!createEventBtn,
+        modal: !!modal
+    });
     
     let selectedSlot = null;
     let selectedUsers = [];
@@ -536,12 +543,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCreateEventButton() {
         const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
         const count = checkedBoxes.length;
+        console.log('Updating button state - checked boxes:', count);
         
         // Update button state
         if (count >= 2) {
             createEventBtn.disabled = false;
+            console.log('Button enabled');
         } else {
             createEventBtn.disabled = true;
+            console.log('Button disabled');
         }
         
         // Update card styling
@@ -618,9 +628,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkedBoxes.forEach(checkbox => {
             const card = checkbox.closest('.user-availability-card');
             const userId = card.dataset.userId;
-            const userName = card.querySelector('h3').textContent;
+            const userName = card.querySelector('.name-text').textContent;
             const timeRangesStr = card.dataset.timeRanges;
-            const avatarClass = card.querySelector('.friend-avatar').className;
+            // Use user ID for avatar class since we removed friend avatars
+            const avatarClass = `friend-color-${userId % 8}`;
             
             try {
                 const timeRanges = JSON.parse(timeRangesStr);
@@ -727,7 +738,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show modal with time slots
     function showEventModal() {
+        console.log('Create event button clicked!');
         const overlaps = calculateOverlaps();
+        console.log('Found overlaps:', overlaps.length);
         
         if (overlaps.length === 0) {
             modalBody.innerHTML = `
@@ -837,7 +850,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listeners
-    createEventBtn.addEventListener('click', showEventModal);
+    if (createEventBtn) {
+        console.log('Adding click listener to create event button');
+        createEventBtn.addEventListener('click', showEventModal);
+        
+        // Test click handler
+        createEventBtn.addEventListener('click', function() {
+            console.log('Button click detected!');
+        });
+    } else {
+        console.error('Create event button not found!');
+    }
     closeModal.addEventListener('click', closeEventModal);
     cancelEvent.addEventListener('click', closeEventModal);
     
