@@ -519,8 +519,6 @@ body.modal-open {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing day detail page...');
-    
     const checkboxes = document.querySelectorAll('.user-select-checkbox');
     const createEventBtn = document.getElementById('create-event-btn');
     const modal = document.getElementById('event-modal');
@@ -528,12 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEvent = document.getElementById('cancel-event');
     const finalizeEvent = document.getElementById('finalize-event');
     const modalBody = document.getElementById('modal-body');
-    
-    console.log('Found elements:', {
-        checkboxes: checkboxes.length,
-        createEventBtn: !!createEventBtn,
-        modal: !!modal
-    });
     
     let selectedSlot = null;
     let selectedUsers = [];
@@ -543,15 +535,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCreateEventButton() {
         const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
         const count = checkedBoxes.length;
-        console.log('Updating button state - checked boxes:', count);
         
         // Update button state
         if (count >= 2) {
             createEventBtn.disabled = false;
-            console.log('Button enabled');
         } else {
             createEventBtn.disabled = true;
-            console.log('Button disabled');
         }
         
         // Update card styling
@@ -573,8 +562,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click event listeners to user cards
     userCards.forEach(card => {
         card.addEventListener('click', function(e) {
-            // Don't trigger if clicking directly on the checkbox
-            if (e.target.classList.contains('user-select-checkbox')) {
+            // Don't trigger if clicking directly on the checkbox or label
+            if (e.target.classList.contains('user-select-checkbox') || 
+                e.target.classList.contains('checkbox-label')) {
                 return;
             }
             
@@ -582,8 +572,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const checkbox = card.querySelector('.user-select-checkbox');
             if (checkbox) {
                 checkbox.checked = !checkbox.checked;
-                // Trigger the change event to update the create event button
-                checkbox.dispatchEvent(new Event('change'));
+                // Trigger the change event to update the create event button and styling
+                updateCreateEventButton();
             }
         });
     });
@@ -597,16 +587,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to format time displays from 24-hour to 12-hour format
     function formatTimeDisplays() {
         const timeBadges = document.querySelectorAll('.time-badge');
-        console.log('Found time badges:', timeBadges.length);
         timeBadges.forEach(badge => {
             const timeText = badge.textContent.trim();
-            console.log('Processing time text:', timeText);
             if (timeText.includes(' - ')) {
                 const [startTime, endTime] = timeText.split(' - ');
                 const formattedStart = formatTime(startTime);
                 const formattedEnd = formatTime(endTime);
                 badge.textContent = `${formattedStart} - ${formattedEnd}`;
-                console.log('Formatted to:', badge.textContent);
             }
         });
     }
@@ -738,9 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show modal with time slots
     function showEventModal() {
-        console.log('Create event button clicked!');
         const overlaps = calculateOverlaps();
-        console.log('Found overlaps:', overlaps.length);
         
         if (overlaps.length === 0) {
             modalBody.innerHTML = `
@@ -851,15 +836,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners
     if (createEventBtn) {
-        console.log('Adding click listener to create event button');
         createEventBtn.addEventListener('click', showEventModal);
-        
-        // Test click handler
-        createEventBtn.addEventListener('click', function() {
-            console.log('Button click detected!');
-        });
-    } else {
-        console.error('Create event button not found!');
     }
     closeModal.addEventListener('click', closeEventModal);
     cancelEvent.addEventListener('click', closeEventModal);
