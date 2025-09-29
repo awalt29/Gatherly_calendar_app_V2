@@ -149,10 +149,13 @@
     -moz-appearance: none;
 }
 
-.user-select-checkbox:hover {
-    border-color: var(--primary);
-    background: rgba(0, 104, 177, 0.05);
-    transform: scale(1.05);
+/* Only show checkbox hover effects on devices with hover capability */
+@media (hover: hover) {
+    .user-select-checkbox:hover {
+        border-color: var(--primary);
+        background: rgba(0, 104, 177, 0.05);
+        transform: scale(1.05);
+    }
 }
 
 .user-select-checkbox:checked {
