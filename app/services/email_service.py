@@ -52,7 +52,7 @@ def send_password_reset_email(user):
         
         # Use the appropriate domain based on environment
         import os
-        base_url = os.environ.get('APP_BASE_URL', 'https://web-production-b922e.up.railway.app')
+        base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
         reset_url = f"{base_url}/auth/reset-password/{token}"
         
         return send_email(

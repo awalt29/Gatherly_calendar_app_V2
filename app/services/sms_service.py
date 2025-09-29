@@ -48,7 +48,7 @@ class SMSService:
         try:
             # Generate the availability URL for the specific week
             # Use a simple base URL since url_for may not work outside request context
-            base_url = os.environ.get('APP_BASE_URL', 'http://localhost:5005')
+            base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
             availability_url = f"{base_url}/availability/week/{week_offset}"
             
             # Create the message
@@ -94,7 +94,7 @@ class SMSService:
         
         try:
             # Get app base URL for calendar link
-            base_url = os.environ.get('APP_BASE_URL', 'http://localhost:5005')
+            base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
             calendar_url = f"{base_url}/"
             
             # Create the weekend planning message
@@ -313,7 +313,7 @@ class SMSService:
         event_time = f"{event.start_time.strftime('%I:%M %p')} - {event.end_time.strftime('%I:%M %p')}"
         
         # Get app base URL for RSVP link
-        base_url = os.environ.get('APP_BASE_URL', 'http://localhost:5004')
+        base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
         events_url = f"{base_url}/events"
         
         # Create list of all attendees (creator + invitees)
@@ -391,7 +391,7 @@ class SMSService:
         event_time = f"{event.start_time.strftime('%I:%M %p')} - {event.end_time.strftime('%I:%M %p')}"
         
         # Get app base URL for RSVP link
-        base_url = os.environ.get('APP_BASE_URL', 'http://localhost:5004')
+        base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
         events_url = f"{base_url}/events"
         
         for invitee in pending_invitees:

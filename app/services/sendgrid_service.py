@@ -70,7 +70,7 @@ class SendGridService:
             token = user.generate_reset_token()
             
             # Build reset URL
-            base_url = os.environ.get('APP_BASE_URL', 'https://web-production-b922e.up.railway.app')
+            base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
             reset_url = f"{base_url}/auth/reset-password/{token}"
             
             # Render email template
