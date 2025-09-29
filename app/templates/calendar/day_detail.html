@@ -62,12 +62,12 @@
 .day-detail-container {
     max-width: 800px;
     margin: 0 auto;
-    padding-top: 80px; /* Space for sticky header */
+    padding-top: 140px; /* Space for top nav + sticky header */
 }
 
 .sticky-header {
     position: fixed;
-    top: 0;
+    top: 60px; /* Position below the top navigation */
     left: 0;
     right: 0;
     background: var(--background);
@@ -237,7 +237,7 @@
 
 @media (max-width: 768px) {
     .day-detail-container {
-        padding-top: 100px; /* More space for mobile header */
+        padding-top: 160px; /* More space for mobile: top nav + sticky header */
     }
     
     .day-detail-header {
