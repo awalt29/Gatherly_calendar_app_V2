@@ -581,19 +581,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize styling on page load
     updateCreateEventButton();
     
-    // Format time displays to 12-hour format
-    formatTimeDisplays();
+    // Format time displays to 12-hour format (with slight delay to ensure DOM is ready)
+    setTimeout(formatTimeDisplays, 100);
     
     // Function to format time displays from 24-hour to 12-hour format
     function formatTimeDisplays() {
-        const timeBadges = document.querySelectorAll('.time-badge:not(.all-day)');
+        const timeBadges = document.querySelectorAll('.time-badge');
+        console.log('Found time badges:', timeBadges.length);
         timeBadges.forEach(badge => {
             const timeText = badge.textContent.trim();
+            console.log('Processing time text:', timeText);
             if (timeText.includes(' - ')) {
                 const [startTime, endTime] = timeText.split(' - ');
                 const formattedStart = formatTime(startTime);
                 const formattedEnd = formatTime(endTime);
                 badge.textContent = `${formattedStart} - ${formattedEnd}`;
+                console.log('Formatted to:', badge.textContent);
             }
         });
     }
