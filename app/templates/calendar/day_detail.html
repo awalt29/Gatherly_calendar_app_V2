@@ -521,7 +521,7 @@ body.modal-open {
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.user-select-checkbox');
     const createEventBtn = document.getElementById('create-event-btn');
-    const selectedCount = document.getElementById('selected-count');
+    // selectedCount element removed from simplified layout
     const modal = document.getElementById('event-modal');
     const closeModal = document.getElementById('close-modal');
     const cancelEvent = document.getElementById('cancel-event');
@@ -540,10 +540,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update button state
         if (count >= 2) {
             createEventBtn.disabled = false;
-            selectedCount.textContent = `${count} people selected. Ready to create an event!`;
         } else {
             createEventBtn.disabled = true;
-            selectedCount.textContent = `Select at least 2 people to create an event.`;
         }
         
         // Update card styling
