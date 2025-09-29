@@ -3,15 +3,16 @@
 {% block title %}{{ date.strftime('%B %d, %Y') }} - Gatherly{% endblock %}
 
 {% block content %}
-<!-- Sticky header outside of container -->
-<div class="day-detail-header sticky-header">
-    <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">←</a>
-    <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
-</div>
-
 <div class="day-detail-container">
     <div class="friends-section">
-        <h2 class="section-title">Available Friends</h2>
+        <div class="section-header">
+            <div class="date-header">
+                <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">←</a>
+                <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
+            </div>
+            <div class="header-divider"></div>
+            <h2 class="section-title">Available Friends</h2>
+        </div>
         
         {% if available_users %}
             <div class="available-users">
@@ -58,35 +59,21 @@
 .day-detail-container {
     max-width: 800px;
     margin: 0 auto;
-    padding-top: 110px; /* Minimal space to clear sticky header */
+    padding: var(--space-4);
 }
 
-.sticky-header {
-    position: fixed;
-    top: 55px; /* Position closer to the top navigation */
-    left: 0;
-    right: 0;
-    background: var(--background);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border);
-    z-index: 1000;
-    padding: var(--space-3) var(--space-4);
+.section-header {
+    margin-bottom: var(--space-4);
 }
 
-.day-detail-header {
+.date-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
-    max-width: 800px;
-    margin: 0 auto;
-    position: relative;
-    width: 100%;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 .back-btn {
-    position: absolute;
-    left: 0;
     width: 40px;
     height: 40px;
     display: flex;
@@ -94,6 +81,14 @@
     justify-content: center;
     font-size: var(--font-size-lg);
     padding: 0;
+    flex-shrink: 0;
+}
+
+.header-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: var(--space-3) 0;
 }
 
 .day-title {
@@ -258,16 +253,11 @@
 
 @media (max-width: 768px) {
     .day-detail-container {
-        padding-top: 115px; /* Minimal space for mobile */
-    }
-    
-    .sticky-header {
-        padding: var(--space-2) var(--space-3);
+        padding: var(--space-3);
     }
     
     .day-title {
         font-size: var(--font-size-lg);
-        text-align: center;
         margin: 0;
     }
     
@@ -275,6 +265,10 @@
         width: 36px;
         height: 36px;
         font-size: var(--font-size-base);
+    }
+    
+    .date-header {
+        gap: var(--space-2);
     }
     
     .user-availability-card {
