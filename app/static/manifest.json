@@ -1,0 +1,21 @@
+{
+  "name": "Gatherly",
+  "short_name": "Gatherly",
+  "description": "Plan events with friends",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#0068b1",
+  "icons": [
+    {
+      "src": "/static/images/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
