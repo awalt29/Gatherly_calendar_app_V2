@@ -10,7 +10,7 @@
     <meta property="og:url" content="{{ request.url }}">
     <meta property="og:title" content="{% block og_title %}Gatherly - Never miss a weekend with your friends{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Plan events effortlessly with friends. Set your availability, create groups, and get notified when everyone is free at the same time.{% endblock %}">
-    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}?v=2">
     <meta property="og:site_name" content="Gatherly">
     
     <!-- Twitter -->
@@ -18,7 +18,7 @@
     <meta property="twitter:url" content="{{ request.url }}">
     <meta property="twitter:title" content="{% block twitter_title %}Gatherly - Never miss a weekend with your friends{% endblock %}">
     <meta property="twitter:description" content="{% block twitter_description %}Plan events effortlessly with friends. Set your availability, create groups, and get notified when everyone is free at the same time.{% endblock %}">
-    <meta property="twitter:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+    <meta property="twitter:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}?v=2">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}?v=2">
