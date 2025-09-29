@@ -117,9 +117,12 @@
     min-height: 50px;
 }
 
-.user-availability-card:hover:not(.selected) {
-    background: var(--surface-hover);
-    border-color: rgba(0, 104, 177, 0.3);
+/* Only show hover effects on devices with hover capability (not mobile) */
+@media (hover: hover) {
+    .user-availability-card:hover:not(.selected) {
+        background: var(--surface-hover);
+        border-color: rgba(0, 104, 177, 0.3);
+    }
 }
 
 .user-availability-card.selected {
