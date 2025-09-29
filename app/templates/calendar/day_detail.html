@@ -5,9 +5,8 @@
 {% block content %}
 <div class="day-detail-container">
     <div class="day-detail-header sticky-header">
+        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">←</a>
         <h1 class="day-title">{{ date.strftime('%A, %B %d, %Y') }}</h1>
-        <div class="header-divider"></div>
-        <a href="{{ url_for('calendar.index') }}" class="btn btn-secondary back-btn">← Back</a>
     </div>
     
     <div class="friends-section">
@@ -39,6 +38,12 @@
                     </div>
                 {% endfor %}
             </div>
+            
+            {% if available_users|length > 1 %}
+                <div class="create-event-section">
+                    <button id="create-event-btn" class="btn btn-primary" disabled>Create Event</button>
+                </div>
+            {% endif %}
         {% else %}
             <div class="empty-state">
                 <p>No one is available on this day.</p>
@@ -46,12 +51,6 @@
             </div>
         {% endif %}
     </div>
-    
-    {% if available_users|length > 1 %}
-        <div class="friends-section create-event-section">
-            <button id="create-event-btn" class="btn btn-primary" disabled>Create Event</button>
-        </div>
-    {% endif %}
 </div>
 
 <style>
@@ -75,22 +74,24 @@
 
 .day-detail-header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
+    justify-content: center;
+    gap: var(--space-4);
     max-width: 800px;
     margin: 0 auto;
-}
-
-.header-divider {
-    width: 100%;
-    height: 1px;
-    background: var(--border);
-    margin: var(--space-2) 0;
+    position: relative;
 }
 
 .back-btn {
-    align-self: flex-start;
+    position: absolute;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    padding: 0;
 }
 
 .day-title {
@@ -244,7 +245,9 @@
 
 .create-event-section {
     text-align: center;
-    margin-top: var(--space-6);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
 }
 
 .create-event-section .btn {
@@ -267,8 +270,9 @@
     }
     
     .back-btn {
-        font-size: var(--font-size-sm);
-        padding: var(--space-2) var(--space-3);
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-base);
     }
     
     .user-availability-card {
