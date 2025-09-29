@@ -190,15 +190,6 @@
                 </div>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>Test Auto-Sync</h4>
-                    <p>Test the new automatic sync logic (uses updated algorithm)</p>
-                </div>
-                <div class="setting-control">
-                    <button id="admin-sync-btn" class="btn btn-secondary btn-sm">Test Auto-Sync</button>
-                </div>
-            </div>
             {% endif %}
             
             <div class="setting-note">
@@ -219,9 +210,6 @@
                 </button>
                 <button id="change-password-btn" class="btn btn-secondary">
                     Change Password
-                </button>
-                <button class="btn btn-secondary" disabled>
-                    Export Data
                 </button>
             </div>
             
@@ -630,7 +618,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const autoSyncToggle = document.getElementById('auto-sync-availability');
     const autoAddEventsToggle = document.getElementById('auto-add-events');
     const syncNowBtn = document.getElementById('sync-now-btn');
-    const adminSyncBtn = document.getElementById('admin-sync-btn');
     
     // Change password modal elements
     const changePasswordBtn = document.getElementById('change-password-btn');
@@ -819,45 +806,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Admin sync button (test new auto-sync logic)
-    if (adminSyncBtn) {
-        adminSyncBtn.addEventListener('click', function() {
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = 'Testing...';
-            
-            fetch('/admin/sync-google-calendar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Auto-sync test completed successfully!', 'success');
-                    
-                    // Refresh the availability calendar if we're on that page
-                    if (window.location.pathname === '/availability' && typeof loadAvailabilityWeek === 'function') {
-                        // Reload the current week to show updated availability
-                        if (typeof Gatherly !== 'undefined' && Gatherly.availabilityCurrentWeek !== undefined) {
-                            loadAvailabilityWeek(Gatherly.availabilityCurrentWeek);
-                        }
-                    }
-                } else {
-                    throw new Error(data.error || 'Failed to test auto-sync');
-                }
-            })
-            .catch(error => {
-                console.error('Error testing auto-sync:', error);
-                showNotification('Failed to test auto-sync. Please try again.', 'error');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = originalText;
-            });
-        });
-    }
     
     // Change Password Modal functionality
     if (changePasswordBtn) {
