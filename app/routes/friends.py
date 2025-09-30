@@ -151,3 +151,29 @@ def search_friends():
         })
     
     return jsonify(results)
+
+@bp.route('/friends/api/list')
+@login_required
+def get_friends_list():
+    """Get user's friends list for API usage"""
+    try:
+        friends = current_user.get_friends()
+        friends_data = []
+        
+        for friend in friends:
+            friends_data.append({
+                'id': friend.id,
+                'name': friend.get_full_name(),
+                'initials': friend.get_initials()
+            })
+        
+        return jsonify({
+            'success': True,
+            'friends': friends_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

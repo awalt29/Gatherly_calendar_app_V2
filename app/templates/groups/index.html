@@ -263,6 +263,49 @@
             </form>
         </div>
     </div>
+    
+    <!-- Edit Group Modal -->
+    <div id="editGroupModal" class="modal-overlay" onclick="closeEditGroupModal(event)">
+        <div class="modal-content group-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Group</h2>
+                <button class="modal-close-btn" onclick="closeEditGroupModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Group Name Section -->
+                <div class="edit-section">
+                    <h3>Group Name</h3>
+                    <input type="text" id="editGroupName" class="form-input modern-input" 
+                           placeholder="Enter group name" maxlength="100">
+                </div>
+                
+                <!-- Current Members Section -->
+                <div class="edit-section">
+                    <h3>Current Members</h3>
+                    <div id="editCurrentMembers" class="members-grid">
+                        <!-- Members will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Add Members Section -->
+                <div class="edit-section">
+                    <h3>Add Friends</h3>
+                    <div id="editAvailableFriends" class="friends-grid">
+                        <!-- Available friends will be populated here -->
+                    </div>
+                    <div id="editNoFriendsMessage" class="empty-state" style="display: none;">
+                        <p>All your friends are already in this group!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditGroupModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveGroupChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -948,6 +991,143 @@
 
 .create-group-form .setting-control {
     margin: 0;
+}
+
+/* Edit Group Modal Styles */
+.edit-section {
+    margin-bottom: var(--space-6);
+}
+
+.edit-section h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+    color: var(--text-primary);
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+}
+
+.member-item-edit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.member-item-edit .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.member-item-edit .member-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.member-item-edit .member-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-item-edit .member-role {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.member-item-edit .remove-btn {
+    padding: var(--space-1) var(--space-2);
+    background: var(--error);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.member-item-edit .remove-btn:hover {
+    background: #d70015;
+}
+
+.member-item-edit.creator .remove-btn {
+    display: none;
+}
+
+.friend-item-add {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.friend-item-add:hover {
+    background: var(--surface);
+    border-color: var(--primary);
+}
+
+.friend-item-add .friend-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.friend-item-add .friend-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-item-add .add-btn {
+    padding: var(--space-1) var(--space-2);
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.friend-item-add .add-btn:hover {
+    background: var(--primary-hover);
 }
 
 .group-type-card {
@@ -2089,12 +2269,9 @@ function leaveGroup(groupId) {
 
 // Edit group function
 function editGroup(groupId) {
-    // For now, let's implement a simple prompt-based edit
-    // Later this could be expanded to a proper edit modal
-    const newName = prompt('Enter new group name:', currentModalGroupData.name);
-    if (newName && newName.trim() && newName.trim() !== currentModalGroupData.name) {
-        updateGroupName(groupId, newName.trim());
-    }
+    // Close the main modal and open edit modal
+    closeGroupModal();
+    openEditGroupModal(groupId);
 }
 
 // Delete group function
@@ -2151,9 +2328,185 @@ function updateGroupName(groupId, newName) {
 
 // Close modal on Escape key
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('groupModal').classList.contains('active')) {
-        closeGroupModal();
+    if (e.key === 'Escape') {
+        if (document.getElementById('editGroupModal').classList.contains('active')) {
+            closeEditGroupModal();
+        } else if (document.getElementById('groupModal').classList.contains('active')) {
+            closeGroupModal();
+        }
     }
 });
+
+// Edit Group Modal Functions
+let editGroupData = null;
+let editGroupFriends = [];
+
+function openEditGroupModal(groupId) {
+    // Fetch group details and friends list
+    Promise.all([
+        fetch(`/groups/${groupId}/details`).then(r => r.json()),
+        fetch('/friends/api/list').then(r => r.json()).catch(() => ({ friends: [] }))
+    ])
+    .then(([groupResponse, friendsResponse]) => {
+        if (groupResponse.success) {
+            editGroupData = groupResponse.group;
+            editGroupFriends = friendsResponse.friends || [];
+            populateEditModal();
+            document.getElementById('editGroupModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        } else {
+            alert('Failed to load group details');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading edit modal data:', error);
+        alert('Error loading group data');
+    });
+}
+
+function closeEditGroupModal(event) {
+    if (event && event.target !== event.currentTarget && !event.target.classList.contains('modal-close-btn')) {
+        return;
+    }
+    
+    document.getElementById('editGroupModal').classList.remove('active');
+    document.body.style.overflow = '';
+    editGroupData = null;
+    editGroupFriends = [];
+}
+
+function populateEditModal() {
+    // Set group name
+    document.getElementById('editGroupName').value = editGroupData.name;
+    
+    // Populate current members
+    const membersContainer = document.getElementById('editCurrentMembers');
+    membersContainer.innerHTML = '';
+    
+    editGroupData.members.forEach(member => {
+        const isCreator = member.id === editGroupData.created_by.id;
+        const memberDiv = document.createElement('div');
+        memberDiv.className = `member-item-edit ${isCreator ? 'creator' : ''}`;
+        memberDiv.innerHTML = `
+            <div class="member-avatar">${escapeHtml(member.initials)}</div>
+            <div class="member-info">
+                <div class="member-name">${escapeHtml(member.name)}</div>
+                <div class="member-role">${isCreator ? 'Creator' : 'Member'}</div>
+            </div>
+            <button class="remove-btn" onclick="removeMemberFromGroup(${member.id}, '${escapeHtml(member.name)}')">Remove</button>
+        `;
+        membersContainer.appendChild(memberDiv);
+    });
+    
+    // Populate available friends (not already in group)
+    const friendsContainer = document.getElementById('editAvailableFriends');
+    const noFriendsMessage = document.getElementById('editNoFriendsMessage');
+    friendsContainer.innerHTML = '';
+    
+    const memberIds = editGroupData.members.map(m => m.id);
+    const availableFriends = editGroupFriends.filter(friend => !memberIds.includes(friend.id));
+    
+    if (availableFriends.length === 0) {
+        noFriendsMessage.style.display = 'block';
+        friendsContainer.style.display = 'none';
+    } else {
+        noFriendsMessage.style.display = 'none';
+        friendsContainer.style.display = 'grid';
+        
+        availableFriends.forEach(friend => {
+            const friendDiv = document.createElement('div');
+            friendDiv.className = 'friend-item-add';
+            friendDiv.innerHTML = `
+                <div class="friend-avatar">${escapeHtml(friend.initials)}</div>
+                <div class="friend-name">${escapeHtml(friend.name)}</div>
+                <button class="add-btn" onclick="addMemberToGroup(${friend.id}, '${escapeHtml(friend.name)}')">Add</button>
+            `;
+            friendsContainer.appendChild(friendDiv);
+        });
+    }
+}
+
+function addMemberToGroup(userId, userName) {
+    fetch(`/groups/${editGroupData.id}/members`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Refresh the edit modal
+            openEditGroupModal(editGroupData.id);
+        } else {
+            alert(data.error || 'Failed to add member');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding member:', error);
+        alert('Error adding member');
+    });
+}
+
+function removeMemberFromGroup(userId, userName) {
+    if (!confirm(`Remove ${userName} from the group?`)) {
+        return;
+    }
+    
+    fetch(`/groups/${editGroupData.id}/members/${userId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Refresh the edit modal
+            openEditGroupModal(editGroupData.id);
+        } else {
+            alert(data.error || 'Failed to remove member');
+        }
+    })
+    .catch(error => {
+        console.error('Error removing member:', error);
+        alert('Error removing member');
+    });
+}
+
+function saveGroupChanges() {
+    const newName = document.getElementById('editGroupName').value.trim();
+    
+    if (!newName) {
+        alert('Group name is required');
+        return;
+    }
+    
+    if (newName === editGroupData.name) {
+        // No name change, just close modal
+        closeEditGroupModal();
+        return;
+    }
+    
+    // Update group name
+    fetch(`/groups/${editGroupData.id}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeEditGroupModal();
+            location.reload(); // Refresh to show updated group
+        } else {
+            alert(data.error || 'Failed to update group name');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating group name:', error);
+        alert('Error updating group name');
+    });
+}
 </script>
 {% endblock %}
