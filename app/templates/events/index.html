@@ -234,6 +234,26 @@
                         <input type="time" id="edit_end_time" name="end_time" class="form-input" required>
                     </div>
                 </div>
+                
+                <!-- Guest Management Section -->
+                <div class="form-group">
+                    <label class="form-label">Guests</label>
+                    <div class="guests-section">
+                        <div class="current-guests">
+                            <h4>Current Attendees</h4>
+                            <div id="currentGuestsList" class="guests-list">
+                                <!-- Current guests will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="add-guests">
+                            <h4>Add More Friends</h4>
+                            <div id="availableFriendsList" class="friends-list">
+                                <!-- Available friends will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelEditEvent">Cancel</button>
@@ -606,6 +626,111 @@
     border-color: rgba(239, 68, 68, 0.3);
 }
 
+/* Guest Management Styles */
+.guests-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-2);
+}
+
+.current-guests h4,
+.add-guests h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.guests-list,
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    background: var(--background);
+}
+
+.guest-item,
+.friend-item-edit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.guest-item:hover,
+.friend-item-edit:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+}
+
+.guest-info,
+.friend-info-edit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+}
+
+.guest-avatar,
+.friend-avatar-edit {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+.guest-name,
+.friend-name-edit {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.guest-status {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.remove-guest-btn,
+.add-friend-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    font-size: var(--font-size-sm);
+}
+
+.remove-guest-btn:hover {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.add-friend-btn:hover {
+    color: var(--primary);
+    background: rgba(0, 122, 255, 0.1);
+}
+
 /* Modal styles */
 .modal {
     display: none;
@@ -975,6 +1100,183 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }, 300);
         }, 3000);
+    }
+    
+    // Edit Event Modal functionality
+    let currentEditEventId = null;
+    let currentEventGuests = [];
+    let availableFriends = [];
+    
+    // Handle edit event buttons
+    document.querySelectorAll('.edit-event-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.getAttribute('data-event-id');
+            openEditEventModal(eventId);
+        });
+    });
+    
+    // Close edit modal
+    document.getElementById('closeEditEventModal').addEventListener('click', closeEditEventModal);
+    document.getElementById('cancelEditEvent').addEventListener('click', closeEditEventModal);
+    
+    // Handle edit form submission
+    document.getElementById('editEventForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveEventChanges();
+    });
+    
+    function openEditEventModal(eventId) {
+        currentEditEventId = eventId;
+        
+        // Fetch event data and friends list
+        Promise.all([
+            fetch(`/events/${eventId}/data`).then(r => r.json()),
+            fetch('/friends/api/list').then(r => r.json())
+        ])
+        .then(([eventData, friendsData]) => {
+            if (eventData.success && friendsData.success) {
+                populateEditModal(eventData.event);
+                availableFriends = friendsData.friends;
+                loadEventGuests(eventId);
+                document.getElementById('editEventModal').classList.add('show');
+            } else {
+                showNotification('Error loading event data', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading edit modal:', error);
+            showNotification('Error loading event data', 'error');
+        });
+    }
+    
+    function populateEditModal(event) {
+        document.getElementById('edit_event_title').value = event.title || '';
+        document.getElementById('edit_event_location').value = event.location || '';
+        document.getElementById('edit_event_description').value = event.description || '';
+        document.getElementById('edit_event_date').value = event.date || '';
+        document.getElementById('edit_start_time').value = event.start_time || '';
+        document.getElementById('edit_end_time').value = event.end_time || '';
+    }
+    
+    function loadEventGuests(eventId) {
+        fetch(`/events/${eventId}/guests`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentEventGuests = data.guests;
+                renderCurrentGuests();
+                renderAvailableFriends();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading guests:', error);
+        });
+    }
+    
+    function renderCurrentGuests() {
+        const container = document.getElementById('currentGuestsList');
+        container.innerHTML = '';
+        
+        currentEventGuests.forEach(guest => {
+            const guestElement = document.createElement('div');
+            guestElement.className = 'guest-item';
+            guestElement.innerHTML = `
+                <div class="guest-info">
+                    <div class="guest-avatar friend-color-${guest.id % 8}">${guest.initials}</div>
+                    <div>
+                        <div class="guest-name">${guest.name}</div>
+                        <div class="guest-status">${guest.status}</div>
+                    </div>
+                </div>
+                ${guest.id !== {{ current_user.id }} ? `<button class="remove-guest-btn" onclick="removeGuest(${guest.id})">Remove</button>` : ''}
+            `;
+            container.appendChild(guestElement);
+        });
+    }
+    
+    function renderAvailableFriends() {
+        const container = document.getElementById('availableFriendsList');
+        container.innerHTML = '';
+        
+        const currentGuestIds = currentEventGuests.map(g => g.id);
+        const availableToAdd = availableFriends.filter(friend => !currentGuestIds.includes(friend.id));
+        
+        availableToAdd.forEach(friend => {
+            const friendElement = document.createElement('div');
+            friendElement.className = 'friend-item-edit';
+            friendElement.innerHTML = `
+                <div class="friend-info-edit">
+                    <div class="friend-avatar-edit friend-color-${friend.id % 8}">${friend.initials}</div>
+                    <div class="friend-name-edit">${friend.name}</div>
+                </div>
+                <button class="add-friend-btn" onclick="addGuest(${friend.id}, '${friend.name}', '${friend.initials}')">Add</button>
+            `;
+            container.appendChild(friendElement);
+        });
+        
+        if (availableToAdd.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: var(--space-4);">All friends are already invited</p>';
+        }
+    }
+    
+    function addGuest(friendId, friendName, friendInitials) {
+        currentEventGuests.push({
+            id: friendId,
+            name: friendName,
+            initials: friendInitials,
+            status: 'pending'
+        });
+        renderCurrentGuests();
+        renderAvailableFriends();
+    }
+    
+    function removeGuest(guestId) {
+        currentEventGuests = currentEventGuests.filter(guest => guest.id !== guestId);
+        renderCurrentGuests();
+        renderAvailableFriends();
+    }
+    
+    function saveEventChanges() {
+        const formData = new FormData(document.getElementById('editEventForm'));
+        
+        // Add guest IDs to form data
+        const guestIds = currentEventGuests.map(guest => guest.id);
+        formData.append('guest_ids', JSON.stringify(guestIds));
+        
+        const submitBtn = document.getElementById('submitEditEvent');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+        
+        fetch(`/events/${currentEditEventId}/edit`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeEditEventModal();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showNotification(data.error || 'Error saving changes', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving event:', error);
+            showNotification('Error saving changes', 'error');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    }
+    
+    function closeEditEventModal() {
+        document.getElementById('editEventModal').classList.remove('show');
+        currentEditEventId = null;
+        currentEventGuests = [];
+        availableFriends = [];
     }
 });
 </script>

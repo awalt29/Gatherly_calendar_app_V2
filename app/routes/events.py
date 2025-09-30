@@ -55,6 +55,53 @@ def get_event_data(event_id):
         }
     })
 
+@bp.route('/events/<int:event_id>/guests')
+@login_required
+def get_event_guests(event_id):
+    """Get event guests for editing"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Only the event creator can view guests for editing
+    if event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    guests = []
+    
+    # Add creator (always attending)
+    creator = event.created_by
+    guests.append({
+        'id': creator.id,
+        'name': creator.get_full_name(),
+        'initials': creator.get_initials(),
+        'status': 'organizer'
+    })
+    
+    # Add current attendees (excluding creator)
+    for attendee in event.attendees:
+        if attendee.id != creator.id:
+            guests.append({
+                'id': attendee.id,
+                'name': attendee.get_full_name(),
+                'initials': attendee.get_initials(),
+                'status': 'attending'
+            })
+    
+    # Add pending invitations
+    invitations = EventInvitation.query.filter_by(event_id=event_id).all()
+    for invitation in invitations:
+        if invitation.invitee_id not in [g['id'] for g in guests]:
+            guests.append({
+                'id': invitation.invitee.id,
+                'name': invitation.invitee.get_full_name(),
+                'initials': invitation.invitee.get_initials(),
+                'status': invitation.status
+            })
+    
+    return jsonify({
+        'success': True,
+        'guests': guests
+    })
+
 @bp.route('/events/<int:event_id>/edit', methods=['POST'])
 @login_required
 def edit_event(event_id):
@@ -73,6 +120,7 @@ def edit_event(event_id):
         date_str = request.form.get('date')
         start_time_str = request.form.get('start_time')
         end_time_str = request.form.get('end_time')
+        guest_ids_json = request.form.get('guest_ids')
         
         # Validation
         if not title:
@@ -98,6 +146,59 @@ def edit_event(event_id):
         event.start_time = start_time
         event.end_time = end_time
         event.updated_at = datetime.utcnow()
+        
+        # Handle guest updates if provided
+        if guest_ids_json:
+            try:
+                import json
+                guest_ids = json.loads(guest_ids_json)
+                
+                # Ensure current user is always included
+                if current_user.id not in guest_ids:
+                    guest_ids.append(current_user.id)
+                
+                # Get current attendees and invitations
+                current_attendees = [user.id for user in event.attendees]
+                current_invitations = EventInvitation.query.filter_by(event_id=event.id).all()
+                current_invitees = [inv.invitee_id for inv in current_invitations]
+                
+                # Determine who to add and remove
+                all_current = set(current_attendees + current_invitees)
+                new_guests = set(guest_ids)
+                
+                to_add = new_guests - all_current
+                to_remove = all_current - new_guests
+                
+                # Remove users (delete invitations, remove from attendees)
+                for user_id in to_remove:
+                    if user_id != current_user.id:  # Don't remove the creator
+                        # Remove from attendees
+                        user_to_remove = User.query.get(user_id)
+                        if user_to_remove and user_to_remove in event.attendees:
+                            event.attendees.remove(user_to_remove)
+                        
+                        # Delete invitations
+                        EventInvitation.query.filter_by(
+                            event_id=event.id, 
+                            invitee_id=user_id
+                        ).delete()
+                
+                # Add new users (create invitations)
+                for user_id in to_add:
+                    if user_id != current_user.id:  # Don't invite the creator
+                        user_to_add = User.query.get(user_id)
+                        if user_to_add:
+                            # Create invitation
+                            invitation = EventInvitation(
+                                event_id=event.id,
+                                invitee_id=user_id,
+                                status='pending'
+                            )
+                            db.session.add(invitation)
+                
+            except (json.JSONDecodeError, ValueError) as e:
+                logger.error(f"Error parsing guest_ids: {str(e)}")
+                # Continue without guest updates if JSON is invalid
         
         db.session.commit()
         
