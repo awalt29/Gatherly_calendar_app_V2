@@ -2514,22 +2514,33 @@ function saveGroupChanges() {
 }
 
 function updateGroupCard(groupId, groupData) {
+    console.log('updateGroupCard called with:', { groupId, groupData });
+    
     // Find the group card on the main page by group ID
     const groupCards = document.querySelectorAll('[onclick*="openGroupModal"]');
+    console.log('Found group cards:', groupCards.length);
     
     for (let card of groupCards) {
         // Extract group ID from onclick attribute
         const onclickAttr = card.getAttribute('onclick');
         const match = onclickAttr.match(/openGroupModal\((\d+)\)/);
+        console.log('Checking card with onclick:', onclickAttr, 'match:', match);
+        
         if (match && parseInt(match[1]) === groupId) {
+            console.log('Found matching card for group ID:', groupId);
+            
             // Update the member bubbles
             const membersContainer = card.querySelector('.group-members');
+            console.log('Members container found:', !!membersContainer);
+            console.log('Group data members:', groupData.members);
+            
             if (membersContainer && groupData.members) {
                 membersContainer.innerHTML = '';
                 
                 // Add member bubbles (limit to first 4, then show +X)
                 const maxVisible = 4;
                 const members = groupData.members || [];
+                console.log('Processing members:', members);
                 
                 for (let i = 0; i < Math.min(members.length, maxVisible); i++) {
                     const member = members[i];
@@ -2538,6 +2549,7 @@ function updateGroupCard(groupId, groupData) {
                     memberBubble.title = member.name;
                     memberBubble.textContent = member.initials;
                     membersContainer.appendChild(memberBubble);
+                    console.log('Added member bubble for:', member.name);
                 }
                 
                 // Add overflow indicator if there are more members
@@ -2547,7 +2559,12 @@ function updateGroupCard(groupId, groupData) {
                     overflowBubble.textContent = `+${members.length - maxVisible}`;
                     overflowBubble.title = `${members.length - maxVisible} more members`;
                     membersContainer.appendChild(overflowBubble);
+                    console.log('Added overflow indicator');
                 }
+                
+                console.log('Successfully updated group card');
+            } else {
+                console.log('Missing members container or group data members');
             }
             break;
         }
