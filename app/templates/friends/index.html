@@ -105,6 +105,11 @@
                         </div>
                         <div class="friend-actions">
                             <span class="status-badge connected">Connected</span>
+                            <button class="btn btn-danger btn-sm remove-friend" 
+                                    data-friend-id="{{ friend.id }}" 
+                                    data-friend-name="{{ friend.get_full_name() }}">
+                                Remove
+                            </button>
                         </div>
                     </div>
                 {% endfor %}
@@ -354,9 +359,162 @@
 <script>
 // Initialize friends page when loaded
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof initializeFriends === 'function') {
-        initializeFriends();
-    }
+    initializeFriends();
 });
+
+function initializeFriends() {
+    // Handle add friend form
+    const addFriendForm = document.getElementById('addFriendForm');
+    if (addFriendForm) {
+        addFriendForm.addEventListener('submit', handleAddFriend);
+    }
+
+    // Handle accept/decline friend requests
+    document.querySelectorAll('.accept-friend').forEach(btn => {
+        btn.addEventListener('click', handleAcceptFriend);
+    });
+    
+    document.querySelectorAll('.decline-friend').forEach(btn => {
+        btn.addEventListener('click', handleDeclineFriend);
+    });
+    
+    // Handle remove friend
+    document.querySelectorAll('.remove-friend').forEach(btn => {
+        btn.addEventListener('click', handleRemoveFriend);
+    });
+}
+
+function handleAddFriend(e) {
+    e.preventDefault();
+    
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    if (!phoneNumber) {
+        alert('Please enter a phone number');
+        return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    
+    fetch('/friends/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone_number: phoneNumber })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('phoneNumber').value = '';
+            location.reload(); // Refresh to show updated requests
+        } else {
+            alert(data.error || 'Failed to send friend request');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending friend request');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function handleAcceptFriend(e) {
+    const friendId = e.target.getAttribute('data-friend-id');
+    const btn = e.target;
+    
+    btn.disabled = true;
+    btn.textContent = 'Accepting...';
+    
+    fetch(`/friends/accept/${friendId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to accept friend request');
+            btn.disabled = false;
+            btn.textContent = 'Accept';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error accepting friend request');
+        btn.disabled = false;
+        btn.textContent = 'Accept';
+    });
+}
+
+function handleDeclineFriend(e) {
+    const friendId = e.target.getAttribute('data-friend-id');
+    const btn = e.target;
+    
+    btn.disabled = true;
+    btn.textContent = 'Declining...';
+    
+    fetch(`/friends/decline/${friendId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to decline friend request');
+            btn.disabled = false;
+            btn.textContent = 'Decline';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error declining friend request');
+        btn.disabled = false;
+        btn.textContent = 'Decline';
+    });
+}
+
+function handleRemoveFriend(e) {
+    const friendId = e.target.getAttribute('data-friend-id');
+    const friendName = e.target.getAttribute('data-friend-name');
+    const btn = e.target;
+    
+    if (!confirm(`Are you sure you want to remove ${friendName} from your friends list?`)) {
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+    
+    fetch(`/friends/remove/${friendId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to remove friend');
+            btn.disabled = false;
+            btn.textContent = 'Remove';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error removing friend');
+        btn.disabled = false;
+        btn.textContent = 'Remove';
+    });
+}
 </script>
 {% endblock %}

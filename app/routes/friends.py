@@ -177,3 +177,35 @@ def get_friends_list():
             'success': False,
             'error': str(e)
         }), 500
+
+@bp.route('/friends/remove/<int:friend_user_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_user_id):
+    """Remove a friend (unfriend)"""
+    try:
+        # Find the friendship record
+        friendship = Friend.query.filter(
+            ((Friend.user_id == current_user.id) & (Friend.friend_id == friend_user_id)) |
+            ((Friend.user_id == friend_user_id) & (Friend.friend_id == current_user.id))
+        ).filter_by(status='accepted').first()
+        
+        if not friendship:
+            return jsonify({'error': 'Friendship not found'}), 404
+        
+        # Get the friend's name for the response
+        friend_user = User.query.get(friend_user_id)
+        if not friend_user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Delete the friendship
+        db.session.delete(friendship)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{friend_user.get_full_name()} has been removed from your friends list'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
