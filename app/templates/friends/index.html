@@ -104,11 +104,11 @@
                             </div>
                         </div>
                         <div class="friend-actions">
-                            <span class="status-badge connected">Connected</span>
-                            <button class="btn btn-danger btn-sm remove-friend" 
+                            <button class="remove-friend-btn" 
                                     data-friend-id="{{ friend.id }}" 
-                                    data-friend-name="{{ friend.get_full_name() }}">
-                                Remove
+                                    data-friend-name="{{ friend.get_full_name() }}"
+                                    title="Remove {{ friend.get_full_name() }}">
+                                ×
                             </button>
                         </div>
                     </div>
@@ -253,6 +253,30 @@
     border: 1px solid rgba(52, 199, 89, 0.3);
 }
 
+.remove-friend-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+}
+
+.remove-friend-btn:hover {
+    background: var(--error);
+    color: white;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
 .empty-state {
     text-align: center;
     padding: var(--space-8);
@@ -379,7 +403,7 @@ function initializeFriends() {
     });
     
     // Handle remove friend
-    document.querySelectorAll('.remove-friend').forEach(btn => {
+    document.querySelectorAll('.remove-friend-btn').forEach(btn => {
         btn.addEventListener('click', handleRemoveFriend);
     });
 }
@@ -493,7 +517,8 @@ function handleRemoveFriend(e) {
     }
     
     btn.disabled = true;
-    btn.textContent = 'Removing...';
+    btn.style.opacity = '0.3';
+    btn.textContent = '...';
     
     fetch(`/friends/remove/${friendId}`, {
         method: 'POST'
@@ -506,14 +531,16 @@ function handleRemoveFriend(e) {
         } else {
             alert(data.error || 'Failed to remove friend');
             btn.disabled = false;
-            btn.textContent = 'Remove';
+            btn.style.opacity = '0.5';
+            btn.textContent = '×';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error removing friend');
         btn.disabled = false;
-        btn.textContent = 'Remove';
+        btn.style.opacity = '0.5';
+        btn.textContent = '×';
     });
 }
 </script>
