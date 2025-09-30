@@ -55,7 +55,11 @@ def add_friend():
         user = User.query.filter(User.phone == phone_number).first()
         
         if not user:
-            return jsonify({'error': 'No user found with that phone number'}), 404
+            return jsonify({
+                'user_not_found': True,
+                'phone_number': phone_number,
+                'message': f'No user found with phone number {phone_number}'
+            }), 404
         
         if user.id == current_user.id:
             return jsonify({'error': 'Cannot add yourself as a friend'}), 400
@@ -208,4 +212,35 @@ def remove_friend(friend_user_id):
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/friends/invite', methods=['POST'])
+@login_required
+def send_invite():
+    """Send an invite to join the app via SMS"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        phone_number = data.get('phone_number', '').strip()
+        
+        if not phone_number:
+            return jsonify({'error': 'Phone number is required'}), 400
+        
+        # Check if user already exists (shouldn't happen, but safety check)
+        existing_user = User.query.filter(User.phone == phone_number).first()
+        if existing_user:
+            return jsonify({'error': 'User already exists with this phone number'}), 400
+        
+        # Send SMS invite
+        from app.services.sms_service import send_app_invite_sms
+        success = send_app_invite_sms(phone_number, current_user.get_full_name())
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Invite sent to {phone_number}! They\'ll receive a text message with a link to join Gatherly.'
+            })
+        else:
+            return jsonify({'error': 'Failed to send invite. Please try again later.'}), 500
+            
+    except Exception as e:
         return jsonify({'error': str(e)}), 500

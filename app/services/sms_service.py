@@ -457,6 +457,30 @@ class SMSService:
             logger.error(f"Failed to send SMS to {phone_number}: {str(e)}")
             return False
 
+def send_app_invite_sms(phone_number, inviter_name):
+    """
+    Send an SMS invite to join the Gatherly app
+    
+    Args:
+        phone_number: Recipient's phone number
+        inviter_name: Name of the person sending the invite
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
+    signup_url = f"{base_url}/auth/signup"
+    
+    message_body = (
+        f"🎉 {inviter_name} invited you to join Gatherly!\n\n"
+        f"Gatherly helps you coordinate plans with friends by sharing availability.\n\n"
+        f"📱 Join here: {signup_url}\n\n"
+        f"Never miss a weekend with your friends!\n"
+        f"- The Gatherly Team"
+    )
+    
+    return sms_service.send_sms(phone_number, message_body)
+
 # Global instance
 sms_service = SMSService()
 

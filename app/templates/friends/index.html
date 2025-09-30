@@ -436,6 +436,17 @@ function handleAddFriend(e) {
             alert(data.message);
             document.getElementById('phoneNumber').value = '';
             location.reload(); // Refresh to show updated requests
+        } else if (data.user_not_found) {
+            // User not found - offer to send an invite
+            const shouldInvite = confirm(
+                `No user found with phone number ${data.phone_number}.\n\n` +
+                `Would you like to send them an invite to join Gatherly?`
+            );
+            
+            if (shouldInvite) {
+                sendInvite(data.phone_number, submitBtn, originalText);
+                return; // Don't reset button state here, sendInvite will handle it
+            }
         } else {
             alert(data.error || 'Failed to send friend request');
         }
@@ -443,6 +454,35 @@ function handleAddFriend(e) {
     .catch(error => {
         console.error('Error:', error);
         alert('Error sending friend request');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function sendInvite(phoneNumber, submitBtn, originalText) {
+    submitBtn.textContent = 'Sending Invite...';
+    
+    fetch('/friends/invite', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone_number: phoneNumber })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('phoneNumber').value = '';
+        } else {
+            alert(data.error || 'Failed to send invite');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending invite');
     })
     .finally(() => {
         submitBtn.disabled = false;
