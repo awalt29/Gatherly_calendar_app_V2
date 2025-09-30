@@ -751,6 +751,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text" id="event-title" placeholder="Enter activity..." required>
                     </div>
                     <div class="form-group">
+                        <label for="event-location">Location</label>
+                        <input type="text" id="event-location" placeholder="Enter location...">
+                    </div>
+                    <div class="form-group">
                         <label for="event-description">Description (optional)</label>
                         <textarea id="event-description" placeholder="Add event details..."></textarea>
                     </div>
@@ -866,6 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Finalize event
     finalizeEvent.addEventListener('click', function() {
         const title = document.getElementById('event-title').value.trim();
+        const location = document.getElementById('event-location').value.trim();
         const description = document.getElementById('event-description').value.trim();
         
         if (!title) {
@@ -900,6 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create the event
         const eventData = {
             title: title,
+            location: location,
             description: description,
             date: '{{ date.strftime('%Y-%m-%d') }}',
             start_time: startTime,

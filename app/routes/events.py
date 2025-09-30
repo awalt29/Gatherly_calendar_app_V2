@@ -47,6 +47,7 @@ def get_event_data(event_id):
         'event': {
             'id': event.id,
             'title': event.title,
+            'location': event.location or '',
             'description': event.description,
             'date': event.date.isoformat(),
             'start_time': event.start_time.strftime('%H:%M'),
@@ -67,6 +68,7 @@ def edit_event(event_id):
     try:
         # Get form data
         title = request.form.get('title', '').strip()
+        location = request.form.get('location', '').strip()
         description = request.form.get('description', '').strip()
         date_str = request.form.get('date')
         start_time_str = request.form.get('start_time')
@@ -90,6 +92,7 @@ def edit_event(event_id):
         
         # Update event
         event.title = title
+        event.location = location if location else None
         event.description = description if description else None
         event.date = event_date
         event.start_time = start_time
@@ -285,6 +288,7 @@ def create():
         # Create the event
         event = Event(
             title=data['title'],
+            location=data.get('location', ''),
             description=data.get('description', ''),
             date=event_date,
             start_time=start_time,

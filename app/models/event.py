@@ -10,6 +10,7 @@ event_attendees = db.Table('event_attendees',
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(200))
     description = db.Column(db.Text)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
