@@ -99,7 +99,7 @@
                                 <h4>{{ friend.get_full_name() }}</h4>
                                 <p>{{ friend.email }}</p>
                                 {% if friend.phone %}
-                                    <small class="text-muted">{{ friend.phone }}</small>
+                                    <small class="text-muted">{{ friend.phone | format_phone }}</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -127,7 +127,7 @@
                     <h4>Tips:</h4>
                     <ul>
                         <li>Ask friends for their phone number</li>
-                        <li>Share your phone: <strong>{{ current_user.phone }}</strong></li>
+                        <li>Share your phone: <strong>{{ current_user.phone | format_phone }}</strong></li>
                         <li>Once connected, you'll see each other's availability</li>
                     </ul>
                 </div>

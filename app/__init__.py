@@ -52,6 +52,27 @@ def create_app(config_class=Config):
     from app.routes.google_auth import bp as google_auth_bp
     app.register_blueprint(google_auth_bp)
 
+    # Register custom Jinja2 filters
+    @app.template_filter('format_phone')
+    def format_phone_number(phone_number):
+        """Format phone number as (XXX) XXX-XXXX"""
+        if not phone_number:
+            return phone_number
+        
+        # Remove all non-digit characters
+        digits = ''.join(filter(str.isdigit, phone_number))
+        
+        # Handle different phone number lengths
+        if len(digits) == 10:
+            # US phone number: 1234567890 -> (123) 456-7890
+            return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        elif len(digits) == 11 and digits[0] == '1':
+            # US phone number with country code: 11234567890 -> (123) 456-7890
+            return f"({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
+        else:
+            # Return original if not a standard US phone number
+            return phone_number
+
     return app
 
 from app import models
