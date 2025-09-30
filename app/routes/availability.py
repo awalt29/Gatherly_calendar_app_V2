@@ -259,6 +259,129 @@ def sync_from_google_calendar():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@bp.route('/availability/sync-outlook', methods=['POST'])
+@login_required
+def sync_from_outlook_calendar():
+    """Sync availability from Outlook Calendar"""
+    try:
+        from app.services.outlook_calendar_service import outlook_calendar_service
+        from app.models.outlook_calendar_sync import OutlookCalendarSync
+        
+        print(f"[SYNC] Starting Outlook Calendar sync for user {current_user.id}")
+        
+        # First, check if Outlook Calendar is configured at all
+        if not outlook_calendar_service.is_configured():
+            print("[SYNC] ERROR: Outlook Calendar service not configured - missing environment variables")
+            return jsonify({'success': False, 'error': 'Outlook Calendar integration not configured on server'}), 500
+        
+        print("[SYNC] Outlook Calendar service is properly configured")
+        
+        # Check if user has Outlook Calendar connected
+        sync_record = OutlookCalendarSync.query.filter_by(user_id=current_user.id).first()
+        if not sync_record:
+            print(f"[SYNC] ERROR: No Outlook Calendar sync record found for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Outlook Calendar not connected'}), 400
+        
+        if not sync_record.sync_enabled:
+            print(f"[SYNC] ERROR: Outlook Calendar sync disabled for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Outlook Calendar sync disabled'}), 400
+        
+        print(f"[SYNC] Found Outlook Calendar sync record for user {current_user.id}, sync_enabled: {sync_record.sync_enabled}")
+        
+        # Test if we can get access token
+        access_token = outlook_calendar_service.get_access_token(current_user.id)
+        if not access_token:
+            logger.error(f"Failed to get Outlook Calendar access token for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Failed to connect to Outlook Calendar service'}), 400
+        
+        logger.info(f"Successfully got Outlook Calendar access token for user {current_user.id}")
+        
+        # Sync availability for the next 4 weeks
+        success_count = 0
+        error_count = 0
+        
+        for week_offset in range(4):
+            try:
+                today = datetime.now().date()
+                week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
+                week_end = week_start + timedelta(days=6)
+                
+                # Get busy times from Outlook Calendar
+                start_datetime = datetime.combine(week_start, datetime.min.time())
+                end_datetime = datetime.combine(week_end, datetime.max.time())
+                
+                events = outlook_calendar_service.get_calendar_events(
+                    current_user.id, 
+                    start_datetime, 
+                    end_datetime
+                )
+                
+                # Convert Outlook events to busy times
+                busy_times = []
+                for event in events:
+                    # Skip free/tentative events, only mark busy/out-of-office as unavailable
+                    show_as = event.get('showAs', 'busy').lower()
+                    if show_as in ['busy', 'oof', 'workingelsewhere']:
+                        start_str = event['start']['dateTime']
+                        end_str = event['end']['dateTime']
+                        
+                        # Parse ISO datetime strings
+                        start_dt = datetime.fromisoformat(start_str.replace('Z', '+00:00')).replace(tzinfo=None)
+                        end_dt = datetime.fromisoformat(end_str.replace('Z', '+00:00')).replace(tzinfo=None)
+                        
+                        busy_times.append({
+                            'start': start_dt,
+                            'end': end_dt,
+                            'summary': event.get('subject', 'Busy')
+                        })
+                
+                print(f"[SYNC] Found {len(busy_times)} busy periods for week {week_offset}")
+                
+                # Convert to availability format and save
+                availability_data = _convert_busy_times_to_availability(busy_times, week_start)
+                
+                # Get or create availability record
+                availability = Availability.query.filter_by(
+                    user_id=current_user.id,
+                    week_start_date=week_start
+                ).first()
+                
+                if not availability:
+                    availability = Availability(
+                        user_id=current_user.id,
+                        week_start_date=week_start
+                    )
+                    db.session.add(availability)
+                
+                # Update availability data
+                for day, times in availability_data.items():
+                    setattr(availability, day, times)
+                
+                success_count += 1
+                print(f"[SYNC] Successfully synced week {week_offset} (starting {week_start})")
+                
+            except Exception as week_error:
+                error_count += 1
+                logger.error(f"Error syncing Outlook Calendar week {week_offset} for user {current_user.id}: {str(week_error)}")
+                continue
+        
+        # Update last sync time
+        sync_record.last_sync = datetime.utcnow()
+        db.session.commit()
+        
+        if success_count > 0:
+            message = f'Successfully synced {success_count} weeks from Outlook Calendar'
+            if error_count > 0:
+                message += f' ({error_count} weeks had errors)'
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to sync any weeks from Outlook Calendar'}), 500
+        
+    except Exception as e:
+        logger.error(f"Error syncing Outlook Calendar for user {current_user.id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def _convert_busy_times_to_availability(busy_times, week_start):
     """Convert Google Calendar busy times to Gatherly availability format with multiple time ranges"""
     from flask import current_app

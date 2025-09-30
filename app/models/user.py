@@ -22,8 +22,9 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     sms_notifications = db.Column(db.Boolean, default=False)
     
-    # Google Calendar integration
+    # Calendar integrations
     google_calendar_enabled = db.Column(db.Boolean, default=False)
+    outlook_calendar_enabled = db.Column(db.Boolean, default=False)
     timezone = db.Column(db.String(50), default='America/New_York')
     
     # Password reset fields

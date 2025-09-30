@@ -51,6 +51,9 @@ def create_app(config_class=Config):
     
     from app.routes.google_auth import bp as google_auth_bp
     app.register_blueprint(google_auth_bp)
+    
+    from app.routes.outlook_auth import bp as outlook_auth_bp
+    app.register_blueprint(outlook_auth_bp)
 
     # Register custom Jinja2 filters
     @app.template_filter('format_phone')

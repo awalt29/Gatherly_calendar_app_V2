@@ -38,6 +38,19 @@ class Config:
         'https://www.googleapis.com/auth/calendar.freebusy'
     ]
     
+    # Outlook Calendar API configuration
+    OUTLOOK_CLIENT_ID = os.environ.get('OUTLOOK_CLIENT_ID')
+    OUTLOOK_CLIENT_SECRET = os.environ.get('OUTLOOK_CLIENT_SECRET')
+    OUTLOOK_REDIRECT_URI = os.environ.get('OUTLOOK_REDIRECT_URI', 'http://localhost:5004/auth/outlook/callback')
+    OUTLOOK_AUTHORITY = os.environ.get('OUTLOOK_AUTHORITY', 'https://login.microsoftonline.com/common')
+    
+    # Outlook Calendar API Scopes
+    OUTLOOK_SCOPES = [
+        'https://graph.microsoft.com/calendars.read',
+        'https://graph.microsoft.com/calendars.readwrite',
+        'https://graph.microsoft.com/user.read'
+    ]
+    
     # Email configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))

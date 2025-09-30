@@ -19,7 +19,11 @@ def index():
     # Load Google Calendar sync data explicitly
     google_sync = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
     
-    return render_template('settings/index.html', user=current_user, google_calendar_sync=google_sync)
+    # Load Outlook Calendar sync data explicitly
+    from app.models.outlook_calendar_sync import OutlookCalendarSync
+    outlook_sync = OutlookCalendarSync.query.filter_by(user_id=current_user.id).first()
+    
+    return render_template('settings/index.html', user=current_user, google_calendar_sync=google_sync, outlook_calendar_sync=outlook_sync)
 
 @bp.route('/settings/update', methods=['POST'])
 @login_required
@@ -89,6 +93,43 @@ def update_google_calendar_settings():
             return jsonify({'success': False, 'error': str(e)}), 500
         else:
             flash('Error updating Google Calendar settings. Please try again.', 'error')
+            return redirect(url_for('settings.index'))
+
+@bp.route('/settings/outlook-calendar', methods=['POST'])
+@login_required
+def update_outlook_calendar_settings():
+    """Update Outlook Calendar sync settings"""
+    try:
+        from app.models.outlook_calendar_sync import OutlookCalendarSync
+        
+        data = request.get_json() if request.is_json else request.form
+        
+        # Get or create OutlookCalendarSync record
+        sync_record = OutlookCalendarSync.query.filter_by(user_id=current_user.id).first()
+        if not sync_record:
+            return jsonify({'success': False, 'error': 'Outlook Calendar not connected'}), 400
+        
+        # Update settings
+        if 'auto_sync_availability' in data:
+            sync_record.auto_sync_availability = data.get('auto_sync_availability') == 'true' or data.get('auto_sync_availability') == True
+        
+        if 'auto_add_events' in data:
+            sync_record.auto_add_events = data.get('auto_add_events') == 'true' or data.get('auto_add_events') == True
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Outlook Calendar settings updated successfully'})
+        else:
+            flash('Outlook Calendar settings updated successfully!', 'success')
+            return redirect(url_for('settings.index'))
+            
+    except Exception as e:
+        db.session.rollback()
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash('Error updating Outlook Calendar settings. Please try again.', 'error')
             return redirect(url_for('settings.index'))
 
 @bp.route('/settings/change-password', methods=['POST'])

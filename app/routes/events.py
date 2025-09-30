@@ -442,6 +442,20 @@ def create():
             logger.error(f"Failed to send SMS invitations: {str(e)}")
             # Don't fail the event creation if SMS fails
         
+        # Try to add event to creator's Google Calendar if enabled
+        try:
+            _add_event_to_google_calendar(current_user, event)
+        except Exception as e:
+            logger.error(f"Failed to add event to Google Calendar: {str(e)}")
+            # Don't fail the event creation if calendar integration fails
+        
+        # Try to add event to creator's Outlook Calendar if enabled
+        try:
+            _add_event_to_outlook_calendar(current_user, event)
+        except Exception as e:
+            logger.error(f"Failed to add event to Outlook Calendar: {str(e)}")
+            # Don't fail the event creation if calendar integration fails
+        
         return jsonify({
             'success': True, 
             'message': 'Event created and invitations sent!',
@@ -505,6 +519,65 @@ def _add_event_to_google_calendar(user, event):
         logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
         return False
 
+def _add_event_to_outlook_calendar(user, event):
+    """Helper function to add an event to user's Outlook Calendar"""
+    try:
+        from app.services.outlook_calendar_service import outlook_calendar_service
+        from app.models.outlook_calendar_sync import OutlookCalendarSync
+        
+        # Check if user has Outlook Calendar connected and auto-add enabled
+        sync_record = OutlookCalendarSync.query.filter_by(user_id=user.id).first()
+        if not sync_record or not sync_record.auto_add_events:
+            return False
+        
+        # Create Outlook Calendar event data
+        outlook_event = {
+            'subject': event.title,
+            'body': {
+                'contentType': 'text',
+                'content': f"{event.description}\n\nCreated via Gatherly"
+            },
+            'start': {
+                'dateTime': f"{event.date}T{event.start_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'end': {
+                'dateTime': f"{event.date}T{event.end_time}",
+                'timeZone': user.timezone or 'America/New_York'
+            },
+            'attendees': [
+                {
+                    'emailAddress': {
+                        'address': attendee.email,
+                        'name': attendee.get_full_name()
+                    },
+                    'type': 'required'
+                } 
+                for attendee in event.attendees
+            ],
+            'reminderMinutesBeforeStart': 30,
+            'isReminderOn': True
+        }
+        
+        # Add location if provided
+        if event.location:
+            outlook_event['location'] = {
+                'displayName': event.location
+            }
+        
+        # Add to Outlook Calendar
+        success = outlook_calendar_service.create_event(user.id, outlook_event)
+        
+        if success:
+            logger.info(f"Added event {event.id} to Outlook Calendar for user {user.id}")
+            return True
+        else:
+            logger.warning(f"Failed to add event {event.id} to Outlook Calendar for user {user.id}")
+            return False
+    except Exception as e:
+        logger.error(f"Error adding event {event.id} to Outlook Calendar for user {user.id}: {str(e)}")
+        return False
+
 @bp.route('/events/invitation/<int:invitation_id>/accept', methods=['POST'])
 @login_required
 def accept_invitation(invitation_id):
@@ -522,6 +595,9 @@ def accept_invitation(invitation_id):
             # Try to add event to user's Google Calendar if enabled
             _add_event_to_google_calendar(current_user, invitation.event)
             
+            # Try to add event to user's Outlook Calendar if enabled
+            _add_event_to_outlook_calendar(current_user, invitation.event)
+            
             # Send SMS notification to event creator
             _send_rsvp_notification(invitation.event.created_by, invitation, 'accepted')
             
@@ -538,57 +614,6 @@ def accept_invitation(invitation_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
-
-def _add_event_to_google_calendar(user, event):
-    """Helper function to add an event to user's Google Calendar"""
-    try:
-        # Check if user has Google Calendar connected and auto-add enabled
-        sync_record = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
-        if not sync_record or not sync_record.auto_add_events:
-            return False
-        
-        # Create Google Calendar event data
-        google_event = {
-            'summary': event.title,
-            'description': f"{event.description}\n\nCreated via Gatherly",
-            'start': {
-                'dateTime': f"{event.date}T{event.start_time}",
-                'timeZone': user.timezone or 'America/New_York'
-            },
-            'end': {
-                'dateTime': f"{event.date}T{event.end_time}",
-                'timeZone': user.timezone or 'America/New_York'
-            },
-            'attendees': [
-                {'email': attendee.email, 'displayName': attendee.get_full_name()} 
-                for attendee in event.attendees
-            ],
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'popup', 'minutes': 30},
-                    {'method': 'email', 'minutes': 60}
-                ]
-            },
-            'source': {
-                'title': 'Gatherly',
-                'url': 'http://localhost:5006'  # Update with actual domain
-            }
-        }
-        
-        # Add to Google Calendar
-        google_event_id = google_calendar_service.create_event(user.id, google_event)
-        
-        if google_event_id:
-            logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
-            return True
-        else:
-            logger.warning(f"Failed to add event {event.id} to Google Calendar for user {user.id}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
-        return False
 
 @bp.route('/events/invitation/<int:invitation_id>/decline', methods=['POST'])
 @login_required
@@ -620,57 +645,6 @@ def decline_invitation(invitation_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
-
-def _add_event_to_google_calendar(user, event):
-    """Helper function to add an event to user's Google Calendar"""
-    try:
-        # Check if user has Google Calendar connected and auto-add enabled
-        sync_record = GoogleCalendarSync.query.filter_by(user_id=user.id).first()
-        if not sync_record or not sync_record.auto_add_events:
-            return False
-        
-        # Create Google Calendar event data
-        google_event = {
-            'summary': event.title,
-            'description': f"{event.description}\n\nCreated via Gatherly",
-            'start': {
-                'dateTime': f"{event.date}T{event.start_time}",
-                'timeZone': user.timezone or 'America/New_York'
-            },
-            'end': {
-                'dateTime': f"{event.date}T{event.end_time}",
-                'timeZone': user.timezone or 'America/New_York'
-            },
-            'attendees': [
-                {'email': attendee.email, 'displayName': attendee.get_full_name()} 
-                for attendee in event.attendees
-            ],
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'popup', 'minutes': 30},
-                    {'method': 'email', 'minutes': 60}
-                ]
-            },
-            'source': {
-                'title': 'Gatherly',
-                'url': 'http://localhost:5006'  # Update with actual domain
-            }
-        }
-        
-        # Add to Google Calendar
-        google_event_id = google_calendar_service.create_event(user.id, google_event)
-        
-        if google_event_id:
-            logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
-            return True
-        else:
-            logger.warning(f"Failed to add event {event.id} to Google Calendar for user {user.id}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error adding event {event.id} to Google Calendar for user {user.id}: {str(e)}")
-        return False
 
 def _send_rsvp_notification(event_creator, invitation, action):
     """Send SMS notification to event creator when someone RSVPs"""
