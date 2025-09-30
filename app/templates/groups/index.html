@@ -1130,6 +1130,24 @@
     background: var(--primary-hover);
 }
 
+/* Pending changes styling */
+.member-item-edit.pending-add {
+    border: 2px solid var(--success);
+    background: rgba(0, 184, 148, 0.1);
+}
+
+.member-item-edit.pending-remove {
+    border: 2px solid var(--error);
+    background: rgba(211, 0, 31, 0.1);
+    opacity: 0.7;
+}
+
+.pending-label {
+    font-size: var(--font-size-xs);
+    color: var(--success);
+    font-weight: 500;
+}
+
 .group-type-card {
     border: 2px solid var(--border);
     border-radius: var(--radius-lg);
@@ -2340,8 +2358,15 @@ document.addEventListener('keydown', function(e) {
 // Edit Group Modal Functions
 let editGroupData = null;
 let editGroupFriends = [];
+let pendingMemberChanges = {
+    toAdd: [],    // Array of user IDs to add
+    toRemove: []  // Array of user IDs to remove
+};
 
 function openEditGroupModal(groupId) {
+    // Reset pending changes
+    pendingMemberChanges = { toAdd: [], toRemove: [] };
+    
     // Fetch group details and friends list
     Promise.all([
         fetch(`/groups/${groupId}/details`).then(r => r.json()),
@@ -2373,38 +2398,63 @@ function closeEditGroupModal(event) {
     document.body.style.overflow = '';
     editGroupData = null;
     editGroupFriends = [];
+    pendingMemberChanges = { toAdd: [], toRemove: [] };
 }
 
 function populateEditModal() {
     // Set group name
     document.getElementById('editGroupName').value = editGroupData.name;
     
+    // Calculate current members including pending changes
+    const currentMembers = [...editGroupData.members];
+    
+    // Add pending members
+    pendingMemberChanges.toAdd.forEach(userId => {
+        const friend = editGroupFriends.find(f => f.id === userId);
+        if (friend && !currentMembers.find(m => m.id === userId)) {
+            currentMembers.push(friend);
+        }
+    });
+    
+    // Remove pending removals
+    const finalMembers = currentMembers.filter(member => 
+        !pendingMemberChanges.toRemove.includes(member.id)
+    );
+    
     // Populate current members
     const membersContainer = document.getElementById('editCurrentMembers');
     membersContainer.innerHTML = '';
     
-    editGroupData.members.forEach(member => {
+    finalMembers.forEach(member => {
         const isCreator = member.id === editGroupData.created_by.id;
+        const isPendingAdd = pendingMemberChanges.toAdd.includes(member.id);
+        const isPendingRemove = pendingMemberChanges.toRemove.includes(member.id);
+        
         const memberDiv = document.createElement('div');
-        memberDiv.className = `member-item-edit ${isCreator ? 'creator' : ''}`;
+        memberDiv.className = `member-item-edit ${isCreator ? 'creator' : ''} ${isPendingAdd ? 'pending-add' : ''} ${isPendingRemove ? 'pending-remove' : ''}`;
         memberDiv.innerHTML = `
             <div class="member-avatar">${escapeHtml(member.initials)}</div>
             <div class="member-info">
-                <div class="member-name">${escapeHtml(member.name)}</div>
+                <div class="member-name">
+                    ${escapeHtml(member.name)}
+                    ${isPendingAdd ? ' <span class="pending-label">(will be added)</span>' : ''}
+                </div>
                 <div class="member-role">${isCreator ? 'Creator' : 'Member'}</div>
             </div>
-            <button class="remove-btn" onclick="removeMemberFromGroup(${member.id}, '${escapeHtml(member.name)}')">Remove</button>
+            <button class="remove-btn" onclick="stageMemberRemoval(${member.id}, '${escapeHtml(member.name)}')">Remove</button>
         `;
         membersContainer.appendChild(memberDiv);
     });
     
-    // Populate available friends (not already in group)
+    // Populate available friends (not already in group and not pending to be added)
     const friendsContainer = document.getElementById('editAvailableFriends');
     const noFriendsMessage = document.getElementById('editNoFriendsMessage');
     friendsContainer.innerHTML = '';
     
-    const memberIds = editGroupData.members.map(m => m.id);
-    const availableFriends = editGroupFriends.filter(friend => !memberIds.includes(friend.id));
+    const memberIds = finalMembers.map(m => m.id);
+    const availableFriends = editGroupFriends.filter(friend => 
+        !memberIds.includes(friend.id) && !pendingMemberChanges.toAdd.includes(friend.id)
+    );
     
     if (availableFriends.length === 0) {
         noFriendsMessage.style.display = 'block';
@@ -2419,61 +2469,49 @@ function populateEditModal() {
             friendDiv.innerHTML = `
                 <div class="friend-avatar">${escapeHtml(friend.initials)}</div>
                 <div class="friend-name">${escapeHtml(friend.name)}</div>
-                <button class="add-btn" onclick="addMemberToGroup(${friend.id}, '${escapeHtml(friend.name)}')">Add</button>
+                <button class="add-btn" onclick="stageMemberAddition(${friend.id}, '${escapeHtml(friend.name)}')">Add</button>
             `;
             friendsContainer.appendChild(friendDiv);
         });
     }
 }
 
-function addMemberToGroup(userId, userName) {
-    fetch(`/groups/${editGroupData.id}/members`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the group card on the main page
-            updateGroupCard(editGroupData.id, data.group);
-            // Refresh the edit modal
-            openEditGroupModal(editGroupData.id);
-        } else {
-            alert(data.error || 'Failed to add member');
-        }
-    })
-    .catch(error => {
-        console.error('Error adding member:', error);
-        alert('Error adding member');
-    });
+function stageMemberAddition(userId, userName) {
+    // Add to pending additions if not already there
+    if (!pendingMemberChanges.toAdd.includes(userId)) {
+        pendingMemberChanges.toAdd.push(userId);
+    }
+    
+    // Remove from pending removals if it was there
+    const removeIndex = pendingMemberChanges.toRemove.indexOf(userId);
+    if (removeIndex > -1) {
+        pendingMemberChanges.toRemove.splice(removeIndex, 1);
+    }
+    
+    // Refresh the modal display
+    populateEditModal();
 }
 
-function removeMemberFromGroup(userId, userName) {
-    if (!confirm(`Remove ${userName} from the group?`)) {
+function stageMemberRemoval(userId, userName) {
+    // Don't allow removing the creator
+    if (userId === editGroupData.created_by.id) {
+        alert('Cannot remove the group creator');
         return;
     }
     
-    fetch(`/groups/${editGroupData.id}/members/${userId}`, {
-        method: 'DELETE'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the group card on the main page
-            updateGroupCard(editGroupData.id, data.group);
-            // Refresh the edit modal
-            openEditGroupModal(editGroupData.id);
-        } else {
-            alert(data.error || 'Failed to remove member');
-        }
-    })
-    .catch(error => {
-        console.error('Error removing member:', error);
-        alert('Error removing member');
-    });
+    // Add to pending removals if not already there
+    if (!pendingMemberChanges.toRemove.includes(userId)) {
+        pendingMemberChanges.toRemove.push(userId);
+    }
+    
+    // Remove from pending additions if it was there
+    const addIndex = pendingMemberChanges.toAdd.indexOf(userId);
+    if (addIndex > -1) {
+        pendingMemberChanges.toAdd.splice(addIndex, 1);
+    }
+    
+    // Refresh the modal display
+    populateEditModal();
 }
 
 function saveGroupChanges() {
@@ -2484,55 +2522,77 @@ function saveGroupChanges() {
         return;
     }
     
-    if (newName === editGroupData.name) {
-        // No name change, just close modal
+    // Prepare all API calls
+    const apiCalls = [];
+    
+    // 1. Update group name if changed
+    if (newName !== editGroupData.name) {
+        apiCalls.push(
+            fetch(`/groups/${editGroupData.id}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            }).then(r => r.json())
+        );
+    }
+    
+    // 2. Add pending members
+    pendingMemberChanges.toAdd.forEach(userId => {
+        apiCalls.push(
+            fetch(`/groups/${editGroupData.id}/members`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            }).then(r => r.json())
+        );
+    });
+    
+    // 3. Remove pending members
+    pendingMemberChanges.toRemove.forEach(userId => {
+        apiCalls.push(
+            fetch(`/groups/${editGroupData.id}/members/${userId}`, {
+                method: 'DELETE'
+            }).then(r => r.json())
+        );
+    });
+    
+    // Execute all API calls
+    if (apiCalls.length === 0) {
+        // No changes to save
         closeEditGroupModal();
         return;
     }
     
-    // Update group name
-    fetch(`/groups/${editGroupData.id}/update`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newName })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            closeEditGroupModal();
-            location.reload(); // Refresh to show updated group
-        } else {
-            alert(data.error || 'Failed to update group name');
+    Promise.all(apiCalls)
+    .then(results => {
+        // Check if all operations succeeded
+        const failures = results.filter(result => !result.success);
+        
+        if (failures.length > 0) {
+            alert(`Some changes failed to save: ${failures.map(f => f.error).join(', ')}`);
         }
+        
+        closeEditGroupModal();
+        location.reload(); // Refresh to show all updates
     })
     .catch(error => {
-        console.error('Error updating group name:', error);
-        alert('Error updating group name');
+        console.error('Error saving group changes:', error);
+        alert('Error saving changes');
     });
 }
 
 function updateGroupCard(groupId, groupData) {
-    console.log('updateGroupCard called with:', { groupId, groupData });
-    
     // Find the group card on the main page by group ID
     const groupCards = document.querySelectorAll('[onclick*="openGroupModal"]');
-    console.log('Found group cards:', groupCards.length);
     
     for (let card of groupCards) {
         // Extract group ID from onclick attribute
         const onclickAttr = card.getAttribute('onclick');
         const match = onclickAttr.match(/openGroupModal\((\d+)\)/);
-        console.log('Checking card with onclick:', onclickAttr, 'match:', match);
         
         if (match && parseInt(match[1]) === groupId) {
-            console.log('Found matching card for group ID:', groupId);
-            
             // Update the member bubbles
             const membersContainer = card.querySelector('.group-members');
-            console.log('Members container found:', !!membersContainer);
-            console.log('Group data members:', groupData.members);
             
             if (membersContainer && groupData.members) {
                 membersContainer.innerHTML = '';
@@ -2540,7 +2600,6 @@ function updateGroupCard(groupId, groupData) {
                 // Add member bubbles (limit to first 4, then show +X)
                 const maxVisible = 4;
                 const members = groupData.members || [];
-                console.log('Processing members:', members);
                 
                 for (let i = 0; i < Math.min(members.length, maxVisible); i++) {
                     const member = members[i];
@@ -2549,7 +2608,6 @@ function updateGroupCard(groupId, groupData) {
                     memberBubble.title = member.name;
                     memberBubble.textContent = member.initials;
                     membersContainer.appendChild(memberBubble);
-                    console.log('Added member bubble for:', member.name);
                 }
                 
                 // Add overflow indicator if there are more members
@@ -2559,12 +2617,7 @@ function updateGroupCard(groupId, groupData) {
                     overflowBubble.textContent = `+${members.length - maxVisible}`;
                     overflowBubble.title = `${members.length - maxVisible} more members`;
                     membersContainer.appendChild(overflowBubble);
-                    console.log('Added overflow indicator');
                 }
-                
-                console.log('Successfully updated group card');
-            } else {
-                console.log('Missing members container or group data members');
             }
             break;
         }
