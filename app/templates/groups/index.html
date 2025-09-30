@@ -2210,6 +2210,12 @@ function addModalActivity(groupId, venue, inputElement) {
 
 // Toggle activity status in modal
 function toggleModalActivityStatus(activityId, currentStatus) {
+    const groupId = currentModalGroupId || (editGroupData && editGroupData.id);
+    if (!groupId) {
+        console.error('No group ID available for activity update');
+        return;
+    }
+    
     fetch(`/activities/${activityId}/complete`, {
         method: 'PUT',
         headers: {
@@ -2219,7 +2225,7 @@ function toggleModalActivityStatus(activityId, currentStatus) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            loadModalActivities(currentModalGroupId); // Reload activities
+            loadModalActivities(groupId); // Reload activities
         } else {
             alert(data.error || 'Failed to update activity status');
         }
@@ -2236,13 +2242,19 @@ function deleteModalActivity(activityId) {
         return;
     }
     
+    const groupId = currentModalGroupId || (editGroupData && editGroupData.id);
+    if (!groupId) {
+        console.error('No group ID available for activity deletion');
+        return;
+    }
+    
     fetch(`/activities/${activityId}`, {
         method: 'DELETE'
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            loadModalActivities(currentModalGroupId); // Reload activities
+            loadModalActivities(groupId); // Reload activities
         } else {
             alert(data.error || 'Failed to delete activity');
         }
