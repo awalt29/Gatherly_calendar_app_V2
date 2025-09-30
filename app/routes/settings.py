@@ -3,13 +3,12 @@ from flask_login import login_required, current_user, logout_user
 from app import db
 from app.models.google_calendar_sync import GoogleCalendarSync
 from app.models.user import User
-from app.models.friendship import Friendship
-from app.models.group import Group
-from app.models.group_membership import GroupMembership
+from app.models.friend import Friend
+from app.models.group import Group, GroupMembership
 from app.models.activity import Activity
 from app.models.availability import Availability
 from app.models.event import Event
-from app.models.event_participant import EventParticipant
+from app.models.event_invitation import EventInvitation
 
 bp = Blueprint('settings', __name__)
 
@@ -251,8 +250,11 @@ def delete_account():
         
         # Delete user's data in the correct order to avoid foreign key constraints
         
-        # 1. Delete event participants where user is a participant
-        EventParticipant.query.filter_by(user_id=user_id).delete()
+        # 1. Delete event invitations where user is invited or is the inviter
+        EventInvitation.query.filter(
+            (EventInvitation.user_id == user_id) | 
+            (EventInvitation.invited_by_id == user_id)
+        ).delete()
         
         # 2. Delete events created by the user
         Event.query.filter_by(created_by_id=user_id).delete()
@@ -269,10 +271,10 @@ def delete_account():
         # 6. Delete groups created by the user (this will cascade to activities and memberships)
         Group.query.filter_by(created_by_id=user_id).delete()
         
-        # 7. Delete friendships (both as requester and requestee)
-        Friendship.query.filter(
-            (Friendship.requester_id == user_id) | 
-            (Friendship.requestee_id == user_id)
+        # 7. Delete friendships (both as user1 and user2)
+        Friend.query.filter(
+            (Friend.user1_id == user_id) | 
+            (Friend.user2_id == user_id)
         ).delete()
         
         # 8. Delete Google Calendar sync data
