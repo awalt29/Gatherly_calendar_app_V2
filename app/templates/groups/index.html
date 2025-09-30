@@ -2086,7 +2086,7 @@ function populateModal(group) {
     
     // Show/hide activity queue for shared groups only
     const activitySection = document.querySelector('.modal-activity-section');
-    if (group.group_type === 'shared') {
+    if (group.group_type === 'shared' && group.id) {
         activitySection.style.display = 'block';
         // Load activities
         loadModalActivities(group.id);
@@ -2126,6 +2126,11 @@ function populateModal(group) {
 
 // Load activities for modal
 function loadModalActivities(groupId) {
+    if (!groupId || groupId === 'undefined') {
+        console.error('Invalid group ID for loading activities:', groupId);
+        return;
+    }
+    
     fetch(`/activities/group/${groupId}`)
         .then(response => response.json())
         .then(data => {
