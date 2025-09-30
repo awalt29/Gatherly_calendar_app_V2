@@ -197,6 +197,12 @@
     gap: 0;
 }
 
+.friends-list .friend-actions {
+    min-width: 40px;
+    max-width: 40px;
+    justify-content: center;
+}
+
 .friend-avatar {
     width: 48px;
     height: 48px;
@@ -263,12 +269,12 @@
 }
 
 .remove-friend-btn {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-size: 36px;
+    font-size: 20px;
     line-height: 1;
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -379,6 +385,8 @@
         flex-shrink: 0;
         gap: var(--space-1);
         min-width: 140px;
+        max-width: 140px;
+        overflow: hidden;
     }
     
     .friend-actions .btn {
