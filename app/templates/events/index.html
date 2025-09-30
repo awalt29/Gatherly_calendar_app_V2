@@ -1180,6 +1180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentEventGuests.forEach(guest => {
             const guestElement = document.createElement('div');
             guestElement.className = 'guest-item';
+            
             guestElement.innerHTML = `
                 <div class="guest-info">
                     <div class="guest-avatar friend-color-${guest.id % 8}">${guest.initials}</div>
@@ -1188,8 +1189,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="guest-status">${guest.status}</div>
                     </div>
                 </div>
-                ${guest.id !== {{ current_user.id }} ? `<button class="remove-guest-btn" onclick="removeGuest(${guest.id})">Remove</button>` : ''}
             `;
+            
+            // Add remove button if not the current user
+            if (guest.id !== {{ current_user.id }}) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-guest-btn';
+                removeBtn.type = 'button';
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', () => removeGuest(guest.id));
+                guestElement.appendChild(removeBtn);
+            }
+            
             container.appendChild(guestElement);
         });
     }
@@ -1204,13 +1215,22 @@ document.addEventListener('DOMContentLoaded', function() {
         availableToAdd.forEach(friend => {
             const friendElement = document.createElement('div');
             friendElement.className = 'friend-item-edit';
+            
             friendElement.innerHTML = `
                 <div class="friend-info-edit">
                     <div class="friend-avatar-edit friend-color-${friend.id % 8}">${friend.initials}</div>
                     <div class="friend-name-edit">${friend.name}</div>
                 </div>
-                <button class="add-friend-btn" onclick="addGuest(${friend.id}, '${friend.name}', '${friend.initials}')">Add</button>
             `;
+            
+            // Add the add button with event listener
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-friend-btn';
+            addBtn.type = 'button';
+            addBtn.textContent = 'Add';
+            addBtn.addEventListener('click', () => addGuest(friend.id, friend.name, friend.initials));
+            friendElement.appendChild(addBtn);
+            
             container.appendChild(friendElement);
         });
         

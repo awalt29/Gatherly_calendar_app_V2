@@ -184,6 +184,7 @@ def edit_event(event_id):
                         ).delete()
                 
                 # Add new users (create invitations)
+                new_invitees = []
                 for user_id in to_add:
                     if user_id != current_user.id:  # Don't invite the creator
                         user_to_add = User.query.get(user_id)
@@ -195,12 +196,28 @@ def edit_event(event_id):
                                 status='pending'
                             )
                             db.session.add(invitation)
+                            new_invitees.append(user_to_add)
+                
+                # Commit changes first
+                db.session.commit()
+                
+                # Send SMS invitations to new invitees
+                if new_invitees:
+                    try:
+                        from app.services.sms_service import sms_service
+                        if sms_service.is_configured():
+                            stats = sms_service.send_event_invitations(event, new_invitees, current_user)
+                            logger.info(f"SMS invitation stats for event edit: {stats}")
+                    except Exception as e:
+                        logger.error(f"Failed to send SMS invitations for event edit: {str(e)}")
+                        # Don't fail the event update if SMS fails
                 
             except (json.JSONDecodeError, ValueError) as e:
                 logger.error(f"Error parsing guest_ids: {str(e)}")
                 # Continue without guest updates if JSON is invalid
-        
-        db.session.commit()
+        else:
+            # If no guest updates, still commit the event changes
+            db.session.commit()
         
         return jsonify({
             'success': True,
