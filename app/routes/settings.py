@@ -262,32 +262,36 @@ def delete_account():
         # 4. Delete user's availability records
         Availability.query.filter_by(user_id=user_id).delete()
         
-        # 5. Delete group memberships for groups created by the user (all members)
+        # 5. Delete user's default schedules
+        from app.models.default_schedule import DefaultSchedule
+        DefaultSchedule.query.filter_by(user_id=user_id).delete()
+        
+        # 6. Delete group memberships for groups created by the user (all members)
         groups_created_by_user = Group.query.filter_by(created_by_id=user_id).all()
         for group in groups_created_by_user:
             GroupMembership.query.filter_by(group_id=group.id).delete()
         
-        # 6. Delete the user's own group memberships in other groups
+        # 7. Delete the user's own group memberships in other groups
         GroupMembership.query.filter_by(user_id=user_id).delete()
         
-        # 7. Delete groups created by the user (activities should cascade)
+        # 8. Delete groups created by the user (activities should cascade)
         Group.query.filter_by(created_by_id=user_id).delete()
         
-        # 8. Delete friendships (both as requester and receiver)
+        # 9. Delete friendships (both as requester and receiver)
         Friend.query.filter(
             (Friend.user_id == user_id) | 
             (Friend.friend_id == user_id)
         ).delete()
         
-        # 9. Remove user from all events they're attending (many-to-many relationship)
+        # 10. Remove user from all events they're attending (many-to-many relationship)
         user = current_user
         for event in user.events:
             event.attendees.remove(user)
         
-        # 10. Delete Google Calendar sync data
+        # 11. Delete Google Calendar sync data
         GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
         
-        # 11. Finally, delete the user account
+        # 12. Finally, delete the user account
         db.session.delete(current_user)
         
         # Commit all deletions
