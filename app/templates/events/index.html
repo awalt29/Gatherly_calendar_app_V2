@@ -35,6 +35,12 @@
                                 </span>
                             </div>
                             
+                            {% if invitation.event.location %}
+                                <div class="event-location">
+                                    📍 {{ invitation.event.location }}
+                                </div>
+                            {% endif %}
+                            
                             {% if invitation.event.description %}
                                 <p class="event-description">{{ invitation.event.description }}</p>
                             {% endif %}
@@ -75,6 +81,12 @@
                                     {{ event.get_time_range() }}
                                 </span>
                             </div>
+                            
+                            {% if event.location %}
+                                <div class="event-location">
+                                    📍 {{ event.location }}
+                                </div>
+                            {% endif %}
                             
                             {% if event.description %}
                                 <p class="event-description">{{ event.description }}</p>
@@ -314,6 +326,15 @@
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     font-weight: 500;
+}
+
+.event-location {
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
 }
 
 .event-description {
