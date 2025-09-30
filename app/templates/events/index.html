@@ -153,16 +153,6 @@
                                     </button>
                                 {% endif %}
                             </div>
-                            
-                            {% if event.created_by_id == current_user.id %}
-                                <div class="event-creator">
-                                    <small class="text-muted">Created by you</small>
-                                </div>
-                            {% else %}
-                                <div class="event-creator">
-                                    <small class="text-muted">Created by {{ event.created_by.get_full_name() }}</small>
-                                </div>
-                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -364,11 +354,6 @@
 .attendee-name {
     font-size: var(--font-size-sm);
     color: var(--text-primary);
-}
-
-.event-creator {
-    padding-top: var(--space-2);
-    border-top: 1px solid var(--border);
 }
 
 /* Invitation Cards */
