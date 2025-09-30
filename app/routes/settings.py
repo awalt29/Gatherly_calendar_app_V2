@@ -262,27 +262,32 @@ def delete_account():
         # 4. Delete user's availability records
         Availability.query.filter_by(user_id=user_id).delete()
         
-        # 5. Delete group memberships
+        # 5. Delete group memberships for groups created by the user (all members)
+        groups_created_by_user = Group.query.filter_by(created_by_id=user_id).all()
+        for group in groups_created_by_user:
+            GroupMembership.query.filter_by(group_id=group.id).delete()
+        
+        # 6. Delete the user's own group memberships in other groups
         GroupMembership.query.filter_by(user_id=user_id).delete()
         
-        # 6. Delete groups created by the user (this will cascade to activities and memberships)
+        # 7. Delete groups created by the user (activities should cascade)
         Group.query.filter_by(created_by_id=user_id).delete()
         
-        # 7. Delete friendships (both as requester and receiver)
+        # 8. Delete friendships (both as requester and receiver)
         Friend.query.filter(
             (Friend.user_id == user_id) | 
             (Friend.friend_id == user_id)
         ).delete()
         
-        # 8. Remove user from all events they're attending (many-to-many relationship)
+        # 9. Remove user from all events they're attending (many-to-many relationship)
         user = current_user
         for event in user.events:
             event.attendees.remove(user)
         
-        # 9. Delete Google Calendar sync data
+        # 10. Delete Google Calendar sync data
         GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
         
-        # 10. Finally, delete the user account
+        # 11. Finally, delete the user account
         db.session.delete(current_user)
         
         # Commit all deletions
