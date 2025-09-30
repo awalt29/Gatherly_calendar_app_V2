@@ -250,13 +250,10 @@ def delete_account():
         
         # Delete user's data in the correct order to avoid foreign key constraints
         
-        # 1. Delete event invitations where user is invited or is the inviter
-        EventInvitation.query.filter(
-            (EventInvitation.user_id == user_id) | 
-            (EventInvitation.invited_by_id == user_id)
-        ).delete()
+        # 1. Delete event invitations where user is invited
+        EventInvitation.query.filter_by(invitee_id=user_id).delete()
         
-        # 2. Delete events created by the user
+        # 2. Delete events created by the user (this will cascade to related invitations)
         Event.query.filter_by(created_by_id=user_id).delete()
         
         # 3. Delete activities suggested by the user
@@ -271,16 +268,21 @@ def delete_account():
         # 6. Delete groups created by the user (this will cascade to activities and memberships)
         Group.query.filter_by(created_by_id=user_id).delete()
         
-        # 7. Delete friendships (both as user1 and user2)
+        # 7. Delete friendships (both as requester and receiver)
         Friend.query.filter(
-            (Friend.user1_id == user_id) | 
-            (Friend.user2_id == user_id)
+            (Friend.user_id == user_id) | 
+            (Friend.friend_id == user_id)
         ).delete()
         
-        # 8. Delete Google Calendar sync data
+        # 8. Remove user from all events they're attending (many-to-many relationship)
+        user = current_user
+        for event in user.events:
+            event.attendees.remove(user)
+        
+        # 9. Delete Google Calendar sync data
         GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
         
-        # 9. Finally, delete the user account
+        # 10. Finally, delete the user account
         db.session.delete(current_user)
         
         # Commit all deletions
