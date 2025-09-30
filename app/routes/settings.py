@@ -253,40 +253,40 @@ def delete_account():
         # 1. Delete event invitations where user is invited
         EventInvitation.query.filter_by(invitee_id=user_id).delete()
         
-        # 2. Delete events created by the user (this will cascade to related invitations)
+        # 2. Remove user from all events they're attending (many-to-many relationship)
+        user = current_user
+        for event in user.events:
+            event.attendees.remove(user)
+        
+        # 3. Delete events created by the user (now safe since user is no longer an attendee)
         Event.query.filter_by(created_by_id=user_id).delete()
         
-        # 3. Delete activities suggested by the user
+        # 4. Delete activities suggested by the user
         Activity.query.filter_by(suggested_by_id=user_id).delete()
         
-        # 4. Delete user's availability records
+        # 5. Delete user's availability records
         Availability.query.filter_by(user_id=user_id).delete()
         
-        # 5. Delete user's default schedules
+        # 6. Delete user's default schedules
         from app.models.default_schedule import DefaultSchedule
         DefaultSchedule.query.filter_by(user_id=user_id).delete()
         
-        # 6. Delete group memberships for groups created by the user (all members)
+        # 7. Delete group memberships for groups created by the user (all members)
         groups_created_by_user = Group.query.filter_by(created_by_id=user_id).all()
         for group in groups_created_by_user:
             GroupMembership.query.filter_by(group_id=group.id).delete()
         
-        # 7. Delete the user's own group memberships in other groups
+        # 8. Delete the user's own group memberships in other groups
         GroupMembership.query.filter_by(user_id=user_id).delete()
         
-        # 8. Delete groups created by the user (activities should cascade)
+        # 9. Delete groups created by the user (activities should cascade)
         Group.query.filter_by(created_by_id=user_id).delete()
         
-        # 9. Delete friendships (both as requester and receiver)
+        # 10. Delete friendships (both as requester and receiver)
         Friend.query.filter(
             (Friend.user_id == user_id) | 
             (Friend.friend_id == user_id)
         ).delete()
-        
-        # 10. Remove user from all events they're attending (many-to-many relationship)
-        user = current_user
-        for event in user.events:
-            event.attendees.remove(user)
         
         # 11. Delete Google Calendar sync data
         GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
