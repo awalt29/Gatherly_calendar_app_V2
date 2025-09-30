@@ -166,31 +166,27 @@
     {% endif %}
     
     <!-- Create Group Form -->
-    <div class="create-group-section">
-        <div class="create-group-header">
-            <h2 class="create-group-title">Create New Group</h2>
-            <p class="create-group-subtitle">Start getting notified when your friends are all available</p>
-        </div>
-        
-        <div class="create-group-card">
+    <div class="friends-section">
+        <h2 class="section-title">Create New Group</h2>
+        <div class="settings-card">
             <form id="createGroupForm" class="create-group-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="group_name" class="form-label">
-                            <span class="label-icon">🏷️</span>
-                            Group Name
-                        </label>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>🏷️ Group Name</h4>
+                        <p>Choose a name for your group</p>
+                    </div>
+                    <div class="setting-control">
                         <input type="text" id="group_name" name="name" class="form-input modern-input" 
                                placeholder="e.g., College Friends, Work Buddies, Gaming Squad" required maxlength="100">
                     </div>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">
-                            <span class="label-icon">⚙️</span>
-                            Group Type
-                        </label>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>⚙️ Group Type</h4>
+                        <p>Choose how your group will work</p>
+                    </div>
+                    <div class="setting-control">
                         <div class="group-type-options">
                             <label class="group-type-option">
                                 <input type="radio" name="group_type" value="private" checked class="group-type-radio">
@@ -217,41 +213,57 @@
                 </div>
                 
                 {% if friends %}
-                    <div class="form-group">
-                        <label class="form-label">
-                            <span class="label-icon">👥</span>
-                            Add Friends to Group
-                        </label>
-                        <div class="friends-grid">
-                            {% for friend in friends %}
-                                <label class="friend-card">
-                                    <input type="checkbox" name="member_ids" value="{{ friend.id }}" class="friend-checkbox-input">
-                                    <div class="friend-card-content">
-                                        <div class="friend-avatar">{{ friend.get_initials() }}</div>
-                                        <span class="friend-name">{{ friend.get_full_name() }}</span>
-                                        <div class="checkmark">✓</div>
-                                    </div>
-                                </label>
-                            {% endfor %}
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>👥 Add Friends to Group</h4>
+                            <p>Select friends to include in this group</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="friends-grid">
+                                {% for friend in friends %}
+                                    <label class="friend-card">
+                                        <input type="checkbox" name="member_ids" value="{{ friend.id }}" class="friend-checkbox-input">
+                                        <div class="friend-card-content">
+                                            <div class="friend-avatar">{{ friend.get_initials() }}</div>
+                                            <span class="friend-name">{{ friend.get_full_name() }}</span>
+                                            <div class="checkmark">✓</div>
+                                        </div>
+                                    </label>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 {% else %}
-                    <div class="empty-friends-state">
-                        <div class="empty-icon">👥</div>
-                        <h3>No Friends Yet</h3>
-                        <p>Add some friends first to include them in groups!</p>
-                        <a href="{{ url_for('friends.index') }}" class="btn btn-secondary">
-                            <span class="btn-icon">➕</span>
-                            Add Friends
-                        </a>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>👥 Add Friends to Group</h4>
+                            <p>You need friends to create groups</p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="empty-friends-state">
+                                <div class="empty-icon">👥</div>
+                                <h3>No Friends Yet</h3>
+                                <p>Add some friends first to include them in groups!</p>
+                                <a href="{{ url_for('friends.index') }}" class="btn btn-secondary">
+                                    <span class="btn-icon">➕</span>
+                                    Add Friends
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 {% endif %}
                 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary btn-large" id="submitCreateGroup">
-                        <span class="btn-icon">✨</span>
-                        Create Group
-                    </button>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>✨ Ready to Create</h4>
+                        <p>Create your group and start planning together</p>
+                    </div>
+                    <div class="setting-control">
+                        <button type="submit" class="btn btn-primary btn-large" id="submitCreateGroup">
+                            <span class="btn-icon">✨</span>
+                            Create Group
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -380,39 +392,6 @@
     opacity: 0.6;
 }
 
-/* Create Group Section */
-.create-group-section {
-    margin: var(--space-12) 0;
-}
-
-.create-group-header {
-    text-align: center;
-    margin-bottom: var(--space-8);
-}
-
-.create-group-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: var(--space-3);
-}
-
-.create-group-subtitle {
-    font-size: var(--font-size-lg);
-    color: var(--text-secondary);
-    max-width: 500px;
-    margin: 0 auto;
-}
-
-.create-group-card {
-    background: var(--card-background);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    padding: var(--space-8);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    max-width: 800px;
-    margin: 0 auto;
-}
 
 .form-label {
     display: flex;
@@ -912,13 +891,6 @@
     min-width: auto;
 }
 
-.create-group-card {
-    background: var(--card-background);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-6);
-    margin-top: var(--space-4);
-}
 
 .form-actions {
     display: flex;
