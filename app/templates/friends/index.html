@@ -230,6 +230,14 @@
     display: flex;
     gap: var(--space-2);
     align-items: center;
+    flex-shrink: 0;
+}
+
+.friend-actions .btn {
+    white-space: nowrap;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
 }
 
 .status-badge {
@@ -356,6 +364,7 @@
         flex-direction: row;
         align-items: center;
         gap: var(--space-3);
+        min-height: 60px;
     }
     
     .friend-info {
@@ -367,6 +376,14 @@
     .friend-actions {
         justify-content: flex-end;
         flex-shrink: 0;
+        gap: var(--space-1);
+        min-width: 120px;
+    }
+    
+    .friend-actions .btn {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--font-size-xs);
+        min-width: 50px;
     }
     
     .empty-state-tips {
