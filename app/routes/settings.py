@@ -1,8 +1,15 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, logout_user
 from app import db
 from app.models.google_calendar_sync import GoogleCalendarSync
 from app.models.user import User
+from app.models.friendship import Friendship
+from app.models.group import Group
+from app.models.group_membership import GroupMembership
+from app.models.activity import Activity
+from app.models.availability import Availability
+from app.models.event import Event
+from app.models.event_participant import EventParticipant
 
 bp = Blueprint('settings', __name__)
 
@@ -234,3 +241,60 @@ def edit_profile():
         else:
             flash('Error updating profile. Please try again.', 'error')
             return redirect(url_for('settings.index'))
+
+@bp.route('/settings/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    """Delete user account and all associated data"""
+    try:
+        user_id = current_user.id
+        
+        # Delete user's data in the correct order to avoid foreign key constraints
+        
+        # 1. Delete event participants where user is a participant
+        EventParticipant.query.filter_by(user_id=user_id).delete()
+        
+        # 2. Delete events created by the user
+        Event.query.filter_by(created_by_id=user_id).delete()
+        
+        # 3. Delete activities suggested by the user
+        Activity.query.filter_by(suggested_by_id=user_id).delete()
+        
+        # 4. Delete user's availability records
+        Availability.query.filter_by(user_id=user_id).delete()
+        
+        # 5. Delete group memberships
+        GroupMembership.query.filter_by(user_id=user_id).delete()
+        
+        # 6. Delete groups created by the user (this will cascade to activities and memberships)
+        Group.query.filter_by(created_by_id=user_id).delete()
+        
+        # 7. Delete friendships (both as requester and requestee)
+        Friendship.query.filter(
+            (Friendship.requester_id == user_id) | 
+            (Friendship.requestee_id == user_id)
+        ).delete()
+        
+        # 8. Delete Google Calendar sync data
+        GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
+        
+        # 9. Finally, delete the user account
+        db.session.delete(current_user)
+        
+        # Commit all deletions
+        db.session.commit()
+        
+        # Log out the user
+        logout_user()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Account deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False, 
+            'error': f'Failed to delete account: {str(e)}'
+        }), 500
