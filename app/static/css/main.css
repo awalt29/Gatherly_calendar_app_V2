@@ -196,6 +196,11 @@ body {
     justify-content: center;
     width: 40px;
     height: 40px;
+    /* PWA touch improvements */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .notification-bell:hover {

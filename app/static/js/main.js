@@ -1072,12 +1072,19 @@ function setupNotifications() {
     const notificationModalClose = document.getElementById('notificationModalClose');
     const notificationModalOverlay = document.getElementById('notificationModalOverlay');
     
+    // Detect PWA mode
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  window.navigator.standalone === true ||
+                  document.referrer.includes('android-app://');
+    
     console.log('Setting up notifications...', {
         bell: !!notificationBell,
         modal: !!notificationModal,
         close: !!notificationModalClose,
         overlay: !!notificationModalOverlay,
         isMobile: window.innerWidth <= 768,
+        isPWA: isPWA,
+        displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
         userAgent: navigator.userAgent
     });
     
@@ -1089,11 +1096,27 @@ function setupNotifications() {
     // Load initial notification count
     loadNotificationCount();
     
-    // Set up event listeners (both click and touch for mobile)
-    notificationBell.addEventListener('click', openNotificationModal);
+    // Set up event listeners (multiple event types for PWA compatibility)
+    notificationBell.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Click event on notification bell');
+        openNotificationModal();
+    });
+    
+    notificationBell.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        console.log('Touch start event on notification bell');
+    });
+    
     notificationBell.addEventListener('touchend', function(e) {
         e.preventDefault();
-        console.log('Touch event on notification bell');
+        console.log('Touch end event on notification bell');
+        openNotificationModal();
+    });
+    
+    // PWA-specific: Add pointer events for better compatibility
+    notificationBell.addEventListener('pointerdown', function(e) {
+        console.log('Pointer down event on notification bell');
         openNotificationModal();
     });
     
