@@ -250,12 +250,21 @@ class OutlookCalendarService:
                 end_dt_str = event['end']['dateTime']
                 
                 # Parse datetime strings (they come in ISO format from Graph API)
+                # Outlook times are in UTC but don't have 'Z' suffix, so we need to add timezone info
                 if start_dt_str.endswith('Z'):
                     start_dt = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
                     end_dt = datetime.fromisoformat(end_dt_str.replace('Z', '+00:00'))
                 else:
-                    start_dt = datetime.fromisoformat(start_dt_str)
-                    end_dt = datetime.fromisoformat(end_dt_str)
+                    # Outlook times are in UTC, add timezone info and convert to local time
+                    from datetime import timezone
+                    start_dt = datetime.fromisoformat(start_dt_str.replace('.0000000', '')).replace(tzinfo=timezone.utc)
+                    end_dt = datetime.fromisoformat(end_dt_str.replace('.0000000', '')).replace(tzinfo=timezone.utc)
+                    
+                    # Convert to Eastern Time (same as Google Calendar processing)
+                    import pytz
+                    eastern = pytz.timezone('US/Eastern')
+                    start_dt = start_dt.astimezone(eastern).replace(tzinfo=None)
+                    end_dt = end_dt.astimezone(eastern).replace(tzinfo=None)
                 
                 busy_times.append({
                     'start': start_dt,
