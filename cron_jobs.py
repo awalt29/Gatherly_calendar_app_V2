@@ -9,7 +9,7 @@ import logging
 from flask import Flask
 from app import create_app
 from app.tasks.sms_scheduler import sms_scheduler
-from app.tasks.google_calendar_scheduler import GoogleCalendarScheduler
+from app.tasks.calendar_scheduler import CalendarScheduler
 
 # Set up logging
 logging.basicConfig(
@@ -52,21 +52,21 @@ def weekly_availability_reminder():
         logger.error(f"Error in weekly availability reminder cron job: {str(e)}")
         raise
 
-def google_calendar_sync():
+def calendar_sync():
     """
-    Google Calendar sync cron job
-    Should be called every 2 hours to sync availability
+    Calendar sync cron job (Google + Outlook)
+    Should be called every 2 hours to sync availability from all connected calendars
     """
-    logger.info("Starting Google Calendar availability sync cron job")
+    logger.info("Starting calendar availability sync cron job (Google + Outlook)")
     
     try:
         app = create_app()
         with app.app_context():
-            stats = GoogleCalendarScheduler.sync_all_users_availability()
-            logger.info(f"Google Calendar sync completed: {stats}")
+            stats = CalendarScheduler.sync_all_users_availability()
+            logger.info(f"Calendar sync completed: {stats}")
             return stats
     except Exception as e:
-        logger.error(f"Error in Google Calendar sync cron job: {str(e)}")
+        logger.error(f"Error in calendar sync cron job: {str(e)}")
         raise
 
 if __name__ == "__main__":
@@ -83,8 +83,8 @@ if __name__ == "__main__":
             weekend_planning_reminder()
         elif cron_job_type == "weekly_availability":
             weekly_availability_reminder()
-        elif cron_job_type == "google_calendar_sync":
-            google_calendar_sync()
+        elif cron_job_type == "calendar_sync":
+            calendar_sync()
         else:
             print(f"Unknown CRON_JOB_TYPE: {cron_job_type}")
     elif len(sys.argv) > 1:
@@ -94,13 +94,13 @@ if __name__ == "__main__":
             weekend_planning_reminder()
         elif job_name == "weekly_availability":
             weekly_availability_reminder()
-        elif job_name == "google_calendar_sync":
-            google_calendar_sync()
+        elif job_name == "calendar_sync":
+            calendar_sync()
         else:
-            print("Usage: python cron_jobs.py [weekend_planning|weekly_availability|google_calendar_sync]")
+            print("Usage: python cron_jobs.py [weekend_planning|weekly_availability|calendar_sync]")
     else:
         print("Available cron jobs:")
         print("- weekend_planning")
         print("- weekly_availability")
-        print("- google_calendar_sync")
+        print("- calendar_sync")
         print("Or set CRON_JOB_TYPE environment variable")
