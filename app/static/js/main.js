@@ -868,11 +868,7 @@ function renderMonth(chunkData, chunkOffset) {
                         friendBlock.classList.add('current-user');
                     }
                     friendBlock.textContent = user.initials;
-                    // Format time range for display
-                    const timeRangeText = user.time_range ? 
-                        `${formatTime(user.time_range.start)} - ${formatTime(user.time_range.end)}` : 
-                        'Available';
-                    friendBlock.title = `${user.name} (${timeRangeText})`;
+                    friendBlock.title = `${user.name} (${user.time_range})`;
                     dayColumn.appendChild(friendBlock);
                 });
             }
