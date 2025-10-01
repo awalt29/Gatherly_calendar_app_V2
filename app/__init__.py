@@ -75,6 +75,29 @@ def create_app(config_class=Config):
         else:
             # Return original if not a standard US phone number
             return phone_number
+    
+    @app.template_filter('format_time')
+    def format_time_12hour(time_str):
+        """Format time from 24-hour to 12-hour format"""
+        if not time_str:
+            return time_str
+        
+        try:
+            # Parse the time string (assuming HH:MM format)
+            hours, minutes = map(int, time_str.split(':'))
+            
+            # Convert to 12-hour format
+            if hours == 0:
+                return f"12:{minutes:02d} AM"
+            elif hours < 12:
+                return f"{hours}:{minutes:02d} AM"
+            elif hours == 12:
+                return f"12:{minutes:02d} PM"
+            else:
+                return f"{hours - 12}:{minutes:02d} PM"
+        except (ValueError, AttributeError):
+            # Return original if parsing fails
+            return time_str
 
     return app
 

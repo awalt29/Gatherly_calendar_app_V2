@@ -33,7 +33,7 @@
                         <div class="time-info">
                             {% for time_range in user_data.time_ranges %}
                                 <span class="time-badge">
-                                    {{ time_range.start }} - {{ time_range.end }}
+                                    {{ time_range.start | format_time }} - {{ time_range.end | format_time }}
                                 </span>
                             {% endfor %}
                         </div>
