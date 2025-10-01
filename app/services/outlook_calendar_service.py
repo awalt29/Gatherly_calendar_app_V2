@@ -224,6 +224,44 @@ class OutlookCalendarService:
             logger.error(f"Error fetching Outlook events for user {user_id}: {str(e)}")
             return []
     
+    def get_busy_times(self, user_id, start_time, end_time):
+        """Get busy times from Outlook Calendar in the same format as Google Calendar"""
+        events = self.get_calendar_events(user_id, start_time, end_time)
+        
+        busy_times = []
+        for event in events:
+            try:
+                # Skip events that don't show as busy (free, tentative, etc.)
+                show_as = event.get('showAs', 'busy').lower()
+                if show_as in ['free', 'workingElsewhere']:
+                    continue
+                
+                # Extract start and end times
+                start_dt_str = event['start']['dateTime']
+                end_dt_str = event['end']['dateTime']
+                
+                # Parse datetime strings (they come in ISO format from Graph API)
+                if start_dt_str.endswith('Z'):
+                    start_dt = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
+                    end_dt = datetime.fromisoformat(end_dt_str.replace('Z', '+00:00'))
+                else:
+                    start_dt = datetime.fromisoformat(start_dt_str)
+                    end_dt = datetime.fromisoformat(end_dt_str)
+                
+                busy_times.append({
+                    'start': start_dt,
+                    'end': end_dt
+                })
+                
+                logger.debug(f"Outlook busy period: {start_dt} to {end_dt} ({event.get('subject', 'No subject')})")
+                
+            except Exception as e:
+                logger.warning(f"Error parsing Outlook event: {event}, error: {str(e)}")
+                continue
+        
+        logger.info(f"Converted {len(busy_times)} Outlook events to busy times for user {user_id}")
+        return busy_times
+    
     def create_event(self, user_id, event_data):
         """Create an event in Outlook Calendar"""
         access_token = self.get_access_token(user_id)
