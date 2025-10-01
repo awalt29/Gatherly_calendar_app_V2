@@ -65,7 +65,9 @@ function setupMobileMenu() {
     
     if (mobileMenuToggle && navMenu) {
         mobileMenuToggle.addEventListener('click', function() {
+            console.log('Menu toggle clicked, current active state:', navMenu.classList.contains('active'));
             navMenu.classList.toggle('active');
+            console.log('Menu toggle after, new active state:', navMenu.classList.contains('active'));
             
             // Animate hamburger lines
             const lines = mobileMenuToggle.querySelectorAll('.hamburger-line');
