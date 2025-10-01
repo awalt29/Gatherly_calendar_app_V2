@@ -336,9 +336,12 @@ def sync_from_outlook_calendar():
                         })
                 
                 print(f"[SYNC] Found {len(busy_times)} busy periods for week {week_offset}")
+                print(f"[SYNC] Busy times: {busy_times}")
+                print(f"[SYNC] Week start: {week_start}, Week end: {week_end}")
                 
                 # Convert to availability format and save
                 availability_data = _convert_busy_times_to_availability(busy_times, week_start)
+                print(f"[SYNC] Converted availability data: {availability_data}")
                 
                 # Get or create availability record
                 availability = Availability.query.filter_by(
