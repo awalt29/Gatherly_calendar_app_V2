@@ -90,16 +90,22 @@ def disconnect():
         success = outlook_calendar_service.disconnect_user(current_user.id)
         
         if success:
-            flash('Outlook Calendar disconnected successfully!', 'success')
+            return jsonify({
+                'success': True,
+                'message': 'Outlook Calendar disconnected successfully!'
+            })
         else:
-            flash('Error disconnecting Outlook Calendar. Please try again.', 'error')
-        
-        return redirect(url_for('settings.index'))
+            return jsonify({
+                'success': False,
+                'message': 'Error disconnecting Outlook Calendar. Please try again.'
+            }), 400
         
     except Exception as e:
         logger.error(f"Error disconnecting Outlook Calendar for user {current_user.id}: {str(e)}")
-        flash('Error disconnecting Outlook Calendar. Please try again.', 'error')
-        return redirect(url_for('settings.index'))
+        return jsonify({
+            'success': False,
+            'message': 'Error disconnecting Outlook Calendar. Please try again.'
+        }), 500
 
 @bp.route('/status')
 @login_required
