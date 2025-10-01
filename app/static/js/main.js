@@ -994,45 +994,64 @@ function getWeekStart(date) {
 }
 
 function showNotification(message, type = 'info') {
-    // Check for duplicate notifications
-    let flashContainer = document.querySelector('.flash-messages');
-    if (flashContainer) {
-        const existingNotifications = flashContainer.querySelectorAll('.flash-message');
-        for (let existing of existingNotifications) {
-            // If we find the same message, don't show duplicate
-            if (existing.textContent.includes(message)) {
-                return;
-            }
-        }
+    // Create notification element with centered styling (same as settings page)
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Get color based on type
+    let backgroundColor;
+    switch(type) {
+        case 'success':
+            backgroundColor = 'var(--success)';
+            break;
+        case 'error':
+            backgroundColor = 'var(--error)';
+            break;
+        case 'warning':
+            backgroundColor = 'var(--warning)';
+            break;
+        default:
+            backgroundColor = 'var(--primary)';
     }
     
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `flash-message flash-${type}`;
-    notification.innerHTML = `
-        ${message}
-        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+    // Style the notification (centered in viewport)
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        background: ${backgroundColor};
+        color: white;
+        padding: var(--space-4) var(--space-6);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        z-index: 10000;
+        font-size: var(--font-size-base);
+        max-width: 400px;
+        text-align: center;
+        opacity: 0;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     `;
     
-    // Add to flash messages container
-    if (!flashContainer) {
-        flashContainer = document.createElement('div');
-        flashContainer.className = 'flash-messages';
-        document.querySelector('.main-content').insertBefore(
-            flashContainer, 
-            document.querySelector('.main-content').firstChild
-        );
-    }
+    document.body.appendChild(notification);
     
-    flashContainer.appendChild(notification);
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 100);
     
-    // Auto-hide after 5 seconds
+    // Remove after 3 seconds
     setTimeout(() => {
         notification.style.opacity = '0';
+        notification.style.transform = 'translate(-50%, -50%) scale(0.8)';
         setTimeout(() => {
             notification.remove();
         }, 300);
-    }, 5000);
+    }, 3000);
 }
 
 // Format time for display
