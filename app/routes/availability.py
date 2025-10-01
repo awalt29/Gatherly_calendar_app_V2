@@ -118,8 +118,8 @@ def get_week_availability(week_offset):
         
         auto_applied_this_request = False
         
-        # If no availability exists for this week and it's a future week, check for default schedule
-        if not availability and week_offset > 0:
+        # If no availability exists for this week and it's current week or future, check for default schedule
+        if not availability and week_offset >= 0:
             logger.info(f"No availability found for week {week_offset}, checking for default schedule")
             default_schedule = DefaultSchedule.get_active_default(current_user.id)
             if default_schedule:
@@ -636,7 +636,7 @@ def _apply_default_to_future_weeks(user_id, default_schedule, max_weeks=52):
         applied_count = 0
         updated_count = 0
         
-        for week_offset in range(1, max_weeks + 1):  # Start from week 1 (next week)
+        for week_offset in range(0, max_weeks + 1):  # Start from week 0 (current week)
             week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
             
             # Get or create availability for this week
