@@ -280,12 +280,7 @@ class CalendarScheduler:
             current_date = week_start + timedelta(days=day_offset)
             day_name = day_names[current_date.weekday()]  # Monday = 0
             
-            # Get existing availability for this day
-            existing_day_data = {}
-            if existing_availability:
-                existing_day_data = existing_availability.get_day_availability(day_name)
-            
-            # Find busy periods for this day
+            # Find busy periods for this day first
             day_busy_times = []
             for busy_period in busy_times:
                 try:
@@ -325,6 +320,15 @@ class CalendarScheduler:
                 except Exception as e:
                     logger.error(f"Error parsing busy period: {busy_period}, error: {str(e)}")
                     continue
+            
+            # Only process days that have busy times - skip days with no calendar conflicts
+            if not day_busy_times:
+                continue
+                
+            # Get existing availability for this day (only for days with conflicts)
+            existing_day_data = {}
+            if existing_availability:
+                existing_day_data = existing_availability.get_day_availability(day_name)
             
             # Process availability based on existing preferences and busy times
             if existing_day_data.get('available', False):
