@@ -336,12 +336,12 @@ def sync_from_outlook_calendar():
                         })
                 
                 print(f"[SYNC] Found {len(busy_times)} busy periods for week {week_offset}")
-                print(f"[SYNC] Busy times: {busy_times}")
-                print(f"[SYNC] Week start: {week_start}, Week end: {week_end}")
+                logger.info(f"[SYNC] Busy times for week {week_offset}: {busy_times}")
+                logger.info(f"[SYNC] Week start: {week_start}, Week end: {week_end}")
                 
                 # Convert to availability format and save
                 availability_data = _convert_busy_times_to_availability(busy_times, week_start)
-                print(f"[SYNC] Converted availability data: {availability_data}")
+                logger.info(f"[SYNC] Converted availability data: {availability_data}")
                 
                 # Get or create availability record
                 availability = Availability.query.filter_by(
@@ -356,9 +356,9 @@ def sync_from_outlook_calendar():
                     )
                     db.session.add(availability)
                 
-                # Update availability data
-                for day, times in availability_data.items():
-                    setattr(availability, day, times)
+                # Update availability data using the same method as Google Calendar sync
+                availability.set_availability_data(availability_data)
+                availability.updated_at = datetime.utcnow()
                 
                 success_count += 1
                 print(f"[SYNC] Successfully synced week {week_offset} (starting {week_start})")
