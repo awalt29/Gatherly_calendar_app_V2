@@ -1076,7 +1076,9 @@ function setupNotifications() {
         bell: !!notificationBell,
         modal: !!notificationModal,
         close: !!notificationModalClose,
-        overlay: !!notificationModalOverlay
+        overlay: !!notificationModalOverlay,
+        isMobile: window.innerWidth <= 768,
+        userAgent: navigator.userAgent
     });
     
     if (!notificationBell || !notificationModal) {
@@ -1087,8 +1089,14 @@ function setupNotifications() {
     // Load initial notification count
     loadNotificationCount();
     
-    // Set up event listeners
+    // Set up event listeners (both click and touch for mobile)
     notificationBell.addEventListener('click', openNotificationModal);
+    notificationBell.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        console.log('Touch event on notification bell');
+        openNotificationModal();
+    });
+    
     notificationModalClose.addEventListener('click', closeNotificationModal);
     notificationModalOverlay.addEventListener('click', closeNotificationModal);
     

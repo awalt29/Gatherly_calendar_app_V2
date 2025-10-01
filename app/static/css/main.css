@@ -894,9 +894,21 @@ body {
         margin-right: var(--space-1);
     }
     
+    .notification-bell {
+        background: var(--surface) !important;
+        color: var(--text-secondary) !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .notification-modal {
+        z-index: 10002 !important;
+    }
+    
     .notification-modal-content {
         margin: var(--space-2);
         max-height: calc(100vh - var(--space-4));
+        z-index: 10003 !important;
     }
     
     .notification-modal-header {
