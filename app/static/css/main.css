@@ -177,41 +177,13 @@ body {
    FLASH MESSAGES
    ============================================ */
 
+/* Flash messages are now handled by JavaScript - hide CSS banners */
 .flash-messages {
-    padding: var(--space-4);
+    display: none;
 }
 
 .flash-message {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
-    margin-bottom: var(--space-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.flash-message.flash-error {
-    border-color: var(--error);
-    background: rgba(255, 59, 48, 0.1);
-    color: #ffcccb;
-}
-
-.flash-message.flash-success {
-    border-color: var(--success);
-    background: rgba(52, 199, 89, 0.1);
-    color: #c8f7c5;
-}
-
-.flash-close {
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: var(--font-size-lg);
-    cursor: pointer;
-    padding: 0;
-    margin-left: var(--space-3);
+    display: none;
 }
 
 /* ============================================
