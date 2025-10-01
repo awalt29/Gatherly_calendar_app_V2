@@ -179,11 +179,11 @@ body {
 
 .notification-bell-container {
     position: relative;
-    margin-right: var(--space-4);
+    margin-right: var(--space-2);
 }
 
 .notification-bell {
-    background: transparent;
+    background: var(--surface);
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
@@ -194,6 +194,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 40px;
+    height: 40px;
 }
 
 .notification-bell:hover {
@@ -889,7 +891,7 @@ body {
 
 @media (max-width: 768px) {
     .notification-bell-container {
-        margin-right: var(--space-2);
+        margin-right: var(--space-1);
     }
     
     .notification-modal-content {

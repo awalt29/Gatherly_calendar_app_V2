@@ -1072,7 +1072,17 @@ function setupNotifications() {
     const notificationModalClose = document.getElementById('notificationModalClose');
     const notificationModalOverlay = document.getElementById('notificationModalOverlay');
     
-    if (!notificationBell || !notificationModal) return;
+    console.log('Setting up notifications...', {
+        bell: !!notificationBell,
+        modal: !!notificationModal,
+        close: !!notificationModalClose,
+        overlay: !!notificationModalOverlay
+    });
+    
+    if (!notificationBell || !notificationModal) {
+        console.warn('Notification elements not found');
+        return;
+    }
     
     // Load initial notification count
     loadNotificationCount();
@@ -1122,11 +1132,16 @@ function updateNotificationBadge(count) {
 
 // Open notification modal
 async function openNotificationModal() {
+    console.log('Opening notification modal...');
     const modal = document.getElementById('notificationModal');
     const notificationList = document.getElementById('notificationList');
     
-    if (!modal || !notificationList) return;
+    if (!modal || !notificationList) {
+        console.warn('Modal elements not found', { modal: !!modal, list: !!notificationList });
+        return;
+    }
     
+    console.log('Showing modal...');
     // Show modal
     modal.style.display = 'flex';
     
