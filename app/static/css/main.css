@@ -126,7 +126,7 @@ body {
 }
 
 .nav-menu {
-    display: flex;
+    display: none;
     align-items: center;
     gap: var(--space-6);
 }
@@ -161,7 +161,7 @@ body {
 
 /* Mobile Menu Toggle */
 .mobile-menu-toggle {
-    display: none;
+    display: flex;
     flex-direction: column;
     justify-content: space-around;
     width: 30px;
@@ -936,6 +936,7 @@ body {
     }
     
     .nav-menu {
+        display: flex;
         position: absolute;
         top: 100%;
         left: 0;
