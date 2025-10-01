@@ -25,26 +25,202 @@ class CalendarScheduler:
         """
         logger.info("Starting automatic calendar availability sync job (Google + Outlook)")
         
-        total_stats = {'google': {'synced': 0, 'errors': 0}, 'outlook': {'synced': 0, 'errors': 0}}
+        total_stats = {'unified': {'synced': 0, 'errors': 0}, 'google_only': {'synced': 0, 'errors': 0}, 'outlook_only': {'synced': 0, 'errors': 0}}
         
-        # Sync Google Calendar users
+        # First, sync users who have both Google AND Outlook calendars (unified approach)
+        unified_stats = CalendarScheduler._sync_unified_calendar_users()
+        total_stats['unified'] = unified_stats
+        
+        # Then sync Google-only users
         if google_calendar_service.is_configured():
-            logger.info("Syncing Google Calendar users...")
-            google_stats = CalendarScheduler._sync_google_calendar_users()
-            total_stats['google'] = google_stats
+            logger.info("Syncing Google-only Calendar users...")
+            google_stats = CalendarScheduler._sync_google_only_users()
+            total_stats['google_only'] = google_stats
         else:
             logger.warning("Google Calendar service not configured. Skipping Google sync.")
         
-        # Sync Outlook Calendar users
+        # Then sync Outlook-only users
         if outlook_calendar_service.is_configured():
-            logger.info("Syncing Outlook Calendar users...")
-            outlook_stats = CalendarScheduler._sync_outlook_calendar_users()
-            total_stats['outlook'] = outlook_stats
+            logger.info("Syncing Outlook-only Calendar users...")
+            outlook_stats = CalendarScheduler._sync_outlook_only_users()
+            total_stats['outlook_only'] = outlook_stats
         else:
             logger.warning("Outlook Calendar service not configured. Skipping Outlook sync.")
         
         logger.info(f"Calendar sync job completed. Stats: {total_stats}")
         return total_stats
+    
+    @staticmethod
+    def _sync_unified_calendar_users():
+        """Sync users who have both Google and Outlook calendars - combine busy times"""
+        logger.info("Syncing users with both Google and Outlook calendars...")
+        
+        try:
+            # Find users who have both Google AND Outlook sync enabled
+            google_users = set()
+            outlook_users = set()
+            
+            if google_calendar_service.is_configured():
+                google_records = GoogleCalendarSync.query.filter(
+                    GoogleCalendarSync.sync_enabled == True,
+                    GoogleCalendarSync.auto_sync_availability == True
+                ).all()
+                google_users = {record.user_id for record in google_records}
+            
+            if outlook_calendar_service.is_configured():
+                outlook_records = OutlookCalendarSync.query.filter(
+                    OutlookCalendarSync.sync_enabled == True,
+                    OutlookCalendarSync.auto_sync_availability == True
+                ).all()
+                outlook_users = {record.user_id for record in outlook_records}
+            
+            # Find users who have BOTH calendars
+            unified_users = google_users.intersection(outlook_users)
+            logger.info(f"Found {len(unified_users)} users with both Google and Outlook calendars")
+            
+            if not unified_users:
+                return {'synced': 0, 'errors': 0}
+            
+            success_count = 0
+            error_count = 0
+            
+            for user_id in unified_users:
+                try:
+                    # Rate limiting temporarily disabled for testing
+                    # Check both sync records for rate limiting
+                    google_sync = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
+                    outlook_sync = OutlookCalendarSync.query.filter_by(user_id=user_id).first()
+                    
+                    # Sync availability for this user with combined calendars
+                    user_success = CalendarScheduler._sync_user_unified_calendars(user_id)
+                    
+                    if user_success:
+                        success_count += 1
+                        # Update last sync time for both calendars
+                        if google_sync:
+                            google_sync.last_sync = datetime.utcnow()
+                        if outlook_sync:
+                            outlook_sync.last_sync = datetime.utcnow()
+                        db.session.commit()
+                    else:
+                        error_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"Error syncing unified calendars for user {user_id}: {str(e)}")
+                    error_count += 1
+                    db.session.rollback()
+            
+            return {'synced': success_count, 'errors': error_count}
+            
+        except Exception as e:
+            logger.error(f"Error in unified calendar sync: {str(e)}")
+            return {'synced': 0, 'errors': 1}
+    
+    @staticmethod
+    def _sync_google_only_users():
+        """Sync users who have ONLY Google Calendar (not Outlook)"""
+        try:
+            # Get Google users
+            google_records = GoogleCalendarSync.query.filter(
+                GoogleCalendarSync.sync_enabled == True,
+                GoogleCalendarSync.auto_sync_availability == True
+            ).all()
+            google_user_ids = {record.user_id for record in google_records}
+            
+            # Get Outlook users
+            outlook_records = OutlookCalendarSync.query.filter(
+                OutlookCalendarSync.sync_enabled == True,
+                OutlookCalendarSync.auto_sync_availability == True
+            ).all()
+            outlook_user_ids = {record.user_id for record in outlook_records}
+            
+            # Find Google-only users (have Google but not Outlook)
+            google_only_users = google_user_ids - outlook_user_ids
+            logger.info(f"Found {len(google_only_users)} Google-only users")
+            
+            if not google_only_users:
+                return {'synced': 0, 'errors': 0}
+            
+            success_count = 0
+            error_count = 0
+            
+            for user_id in google_only_users:
+                try:
+                    user_success = CalendarScheduler._sync_user_google_calendar(user_id)
+                    
+                    if user_success:
+                        success_count += 1
+                        # Update last sync time
+                        sync_record = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
+                        if sync_record:
+                            sync_record.last_sync = datetime.utcnow()
+                            db.session.commit()
+                    else:
+                        error_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"Error syncing Google Calendar for user {user_id}: {str(e)}")
+                    error_count += 1
+                    db.session.rollback()
+            
+            return {'synced': success_count, 'errors': error_count}
+            
+        except Exception as e:
+            logger.error(f"Error in Google-only calendar sync: {str(e)}")
+            return {'synced': 0, 'errors': 1}
+    
+    @staticmethod
+    def _sync_outlook_only_users():
+        """Sync users who have ONLY Outlook Calendar (not Google)"""
+        try:
+            # Get Google users
+            google_records = GoogleCalendarSync.query.filter(
+                GoogleCalendarSync.sync_enabled == True,
+                GoogleCalendarSync.auto_sync_availability == True
+            ).all()
+            google_user_ids = {record.user_id for record in google_records}
+            
+            # Get Outlook users
+            outlook_records = OutlookCalendarSync.query.filter(
+                OutlookCalendarSync.sync_enabled == True,
+                OutlookCalendarSync.auto_sync_availability == True
+            ).all()
+            outlook_user_ids = {record.user_id for record in outlook_records}
+            
+            # Find Outlook-only users (have Outlook but not Google)
+            outlook_only_users = outlook_user_ids - google_user_ids
+            logger.info(f"Found {len(outlook_only_users)} Outlook-only users")
+            
+            if not outlook_only_users:
+                return {'synced': 0, 'errors': 0}
+            
+            success_count = 0
+            error_count = 0
+            
+            for user_id in outlook_only_users:
+                try:
+                    user_success = CalendarScheduler._sync_user_outlook_calendar(user_id)
+                    
+                    if user_success:
+                        success_count += 1
+                        # Update last sync time
+                        sync_record = OutlookCalendarSync.query.filter_by(user_id=user_id).first()
+                        if sync_record:
+                            sync_record.last_sync = datetime.utcnow()
+                            db.session.commit()
+                    else:
+                        error_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"Error syncing Outlook Calendar for user {user_id}: {str(e)}")
+                    error_count += 1
+                    db.session.rollback()
+            
+            return {'synced': success_count, 'errors': error_count}
+            
+        except Exception as e:
+            logger.error(f"Error in Outlook-only calendar sync: {str(e)}")
+            return {'synced': 0, 'errors': 1}
     
     @staticmethod
     def _sync_google_calendar_users():
@@ -450,6 +626,92 @@ class CalendarScheduler:
                     })
         
         return available_ranges
+    
+    @staticmethod
+    def _sync_user_unified_calendars(user_id):
+        """Sync availability from both Google and Outlook calendars for a specific user - combines busy times"""
+        try:
+            # Check if user has both calendars connected
+            google_sync = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
+            outlook_sync = OutlookCalendarSync.query.filter_by(user_id=user_id).first()
+            
+            if not (google_sync and google_sync.sync_enabled and outlook_sync and outlook_sync.sync_enabled):
+                logger.debug(f"User {user_id} doesn't have both Google and Outlook Calendar sync enabled")
+                return False
+            
+            # Sync availability for the next 4 weeks
+            success_count = 0
+            error_count = 0
+            
+            for week_offset in range(4):
+                try:
+                    today = datetime.now().date()
+                    week_start = Availability.get_week_start(today) + timedelta(weeks=week_offset)
+                    week_end = week_start + timedelta(days=6)
+                    
+                    # Get busy times from BOTH calendars
+                    combined_busy_times = []
+                    
+                    # Get Google Calendar busy times
+                    try:
+                        google_busy_times = google_calendar_service.get_busy_times(
+                            user_id,
+                            datetime.combine(week_start, datetime.min.time()),
+                            datetime.combine(week_end, datetime.max.time())
+                        )
+                        if google_busy_times:
+                            combined_busy_times.extend(google_busy_times)
+                            logger.debug(f"Found {len(google_busy_times)} Google busy periods for user {user_id}")
+                    except Exception as e:
+                        logger.warning(f"Error getting Google busy times for user {user_id}: {str(e)}")
+                    
+                    # Get Outlook Calendar busy times
+                    try:
+                        outlook_busy_times = outlook_calendar_service.get_busy_times(
+                            user_id,
+                            datetime.combine(week_start, datetime.min.time()),
+                            datetime.combine(week_end, datetime.max.time())
+                        )
+                        if outlook_busy_times:
+                            combined_busy_times.extend(outlook_busy_times)
+                            logger.debug(f"Found {len(outlook_busy_times)} Outlook busy periods for user {user_id}")
+                    except Exception as e:
+                        logger.warning(f"Error getting Outlook busy times for user {user_id}: {str(e)}")
+                    
+                    logger.info(f"Combined {len(combined_busy_times)} total busy periods from both calendars for user {user_id}")
+                    
+                    # Convert combined busy times to availability data
+                    availability_data = CalendarScheduler._convert_busy_times_to_availability_format(combined_busy_times, week_start, user_id)
+                    
+                    # Update availability in database - merge with existing data
+                    availability = Availability.get_or_create_availability(user_id, week_start)
+                    existing_data = availability.get_availability_data()
+                    
+                    # Only update days that have changes, preserve others
+                    for day_name, day_data in availability_data.items():
+                        existing_data[day_name] = day_data
+                    
+                    availability.set_availability_data(existing_data)
+                    availability.updated_at = datetime.utcnow()
+                    
+                    success_count += 1
+                    
+                except Exception as e:
+                    logger.error(f"Error syncing unified calendars week {week_offset} for user {user_id}: {str(e)}")
+                    error_count += 1
+            
+            if success_count > 0:
+                db.session.commit()
+                logger.info(f"Successfully synced {success_count} unified calendar weeks for user {user_id}")
+                return True
+            else:
+                logger.warning(f"Failed to sync any unified calendar weeks for user {user_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error syncing unified calendars for user {user_id}: {str(e)}")
+            db.session.rollback()
+            return False
     
     @staticmethod
     def sync_user_now(user_id):
