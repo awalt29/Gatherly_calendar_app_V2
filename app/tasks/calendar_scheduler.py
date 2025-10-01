@@ -174,9 +174,15 @@ class CalendarScheduler:
                     # Convert busy times to availability data
                     availability_data = CalendarScheduler._convert_busy_times_to_availability_format(busy_times, week_start, user_id)
                     
-                    # Update availability in database
+                    # Update availability in database - merge with existing data
                     availability = Availability.get_or_create_availability(user_id, week_start)
-                    availability.set_availability_data(availability_data)
+                    existing_data = availability.get_availability_data()
+                    
+                    # Only update days that have changes, preserve others
+                    for day_name, day_data in availability_data.items():
+                        existing_data[day_name] = day_data
+                    
+                    availability.set_availability_data(existing_data)
                     availability.updated_at = datetime.utcnow()
                     
                     success_count += 1
@@ -228,9 +234,15 @@ class CalendarScheduler:
                     # Convert busy times to availability data
                     availability_data = CalendarScheduler._convert_busy_times_to_availability_format(busy_times, week_start, user_id)
                     
-                    # Update availability in database
+                    # Update availability in database - merge with existing data
                     availability = Availability.get_or_create_availability(user_id, week_start)
-                    availability.set_availability_data(availability_data)
+                    existing_data = availability.get_availability_data()
+                    
+                    # Only update days that have changes, preserve others
+                    for day_name, day_data in availability_data.items():
+                        existing_data[day_name] = day_data
+                    
+                    availability.set_availability_data(existing_data)
                     availability.updated_at = datetime.utcnow()
                     
                     success_count += 1
