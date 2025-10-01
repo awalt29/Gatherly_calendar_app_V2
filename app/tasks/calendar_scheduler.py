@@ -433,10 +433,10 @@ class CalendarScheduler:
                 
                 current_ranges = new_ranges
             
-            # Convert back to time ranges and filter out short periods
+            # Convert back to time ranges and filter out very short periods
             for start_min, end_min in current_ranges:
                 duration_minutes = end_min - start_min
-                if duration_minutes >= 60:  # At least 1 hour
+                if duration_minutes >= 30:  # At least 30 minutes
                     available_ranges.append({
                         'start': minutes_to_time_str(start_min),
                         'end': minutes_to_time_str(end_min)
