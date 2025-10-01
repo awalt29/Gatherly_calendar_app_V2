@@ -348,19 +348,10 @@ class CalendarScheduler:
                         'all_day': False
                     }
             else:
-                # User didn't have availability set - preserve their choice (don't add availability)
-                # Only copy existing data if it exists, otherwise leave the day unchanged
+                # User didn't have availability set for this day - preserve existing data exactly
                 if existing_day_data:
                     availability_data[day_name] = existing_day_data
-                else:
-                    # No existing data - keep as not available (don't auto-add weekday availability)
-                    availability_data[day_name] = {
-                        'available': False,
-                        'start': '09:00',
-                        'end': '17:00',
-                        'time_ranges': [],
-                        'all_day': False
-                    }
+                # If no existing data, don't add anything - let the day remain as it was
         
         return availability_data
     
