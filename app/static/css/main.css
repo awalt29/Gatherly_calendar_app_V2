@@ -126,9 +126,27 @@ body {
 }
 
 .nav-menu {
-    display: none;
-    align-items: center;
-    gap: var(--space-6);
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    flex-direction: column;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    gap: var(--space-2);
+    z-index: 9999;
+}
+
+.nav-menu.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 .nav-link {
@@ -935,29 +953,7 @@ body {
         display: flex;
     }
     
-    .nav-menu {
-        display: flex;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: var(--surface);
-        flex-direction: column;
-        padding: var(--space-4);
-        border-bottom: 1px solid var(--border);
-        transform: translateY(-100%);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        gap: var(--space-2);
-        z-index: 9999;
-    }
-    
-    .nav-menu.active {
-        transform: translateY(0);
-        opacity: 1;
-        visibility: visible;
-    }
+    /* Nav menu styles are now global */
     
     .nav-link {
         padding: var(--space-3) var(--space-4);
