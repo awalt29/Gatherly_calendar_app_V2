@@ -352,3 +352,70 @@ def delete_account():
             'success': False, 
             'error': f'Failed to delete account: {str(e)}'
         }), 500
+
+@bp.route('/settings/debug-user', methods=['GET'])
+@login_required
+def debug_user():
+    """Debug endpoint to show current user info and calendar sync status"""
+    try:
+        from app.models.google_calendar_sync import GoogleCalendarSync
+        from app.models.outlook_calendar_sync import OutlookCalendarSync
+        from app.models.availability import Availability
+        from datetime import datetime, timedelta
+        
+        # Get user info
+        user_info = {
+            'user_id': current_user.id,
+            'email': current_user.email,
+            'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
+            'google_calendar_enabled': getattr(current_user, 'google_calendar_enabled', False),
+            'outlook_calendar_enabled': getattr(current_user, 'outlook_calendar_enabled', False)
+        }
+        
+        # Get Google sync info
+        google_sync = GoogleCalendarSync.query.filter_by(user_id=current_user.id).first()
+        google_info = None
+        if google_sync:
+            google_info = {
+                'sync_enabled': google_sync.sync_enabled,
+                'auto_sync_availability': google_sync.auto_sync_availability,
+                'auto_add_events': google_sync.auto_add_events,
+                'last_sync': google_sync.last_sync.isoformat() if google_sync.last_sync else None
+            }
+        
+        # Get Outlook sync info
+        outlook_sync = OutlookCalendarSync.query.filter_by(user_id=current_user.id).first()
+        outlook_info = None
+        if outlook_sync:
+            outlook_info = {
+                'sync_enabled': outlook_sync.sync_enabled,
+                'auto_sync_availability': outlook_sync.auto_sync_availability,
+                'auto_add_events': outlook_sync.auto_add_events,
+                'last_sync': outlook_sync.last_sync.isoformat() if outlook_sync.last_sync else None,
+                'token_expires_at': outlook_sync.token_expires_at.isoformat() if outlook_sync.token_expires_at else None
+            }
+        
+        # Get recent availability records
+        recent_availability = Availability.query.filter_by(user_id=current_user.id).order_by(Availability.updated_at.desc()).limit(5).all()
+        availability_info = []
+        for avail in recent_availability:
+            monday_data = avail.get_day_availability('monday')
+            availability_info.append({
+                'week_start': avail.week_start_date.isoformat(),
+                'updated_at': avail.updated_at.isoformat() if avail.updated_at else None,
+                'monday_available': monday_data.get('available', False),
+                'monday_time_ranges': monday_data.get('time_ranges', [])
+            })
+        
+        debug_data = {
+            'user': user_info,
+            'google_sync': google_info,
+            'outlook_sync': outlook_info,
+            'recent_availability': availability_info
+        }
+        
+        return jsonify(debug_data)
+        
+    except Exception as e:
+        logger.error(f"Error in debug endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
