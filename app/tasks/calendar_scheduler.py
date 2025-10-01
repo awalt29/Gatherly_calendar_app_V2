@@ -576,15 +576,8 @@ class CalendarScheduler:
         def minutes_to_time_str(minutes):
             hours = minutes // 60
             mins = minutes % 60
-            # Convert to 12-hour format to match manually set availability
-            if hours == 0:
-                return f"12:{mins:02d} AM"
-            elif hours < 12:
-                return f"{hours}:{mins:02d} AM"
-            elif hours == 12:
-                return f"12:{mins:02d} PM"
-            else:
-                return f"{hours - 12}:{mins:02d} PM"
+            # Use 24-hour format for UI compatibility (HTML time inputs expect HH:MM)
+            return f"{hours:02d}:{mins:02d}"
         
         available_ranges = []
         
