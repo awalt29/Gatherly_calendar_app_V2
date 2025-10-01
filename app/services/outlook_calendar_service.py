@@ -228,12 +228,21 @@ class OutlookCalendarService:
         """Get busy times from Outlook Calendar in the same format as Google Calendar"""
         events = self.get_calendar_events(user_id, start_time, end_time)
         
+        logger.info(f"Processing {len(events)} Outlook events for user {user_id}")
+        
         busy_times = []
         for event in events:
             try:
-                # Skip events that don't show as busy (free, tentative, etc.)
+                subject = event.get('subject', 'No subject')
                 show_as = event.get('showAs', 'busy').lower()
+                
+                logger.info(f"Outlook event: '{subject}', showAs: '{show_as}'")
+                logger.info(f"  Start: {event.get('start', {}).get('dateTime', 'Unknown')}")
+                logger.info(f"  End: {event.get('end', {}).get('dateTime', 'Unknown')}")
+                
+                # Skip events that don't show as busy (free, workingElsewhere)
                 if show_as in ['free', 'workingElsewhere']:
+                    logger.info(f"  Skipping event '{subject}' - showAs: '{show_as}'")
                     continue
                 
                 # Extract start and end times
@@ -253,7 +262,7 @@ class OutlookCalendarService:
                     'end': end_dt
                 })
                 
-                logger.debug(f"Outlook busy period: {start_dt} to {end_dt} ({event.get('subject', 'No subject')})")
+                logger.info(f"  Added as busy time: {start_dt} to {end_dt}")
                 
             except Exception as e:
                 logger.warning(f"Error parsing Outlook event: {event}, error: {str(e)}")
