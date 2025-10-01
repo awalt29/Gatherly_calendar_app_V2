@@ -159,3 +159,31 @@ def api_clear_all():
             'success': False,
             'error': 'Failed to clear notifications'
         }), 500
+
+@bp.route('/api/test', methods=['POST'])
+@login_required
+def api_test():
+    """Test endpoint to create a sample notification"""
+    try:
+        # Create a test notification
+        test_notification = Notification(
+            user_id=current_user.id,
+            type='test',
+            title='Test Notification',
+            message='This is a test notification to verify the system is working',
+            from_user_id=current_user.id
+        )
+        db.session.add(test_notification)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Test notification created successfully',
+            'notification_id': test_notification.id
+        })
+    except Exception as e:
+        logger.error(f"Error creating test notification: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to create test notification: {str(e)}'
+        }), 500

@@ -200,11 +200,16 @@ def edit_event(event_id):
                             new_invitees.append(user_to_add)
                             
                             # Create notification for the invited user
-                            Notification.create_event_invited_notification(
-                                user_id=user_id,
-                                from_user_id=current_user.id,
-                                event_id=event.id
-                            )
+                            try:
+                                Notification.create_event_invited_notification(
+                                    user_id=user_id,
+                                    from_user_id=current_user.id,
+                                    event_id=event.id
+                                )
+                                logger.info(f"Created event edit notification for user {user_id} for event {event.id}")
+                            except Exception as e:
+                                logger.error(f"Failed to create event edit notification: {str(e)}")
+                                # Don't fail the event update if notification fails
                 
                 # Commit changes first
                 db.session.commit()
@@ -439,11 +444,16 @@ def create():
             db.session.add(invitation)
             
             # Create notification for the invited user
-            Notification.create_event_invited_notification(
-                user_id=attendee.id,
-                from_user_id=current_user.id,
-                event_id=event.id
-            )
+            try:
+                Notification.create_event_invited_notification(
+                    user_id=attendee.id,
+                    from_user_id=current_user.id,
+                    event_id=event.id
+                )
+                logger.info(f"Created event notification for user {attendee.id} for event {event.id}")
+            except Exception as e:
+                logger.error(f"Failed to create event notification: {str(e)}")
+                # Don't fail the event creation if notification fails
         
         db.session.commit()
         
