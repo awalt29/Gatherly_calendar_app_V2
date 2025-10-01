@@ -219,7 +219,31 @@
 
 .time-info {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--space-1);
+    align-items: flex-start;
+}
+
+/* Multiple time ranges styling for friends */
+.time-info:has(.time-badge:nth-child(2)) {
+    background: rgba(0, 104, 177, 0.05);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    border: 1px solid rgba(0, 104, 177, 0.1);
+    position: relative;
+}
+
+.time-info:has(.time-badge:nth-child(2))::before {
+    content: "Multiple windows";
+    position: absolute;
+    top: -6px;
+    left: var(--space-2);
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: 10px;
+    padding: 1px var(--space-1);
+    border-radius: var(--radius-xs);
+    border: 1px solid rgba(0, 104, 177, 0.2);
 }
 
 .time-badge {
@@ -229,6 +253,24 @@
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: 500;
+    width: 100%;
+    text-align: center;
+}
+
+/* Enhanced styling for multiple time badges */
+.time-info:has(.time-badge:nth-child(2)) .time-badge {
+    background: var(--primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.time-info:has(.time-badge:nth-child(2)) .time-badge:first-child {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.time-info:has(.time-badge:nth-child(2)) .time-badge:last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
 }
 
 .time-badge.all-day {
