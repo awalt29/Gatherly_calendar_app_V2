@@ -66,12 +66,12 @@ class CalendarScheduler:
             
             for sync_record in sync_records:
                 try:
-                    # Check if sync is needed (avoid too frequent syncs)
-                    if sync_record.last_sync:
-                        time_since_sync = datetime.utcnow() - sync_record.last_sync
-                        if time_since_sync < timedelta(hours=1):
-                            logger.debug(f"Skipping Google user {sync_record.user_id} - synced recently")
-                            continue
+                    # Rate limiting temporarily disabled for testing
+                    # if sync_record.last_sync:
+                    #     time_since_sync = datetime.utcnow() - sync_record.last_sync
+                    #     if time_since_sync < timedelta(hours=1):
+                    #         logger.debug(f"Skipping Google user {sync_record.user_id} - synced recently")
+                    #         continue
                     
                     # Sync availability for this user
                     user_success = CalendarScheduler._sync_user_google_calendar(sync_record.user_id)
@@ -115,12 +115,12 @@ class CalendarScheduler:
             
             for sync_record in sync_records:
                 try:
-                    # Check if sync is needed (avoid too frequent syncs)
-                    if sync_record.last_sync:
-                        time_since_sync = datetime.utcnow() - sync_record.last_sync
-                        if time_since_sync < timedelta(hours=1):
-                            logger.debug(f"Skipping Outlook user {sync_record.user_id} - synced recently")
-                            continue
+                    # Rate limiting temporarily disabled for testing
+                    # if sync_record.last_sync:
+                    #     time_since_sync = datetime.utcnow() - sync_record.last_sync
+                    #     if time_since_sync < timedelta(hours=1):
+                    #         logger.debug(f"Skipping Outlook user {sync_record.user_id} - synced recently")
+                    #         continue
                     
                     # Sync availability for this user
                     user_success = CalendarScheduler._sync_user_outlook_calendar(sync_record.user_id)
