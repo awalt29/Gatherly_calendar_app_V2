@@ -122,6 +122,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    flex-shrink: 0;
 }
 
 .nav-menu {
@@ -169,6 +170,7 @@ body {
     border: none;
     cursor: pointer;
     padding: 0;
+    flex-shrink: 0;
 }
 
 .hamburger-line {
@@ -195,12 +197,12 @@ body {
     padding: var(--space-2);
     border-radius: var(--radius-md);
     transition: all 0.2s ease;
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 40px;
     height: 40px;
+    flex-shrink: 0;
     /* PWA touch improvements */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
