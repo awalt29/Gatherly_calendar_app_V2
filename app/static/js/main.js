@@ -603,15 +603,6 @@ function saveAsDefaultSchedule() {
     .then(result => {
         if (result.success) {
             showNotification('Default schedule saved and applied to the entire year!', 'success');
-            // Show the status message temporarily, then hide it
-            const statusDiv = document.getElementById('defaultScheduleStatus');
-            if (statusDiv) {
-                statusDiv.style.display = 'flex';
-                // Hide the status message after 5 seconds
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 5000);
-            }
         } else {
             showNotification(result.error || 'Error saving default schedule', 'error');
         }
@@ -623,15 +614,8 @@ function saveAsDefaultSchedule() {
 }
 
 function checkDefaultScheduleStatus() {
-    // Don't show the persistent status message on page load
-    // The green status box should only appear temporarily when the user sets a default
-    // and disappear on page reload
-    
-    // Keep the status div hidden by default
-    const statusDiv = document.getElementById('defaultScheduleStatus');
-    if (statusDiv) {
-        statusDiv.style.display = 'none';
-    }
+    // No longer needed - bottom notification has been removed
+    // Only the centered notification will show when setting default schedule
 }
 
 function updateAvailabilityWeekDisplay(weekData) {

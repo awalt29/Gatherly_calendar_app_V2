@@ -33,10 +33,6 @@
                     <span class="btn-icon">💾</span>
                     Set as Default Schedule
                 </button>
-                <div id="defaultScheduleStatus" class="default-status" style="display: none;">
-                    <span class="btn-icon">✨</span>
-                    <span class="status-text">Default schedule will auto-apply to the entire year</span>
-                </div>
             </div>
         </div>
     </div>
@@ -242,10 +238,61 @@
     background: rgba(255, 255, 255, 0.02);
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
+    position: relative;
 }
 
 .time-range-item:last-child {
     margin-bottom: 0;
+}
+
+/* Multiple time ranges styling */
+.time-ranges-container:has(.time-range-item:nth-child(2)) {
+    background: rgba(0, 104, 177, 0.03);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    border: 1px solid rgba(0, 104, 177, 0.1);
+    position: relative;
+}
+
+.time-ranges-container:has(.time-range-item:nth-child(2))::before {
+    content: "Multiple availability windows";
+    position: absolute;
+    top: -8px;
+    left: var(--space-3);
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0, 104, 177, 0.2);
+}
+
+/* Add connecting lines between multiple ranges */
+.time-ranges-container .time-range-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -15px;
+    top: 50%;
+    width: 2px;
+    height: calc(100% + var(--space-2));
+    background: rgba(0, 104, 177, 0.2);
+    transform: translateY(-50%);
+}
+
+/* Enhance visual grouping for multiple ranges */
+.time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-item {
+    background: rgba(0, 104, 177, 0.05);
+    border-color: rgba(0, 104, 177, 0.15);
+}
+
+.time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-item:first-child {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-item:last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
 }
 
 .time-input {
@@ -513,25 +560,6 @@
     margin-right: var(--space-1);
 }
 
-.default-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--success);
-    font-size: var(--font-size-sm);
-    padding: var(--space-2) var(--space-3);
-    background: rgba(52, 199, 89, 0.1);
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(52, 199, 89, 0.3);
-}
-
-.default-status .btn-icon {
-    color: var(--success);
-}
-
-.status-text {
-    font-weight: 500;
-}
 
 
 @media (max-width: 768px) {
