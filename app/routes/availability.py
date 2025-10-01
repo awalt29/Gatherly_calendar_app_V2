@@ -485,15 +485,39 @@ def _subtract_busy_times_from_ranges(time_ranges, busy_times):
     """Remove busy time periods from available time ranges"""
     def time_to_minutes(time_str):
         if isinstance(time_str, str):
-            hours, minutes = time_str.split(':')
-            return int(hours) * 60 + int(minutes)
+            # Handle both 24-hour format (HH:MM) and 12-hour format (H:MM AM/PM)
+            if 'AM' in time_str or 'PM' in time_str:
+                # Parse 12-hour format
+                time_part = time_str.replace(' AM', '').replace(' PM', '')
+                hours, minutes = time_part.split(':')
+                hours = int(hours)
+                minutes = int(minutes)
+                
+                if 'PM' in time_str and hours != 12:
+                    hours += 12
+                elif 'AM' in time_str and hours == 12:
+                    hours = 0
+                    
+                return hours * 60 + minutes
+            else:
+                # Parse 24-hour format
+                hours, minutes = time_str.split(':')
+                return int(hours) * 60 + int(minutes)
         else:  # time object
             return time_str.hour * 60 + time_str.minute
     
     def minutes_to_time_str(minutes):
         hours = minutes // 60
         mins = minutes % 60
-        return f"{hours:02d}:{mins:02d}"
+        # Convert to 12-hour format to match manually set availability
+        if hours == 0:
+            return f"12:{mins:02d} AM"
+        elif hours < 12:
+            return f"{hours}:{mins:02d} AM"
+        elif hours == 12:
+            return f"12:{mins:02d} PM"
+        else:
+            return f"{hours - 12}:{mins:02d} PM"
     
     available_ranges = []
     
