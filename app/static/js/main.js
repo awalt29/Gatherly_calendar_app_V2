@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     setupMobileMenu();
     setupFlashMessages();
+    setupNotifications();
     
     // Page-specific initialization
     const currentPage = getCurrentPage();
@@ -1058,4 +1059,240 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+/* ============================================
+   NOTIFICATION SYSTEM
+   ============================================ */
+
+// Setup notification system
+function setupNotifications() {
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationModal = document.getElementById('notificationModal');
+    const notificationModalClose = document.getElementById('notificationModalClose');
+    const notificationModalOverlay = document.getElementById('notificationModalOverlay');
+    
+    if (!notificationBell || !notificationModal) return;
+    
+    // Load initial notification count
+    loadNotificationCount();
+    
+    // Set up event listeners
+    notificationBell.addEventListener('click', openNotificationModal);
+    notificationModalClose.addEventListener('click', closeNotificationModal);
+    notificationModalOverlay.addEventListener('click', closeNotificationModal);
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && notificationModal.style.display !== 'none') {
+            closeNotificationModal();
+        }
+    });
+    
+    // Refresh notification count periodically (every 30 seconds)
+    setInterval(loadNotificationCount, 30000);
+}
+
+// Load notification count
+async function loadNotificationCount() {
+    try {
+        const response = await fetch('/notifications/api/count');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateNotificationBadge(data.count);
+        }
+    } catch (error) {
+        console.error('Error loading notification count:', error);
+    }
+}
+
+// Update notification badge
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationCount');
+    if (!badge) return;
+    
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count.toString();
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Open notification modal
+async function openNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    const notificationList = document.getElementById('notificationList');
+    
+    if (!modal || !notificationList) return;
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Show loading state
+    notificationList.innerHTML = `
+        <div class="notification-loading">
+            <div class="loading-spinner"></div>
+            <p>Loading notifications...</p>
+        </div>
+    `;
+    
+    try {
+        // Load notifications
+        const response = await fetch('/notifications/api/list');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderNotifications(data.notifications);
+            
+            // Mark all as read after opening
+            await markAllNotificationsAsRead();
+        } else {
+            throw new Error(data.error || 'Failed to load notifications');
+        }
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        notificationList.innerHTML = `
+            <div class="notification-empty">
+                <div class="notification-empty-icon">⚠️</div>
+                <p>Failed to load notifications</p>
+                <button onclick="openNotificationModal()" class="btn btn-secondary btn-sm">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Close notification modal
+function closeNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Render notifications
+function renderNotifications(notifications) {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
+    
+    if (notifications.length === 0) {
+        notificationList.innerHTML = `
+            <div class="notification-empty">
+                <div class="notification-empty-icon">🔔</div>
+                <p>No notifications yet</p>
+                <p style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: var(--space-2);">
+                    You'll see friend requests, group invitations, and event notifications here.
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    const notificationHTML = notifications.map(notification => {
+        const timeAgo = getTimeAgo(new Date(notification.created_at));
+        const avatarClass = `friend-color-${notification.from_user ? notification.from_user.id % 8 : 0}`;
+        
+        return `
+            <div class="notification-item ${!notification.is_read ? 'unread' : ''}" 
+                 data-notification-id="${notification.id}"
+                 onclick="handleNotificationClick(${notification.id}, '${notification.type}', ${notification.friend_id || 'null'}, ${notification.group_id || 'null'}, ${notification.event_id || 'null'})">
+                <div class="notification-avatar ${avatarClass}">
+                    ${notification.from_user ? notification.from_user.initials : '🔔'}
+                </div>
+                <div class="notification-content">
+                    <h4 class="notification-title">${notification.title}</h4>
+                    <p class="notification-message">${notification.message}</p>
+                    <p class="notification-time">${timeAgo}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    notificationList.innerHTML = notificationHTML;
+}
+
+// Handle notification click
+async function handleNotificationClick(notificationId, type, friendId, groupId, eventId) {
+    try {
+        // Mark as read if not already
+        await markNotificationAsRead(notificationId);
+        
+        // Navigate based on notification type
+        switch (type) {
+            case 'friend_request':
+                window.location.href = '/friends';
+                break;
+            case 'friend_accepted':
+                window.location.href = '/friends';
+                break;
+            case 'group_added':
+                if (groupId) {
+                    window.location.href = '/groups';
+                }
+                break;
+            case 'event_invited':
+                if (eventId) {
+                    window.location.href = '/events';
+                }
+                break;
+            default:
+                // Close modal for unknown types
+                closeNotificationModal();
+        }
+    } catch (error) {
+        console.error('Error handling notification click:', error);
+    }
+}
+
+// Mark notification as read
+async function markNotificationAsRead(notificationId) {
+    try {
+        await fetch(`/notifications/api/mark-read/${notificationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+// Mark all notifications as read
+async function markAllNotificationsAsRead() {
+    try {
+        await fetch('/notifications/api/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Update badge
+        updateNotificationBadge(0);
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+    }
+}
+
+// Get time ago string
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) {
+        return 'Just now';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes}m ago`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours}h ago`;
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days}d ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
 }

@@ -6,6 +6,7 @@ from app.models.event import Event
 from app.models.event_invitation import EventInvitation
 from app.models.user import User
 from app.models.google_calendar_sync import GoogleCalendarSync
+from app.models.notification import Notification
 from app.services.google_calendar_service import google_calendar_service
 from app.services.sms_service import SMSService
 import logging
@@ -197,6 +198,13 @@ def edit_event(event_id):
                             )
                             db.session.add(invitation)
                             new_invitees.append(user_to_add)
+                            
+                            # Create notification for the invited user
+                            Notification.create_event_invited_notification(
+                                user_id=user_id,
+                                from_user_id=current_user.id,
+                                event_id=event.id
+                            )
                 
                 # Commit changes first
                 db.session.commit()
@@ -429,6 +437,13 @@ def create():
                 status='pending'
             )
             db.session.add(invitation)
+            
+            # Create notification for the invited user
+            Notification.create_event_invited_notification(
+                user_id=attendee.id,
+                from_user_id=current_user.id,
+                event_id=event.id
+            )
         
         db.session.commit()
         

@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models.user import User
 from app.models.friend import Friend
+from app.models.notification import Notification
 
 bp = Blueprint('friends', __name__)
 
@@ -68,6 +69,14 @@ def add_friend():
         friend_request, created = Friend.send_friend_request(current_user.id, user.id)
         
         if created:
+            # Create notification for the recipient
+            Notification.create_friend_request_notification(
+                user_id=user.id,
+                from_user_id=current_user.id,
+                friend_id=friend_request.id
+            )
+            db.session.commit()
+            
             return jsonify({
                 'success': True, 
                 'message': f'Friend request sent to {user.get_full_name()}'
@@ -96,6 +105,14 @@ def accept_friend(friend_request_id):
         
         if friend_request.accept_request():
             requester = User.query.get(friend_request.user_id)
+            
+            # Create notification for the original requester
+            Notification.create_friend_accepted_notification(
+                user_id=requester.id,
+                from_user_id=current_user.id
+            )
+            db.session.commit()
+            
             return jsonify({
                 'success': True,
                 'message': f'You are now friends with {requester.get_full_name()}'

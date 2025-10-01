@@ -64,7 +64,7 @@ class SendGridService:
             return False
     
     def send_password_reset_email(self, user):
-        """Send password reset email using SendGrid"""
+        """Send password reset email using SendGrid Dynamic Template"""
         try:
             # Generate reset token
             token = user.generate_reset_token()
@@ -73,20 +73,34 @@ class SendGridService:
             base_url = os.environ.get('APP_BASE_URL', 'https://trygatherly.com')
             reset_url = f"{base_url}/auth/reset-password/{token}"
             
-            # Render email template
-            html_content = render_template(
-                'email/password_reset.html',
-                user=user,
-                reset_url=reset_url,
-                token=token
-            )
+            # Use dynamic template if configured, otherwise fall back to HTML
+            template_id = os.environ.get('SENDGRID_PASSWORD_RESET_TEMPLATE_ID')
             
-            # Send email
-            success = self.send_email(
-                to_email=user.email,
-                subject='Reset Your Gatherly Password',
-                html_content=html_content
-            )
+            if template_id:
+                # Send using dynamic template
+                success = self.send_template_email(
+                    to_email=user.email,
+                    template_id=template_id,
+                    dynamic_template_data={
+                        'user_name': user.get_full_name(),
+                        'reset_url': reset_url,
+                        'app_name': 'Gatherly'
+                    }
+                )
+            else:
+                # Fallback to HTML template
+                html_content = render_template(
+                    'email/password_reset.html',
+                    user=user,
+                    reset_url=reset_url,
+                    token=token
+                )
+                
+                success = self.send_email(
+                    to_email=user.email,
+                    subject='Reset Your Gatherly Password',
+                    html_content=html_content
+                )
             
             if success:
                 logger.info(f"Password reset email sent successfully to {user.email}")

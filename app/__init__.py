@@ -54,6 +54,9 @@ def create_app(config_class=Config):
     
     from app.routes.outlook_auth import bp as outlook_auth_bp
     app.register_blueprint(outlook_auth_bp)
+    
+    from app.routes.notifications import bp as notifications_bp
+    app.register_blueprint(notifications_bp)
 
     # Register custom Jinja2 filters
     @app.template_filter('format_phone')

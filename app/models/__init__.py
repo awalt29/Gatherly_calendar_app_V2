@@ -7,3 +7,4 @@ from .event_invitation import EventInvitation
 from .google_calendar_sync import GoogleCalendarSync
 from .default_schedule import DefaultSchedule
 from .group import Group, GroupMembership, GroupAvailabilityAlert
+from .notification import Notification

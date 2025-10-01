@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models.group import Group, GroupMembership
 from app.models.user import User
+from app.models.notification import Notification
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,13 @@ def create_group():
                     user = User.query.get(member_id)
                     if user:
                         added_members.append(user.get_full_name())
+                        
+                        # Create notification for the added user
+                        Notification.create_group_added_notification(
+                            user_id=member_id,
+                            from_user_id=current_user.id,
+                            group_id=group.id
+                        )
             except (ValueError, TypeError):
                 continue
         
@@ -185,8 +193,16 @@ def add_group_member(group_id):
         
         # Add the member
         if group.add_member(user_id):
-            db.session.commit()
             user = User.query.get(user_id)
+            
+            # Create notification for the added user
+            Notification.create_group_added_notification(
+                user_id=user_id,
+                from_user_id=current_user.id,
+                group_id=group_id
+            )
+            
+            db.session.commit()
             return jsonify({
                 'success': True,
                 'message': f'{user.get_full_name()} added to group',
