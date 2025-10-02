@@ -1181,7 +1181,7 @@ body {
 }
 
 .chunk-section .day-column {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--background); /* Match weekday header background */
     border-right: 1px solid transparent; /* Completely invisible borders */
     padding: var(--space-3);
     min-height: 45vh;
