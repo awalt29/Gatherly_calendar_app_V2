@@ -1172,7 +1172,7 @@ body {
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: 1fr;
     gap: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid transparent; /* Invisible grid lines like Apple Calendar */
     flex: 1;
 }
 
@@ -1182,7 +1182,7 @@ body {
 
 .chunk-section .day-column {
     background: rgba(255, 255, 255, 0.02);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid transparent; /* Invisible grid lines like Apple Calendar */
     padding: var(--space-3);
     min-height: 45vh;
     cursor: pointer;
