@@ -336,14 +336,17 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-4); /* Back to original gap */
-    background: rgba(10, 14, 26, 0.8); /* Semi-translucent background matching --background */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: var(--space-3) var(--space-4); /* Back to original padding */
+    background: rgba(0, 0, 0, 0.9); /* Darker, more opaque background for better contrast */
+    backdrop-filter: blur(30px); /* Increased blur for more separation */
+    -webkit-backdrop-filter: blur(30px);
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Thicker, more visible border */
+    border-radius: 28px; /* Slightly more rounded */
+    padding: var(--space-4) var(--space-5); /* Increased padding for more presence */
     z-index: 1000;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.6), /* Larger, darker shadow */
+        0 4px 20px rgba(0, 0, 0, 0.4), /* Secondary shadow */
+        inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Inner highlight for depth */
 }
 
 .menu-item {
@@ -353,21 +356,27 @@ body {
     gap: var(--space-1);
     text-decoration: none;
     color: white; /* Pure white for better visibility */
-    transition: all 0.2s ease;
-    padding: var(--space-2);
-    border-radius: var(--radius-md);
-    min-width: 60px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
+    padding: var(--space-3); /* Increased padding for better touch targets */
+    border-radius: var(--radius-lg); /* More rounded corners */
+    min-width: 65px; /* Slightly wider */
+    position: relative; /* For pseudo-element effects */
 }
 
 .menu-item:hover {
     color: white; /* Keep pure white on hover */
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15); /* More visible hover background */
+    transform: translateY(-3px) scale(1.05); /* Lift and slightly scale */
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1); /* Glow effect on hover */
 }
 
 .menu-item.active {
     color: var(--primary);
-    background: rgba(0, 122, 255, 0.2);
+    background: rgba(0, 122, 255, 0.25); /* More visible active background */
+    box-shadow: 
+        0 0 20px rgba(0, 122, 255, 0.3), /* Blue glow */
+        inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Inner highlight */
+    border: 1px solid rgba(0, 122, 255, 0.4); /* Subtle blue border */
 }
 
 .menu-icon {
@@ -390,7 +399,12 @@ body {
     .bottom-menu-bar {
         bottom: 35px; /* Moved up ~5mm on mobile too */
         gap: var(--space-3); /* Back to original mobile gap */
-        padding: var(--space-2) var(--space-3); /* Back to original mobile padding */
+        padding: var(--space-3) var(--space-4); /* Enhanced mobile padding */
+        border-radius: 24px; /* Slightly less rounded on mobile */
+        box-shadow: 
+            0 8px 30px rgba(0, 0, 0, 0.7), /* Stronger shadow on mobile */
+            0 2px 15px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
     
     .menu-item {
