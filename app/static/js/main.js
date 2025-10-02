@@ -854,6 +854,9 @@ function renderMonth(chunkData, chunkOffset) {
                     friendBlock.className = 'friend-block';
                     if (user.is_current_user) {
                         friendBlock.classList.add('current-user');
+                    } else {
+                        // Use the color_index from backend for consistent colors
+                        friendBlock.classList.add(`friend-color-${user.color_index}`);
                     }
                     friendBlock.textContent = user.initials;
                     friendBlock.title = `${user.name} (${user.time_range})`;

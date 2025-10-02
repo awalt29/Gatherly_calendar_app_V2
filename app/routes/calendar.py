@@ -132,6 +132,13 @@ def get_month_data(month_offset):
                     'users': []
                 }
                 
+                # Create a consistent color mapping for this group of friends
+                # Sort friends by ID to ensure consistent color assignment
+                all_users = sorted(friends + [current_user], key=lambda x: x.id)
+                user_color_map = {}
+                for i, user in enumerate(all_users):
+                    user_color_map[user.id] = i % 8  # 8 available colors
+                
                 # Add availability for each friend
                 for friend in friends + [current_user]:
                     user_availability = next(
@@ -146,7 +153,8 @@ def get_month_data(month_offset):
                             'name': friend.get_full_name(),
                             'initials': friend.get_initials(),
                             'is_current_user': friend.id == current_user.id,
-                            'time_range': time_range
+                            'time_range': time_range,
+                            'color_index': user_color_map[friend.id]
                         })
                 
                 week_data['days'].append(day_data)

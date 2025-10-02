@@ -280,13 +280,15 @@ def get_group_details(group_id):
         if not group.is_member(current_user.id):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
         
-        # Get all group members
+        # Get all group members with smart color assignment
+        all_members = sorted(group.get_members(), key=lambda x: x.id)  # Sort for consistency
         members = []
-        for user in group.get_members():
+        for i, user in enumerate(all_members):
             members.append({
                 'id': user.id,
                 'name': user.get_full_name(),
-                'initials': user.get_initials()
+                'initials': user.get_initials(),
+                'color_index': i % 8  # Assign colors 0-7 based on position in sorted list
             })
         
         group_data = {

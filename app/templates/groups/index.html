@@ -1026,7 +1026,6 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--primary);
     color: white;
     display: flex;
     align-items: center;
@@ -1034,6 +1033,7 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     flex-shrink: 0;
+    /* Background color will be set by friend-color-X classes */
 }
 
 .member-item-edit .member-info {
@@ -2441,8 +2441,12 @@ function populateEditModal() {
         
         const memberDiv = document.createElement('div');
         memberDiv.className = `member-item-edit ${isCreator ? 'creator' : ''} ${isPendingAdd ? 'pending-add' : ''} ${isPendingRemove ? 'pending-remove' : ''}`;
+        
+        // Use color_index if available, otherwise fall back to ID-based coloring
+        const colorClass = member.color_index !== undefined ? `friend-color-${member.color_index}` : `friend-color-${member.id % 8}`;
+        
         memberDiv.innerHTML = `
-            <div class="member-avatar">${escapeHtml(member.initials)}</div>
+            <div class="member-avatar ${colorClass}">${escapeHtml(member.initials)}</div>
             <div class="member-info">
                 <div class="member-name">${escapeHtml(member.name)}</div>
                 <div class="member-role">${isCreator ? 'Creator' : 'Member'}</div>
@@ -2610,7 +2614,7 @@ function updateGroupCard(groupId, groupData) {
                 for (let i = 0; i < Math.min(members.length, maxVisible); i++) {
                     const member = members[i];
                     const memberBubble = document.createElement('div');
-                    memberBubble.className = `member-avatar friend-color-${member.id % 8}`;
+                    memberBubble.className = `member-avatar friend-color-${member.color_index || (member.id % 8)}`;
                     memberBubble.title = member.name;
                     memberBubble.textContent = member.initials;
                     membersContainer.appendChild(memberBubble);
