@@ -342,11 +342,26 @@ def test_template(email):
     else:
         result = 'NO_TEMPLATE_ID'
     
+    # Also test basic email sending (no template)
+    basic_test = "NOT_TESTED"
+    if sendgrid_service.is_configured():
+        try:
+            basic_success = sendgrid_service.send_email(
+                to_email=email,
+                subject="Test Email - No Template",
+                html_content="<h1>Test</h1><p>This is a basic test email without template.</p>"
+            )
+            basic_test = "SUCCESS" if basic_success else "FAILED"
+        except Exception as e:
+            basic_test = f"ERROR: {str(e)}"
+    
     return f"""
     <h1>SendGrid Template Test</h1>
     <h2>Configuration:</h2>
     <pre>{config_info}</pre>
-    <h2>Test Result:</h2>
+    <h2>Template Test Result:</h2>
     <p><strong>{result}</strong></p>
+    <h2>Basic Email Test Result:</h2>
+    <p><strong>{basic_test}</strong></p>
     <p>Check the Railway logs for detailed error information.</p>
     """

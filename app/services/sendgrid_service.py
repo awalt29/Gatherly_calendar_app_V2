@@ -100,6 +100,15 @@ class SendGridService:
                 
         except Exception as e:
             logger.error(f"Failed to send template email via SendGrid to {to_email}: {str(e)}")
+            
+            # Try to get more details from the exception
+            if hasattr(e, 'body'):
+                logger.error(f"SendGrid error body: {e.body}")
+            if hasattr(e, 'headers'):
+                logger.error(f"SendGrid error headers: {e.headers}")
+            if hasattr(e, 'status_code'):
+                logger.error(f"SendGrid error status: {e.status_code}")
+                
             import traceback
             logger.error(f"SendGrid template error traceback: {traceback.format_exc()}")
             return False
