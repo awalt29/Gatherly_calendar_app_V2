@@ -26,9 +26,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.png') }}?v=2">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='images/favicon-192x192.png') }}?v=2">
     <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='images/favicon-512x512.png') }}?v=2">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-icon-v5.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-icon-v5.png') }}">
-    <link rel="apple-touch-icon" sizes="512x512" href="{{ url_for('static', filename='images/apple-icon-v5.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" sizes="512x512" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     
     <!-- Inter Font -->
@@ -115,15 +115,24 @@
         <!-- Flash messages - converted to centered notifications -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
+                <!-- Template-generated flash messages -->
+                {% for category, message in messages %}
+                <div class="flash-message-data" data-message="{{ message }}" data-category="{{ category }}" style="display: none;"></div>
+                {% endfor %}
+                
                 <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    {% for category, message in messages %}
-                        // Convert Flask flash message to centered notification
-                        showCenteredNotification('{{ message|safe }}', '{{ category }}');
-                    {% endfor %}
+                    var flashElements = document.querySelectorAll('.flash-message-data');
+                    flashElements.forEach(function(element) {
+                        var message = element.getAttribute('data-message');
+                        var category = element.getAttribute('data-category');
+                        showCenteredNotification(message, category);
+                        element.remove(); // Clean up
+                    });
                 });
                 
-                function showCenteredNotification(message, type = 'info') {
+                function showCenteredNotification(message, type) {
+                    type = type || 'info';
                     // Create notification element with centered styling
                     const notification = document.createElement('div');
                     notification.className = `notification notification-${type}`;
