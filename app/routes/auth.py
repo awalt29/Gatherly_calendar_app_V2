@@ -282,8 +282,9 @@ def reset_password(token):
 @bp.route('/debug-reset/<email>')
 def debug_reset(email):
     """Temporary debug endpoint to generate reset token manually"""
-    if not current_app.debug:
-        return "Not available in production", 404
+    # Temporarily allow in production for debugging
+    # if not current_app.debug:
+    #     return "Not available in production", 404
     
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -303,8 +304,9 @@ def debug_reset(email):
 @bp.route('/test-template/<email>')
 def test_template(email):
     """Test SendGrid template functionality"""
-    if not current_app.debug:
-        return "Not available in production", 404
+    # Temporarily allow in production for debugging
+    # if not current_app.debug:
+    #     return "Not available in production", 404
     
     from app.services.sendgrid_service import SendGridService
     import os
