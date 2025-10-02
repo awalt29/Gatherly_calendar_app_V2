@@ -228,7 +228,7 @@ body {
 .notification-bell {
     background: var(--background); /* Match calendar background */
     border: none;
-    color: var(--text-secondary);
+    color: white; /* Pure white for better visibility */
     cursor: pointer;
     padding: var(--space-2);
     border-radius: var(--radius-md);
@@ -944,7 +944,7 @@ body {
     
     .notification-bell {
         background: var(--background) !important; /* Match calendar background */
-        color: var(--text-secondary) !important;
+        color: white !important; /* Pure white for better visibility */
         width: 40px !important;
         height: 40px !important;
     }
