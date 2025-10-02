@@ -107,16 +107,33 @@ body {
     position: relative;
 }
 
+.nav-brand a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.nav-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+}
+
+.nav-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Legacy support for h1 if needed */
 .nav-brand h1 {
     font-size: var(--font-size-xl);
     font-weight: 700;
     color: var(--text-primary);
     text-decoration: none;
-}
-
-.nav-brand a {
-    text-decoration: none;
-    color: inherit;
+    margin: 0;
 }
 
 .nav-controls {
