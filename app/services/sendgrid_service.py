@@ -71,6 +71,8 @@ class SendGridService:
         
         try:
             logger.info(f"Sending template email via SendGrid to {to_email} with template: {template_id}")
+            logger.info(f"Template data: {dynamic_template_data}")
+            logger.info(f"From email: {self.from_email}")
             
             message = Mail(
                 from_email=self.from_email,
@@ -79,9 +81,11 @@ class SendGridService:
             
             # Set the template ID
             message.template_id = template_id
+            logger.info(f"Set template_id: {message.template_id}")
             
             # Add dynamic template data
             message.dynamic_template_data = dynamic_template_data
+            logger.info(f"Set dynamic_template_data: {message.dynamic_template_data}")
             
             response = self.client.send(message)
             
@@ -91,6 +95,7 @@ class SendGridService:
             else:
                 logger.error(f"SendGrid API returned status code: {response.status_code}")
                 logger.error(f"Response body: {response.body}")
+                logger.error(f"Response headers: {response.headers}")
                 return False
                 
         except Exception as e:

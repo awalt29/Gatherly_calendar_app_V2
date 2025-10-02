@@ -299,3 +299,52 @@ def debug_reset(email):
     <p><a href="{reset_url}">Click here to reset password</a></p>
     <p>Or go to: {reset_url}</p>
     """
+
+@bp.route('/test-template/<email>')
+def test_template(email):
+    """Test SendGrid template functionality"""
+    if not current_app.debug:
+        return "Not available in production", 404
+    
+    from app.services.sendgrid_service import SendGridService
+    import os
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"User with email {email} not found", 404
+    
+    sendgrid_service = SendGridService()
+    
+    # Check configuration
+    config_info = {
+        'is_configured': sendgrid_service.is_configured(),
+        'from_email': sendgrid_service.from_email,
+        'template_id': os.environ.get('SENDGRID_PASSWORD_RESET_TEMPLATE_ID'),
+        'api_key_set': bool(os.environ.get('SENDGRID_API_KEY')),
+    }
+    
+    # Try to send template email
+    template_id = os.environ.get('SENDGRID_PASSWORD_RESET_TEMPLATE_ID')
+    if template_id:
+        reset_url = url_for('auth.reset_password', token='test-token-123', _external=True)
+        success = sendgrid_service.send_template_email(
+            to_email=email,
+            template_id=template_id,
+            dynamic_template_data={
+                'user_name': user.get_full_name(),
+                'reset_url': reset_url,
+                'app_name': 'Gatherly'
+            }
+        )
+        result = 'SUCCESS' if success else 'FAILED'
+    else:
+        result = 'NO_TEMPLATE_ID'
+    
+    return f"""
+    <h1>SendGrid Template Test</h1>
+    <h2>Configuration:</h2>
+    <pre>{config_info}</pre>
+    <h2>Test Result:</h2>
+    <p><strong>{result}</strong></p>
+    <p>Check the Railway logs for detailed error information.</p>
+    """
