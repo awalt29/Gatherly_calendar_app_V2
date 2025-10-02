@@ -330,23 +330,20 @@ body {
 /* Bottom Menu Bar */
 .bottom-menu-bar {
     position: fixed;
-    bottom: 39px; /* Moved up ~5mm (19px) from 20px */
+    bottom: 39px; /* Keep the 5mm upward movement */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: var(--space-4); /* Back to original gap */
-    background: rgba(0, 0, 0, 0.9); /* Darker, more opaque background for better contrast */
-    backdrop-filter: blur(30px); /* Increased blur for more separation */
-    -webkit-backdrop-filter: blur(30px);
-    border: 2px solid rgba(255, 255, 255, 0.2); /* Thicker, more visible border */
-    border-radius: 28px; /* Slightly more rounded */
-    padding: var(--space-4) var(--space-5); /* Increased padding for more presence */
+    gap: var(--space-4);
+    background: rgba(10, 14, 26, 0.8); /* Back to original semi-translucent background */
+    backdrop-filter: blur(20px); /* Back to original blur */
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Back to original border */
+    border-radius: 24px; /* Back to original border-radius */
+    padding: var(--space-4) var(--space-5); /* Keep the increased padding for size */
     z-index: 1000;
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.6), /* Larger, darker shadow */
-        0 4px 20px rgba(0, 0, 0, 0.4), /* Secondary shadow */
-        inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Inner highlight for depth */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* Back to original shadow */
 }
 
 .menu-item {
@@ -355,28 +352,22 @@ body {
     align-items: center;
     gap: var(--space-1);
     text-decoration: none;
-    color: white; /* Pure white for better visibility */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
-    padding: var(--space-3); /* Increased padding for better touch targets */
-    border-radius: var(--radius-lg); /* More rounded corners */
-    min-width: 65px; /* Slightly wider */
-    position: relative; /* For pseudo-element effects */
+    color: white; /* Keep the pure white color */
+    transition: all 0.2s ease; /* Back to original transition */
+    padding: var(--space-3); /* Keep the increased padding for size */
+    border-radius: var(--radius-md); /* Back to original border-radius */
+    min-width: 65px; /* Keep the slightly wider size */
 }
 
 .menu-item:hover {
     color: white; /* Keep pure white on hover */
-    background: rgba(255, 255, 255, 0.15); /* More visible hover background */
-    transform: translateY(-3px) scale(1.05); /* Lift and slightly scale */
-    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1); /* Glow effect on hover */
+    background: rgba(255, 255, 255, 0.1); /* Back to original hover background */
+    transform: translateY(-2px); /* Back to original lift amount */
 }
 
 .menu-item.active {
     color: var(--primary);
-    background: rgba(0, 122, 255, 0.25); /* More visible active background */
-    box-shadow: 
-        0 0 20px rgba(0, 122, 255, 0.3), /* Blue glow */
-        inset 0 1px 0 rgba(255, 255, 255, 0.1); /* Inner highlight */
-    border: 1px solid rgba(0, 122, 255, 0.4); /* Subtle blue border */
+    background: rgba(0, 122, 255, 0.2); /* Back to original active background */
 }
 
 .menu-icon {
@@ -397,14 +388,9 @@ body {
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .bottom-menu-bar {
-        bottom: 35px; /* Moved up ~5mm on mobile too */
-        gap: var(--space-3); /* Back to original mobile gap */
-        padding: var(--space-3) var(--space-4); /* Enhanced mobile padding */
-        border-radius: 24px; /* Slightly less rounded on mobile */
-        box-shadow: 
-            0 8px 30px rgba(0, 0, 0, 0.7), /* Stronger shadow on mobile */
-            0 2px 15px rgba(0, 0, 0, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        bottom: 35px; /* Keep the 5mm upward movement on mobile */
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4); /* Keep the enhanced mobile padding for size */
     }
     
     .menu-item {
