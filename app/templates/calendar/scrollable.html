@@ -117,7 +117,7 @@ body {
     letter-spacing: 0.5px;
     padding: var(--space-2);
     background: var(--surface);
-    border-right: 1px solid var(--surface); /* Match header background - invisible grid lines */
+    border-right: 1px solid var(--border);
 }
 
 .sticky-day-headers .day-header:last-child {
@@ -143,7 +143,7 @@ body {
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: 1fr;
     gap: 0;
-    border-bottom: 1px solid var(--background); /* Match background - invisible grid lines */
+    border-bottom: 1px solid var(--border);
     flex: 1;
 }
 
@@ -153,7 +153,7 @@ body {
 
 .calendar-grid-continuous .day-column {
     background: rgba(255, 255, 255, 0.02);
-    border-right: 1px solid var(--background); /* Match background - invisible grid lines */
+    border-right: 1px solid var(--border);
     padding: var(--space-3);
     min-height: calc((100vh - 200px) / 4 - 1px); /* 4 rows fit in viewport minus headers/padding */
     cursor: pointer;
