@@ -89,8 +89,8 @@ body {
    ============================================ */
 
 .top-nav {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: var(--background); /* Match calendar background */
+    border-bottom: 1px solid transparent; /* Invisible bottom border */
     position: sticky;
     top: 0;
     z-index: 10000;
@@ -132,10 +132,10 @@ body {
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--surface);
+    background: var(--background); /* Match calendar background */
     flex-direction: column;
     padding: var(--space-4);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid transparent; /* Invisible bottom border */
     transform: translateY(-100%);
     opacity: 0;
     visibility: hidden;
