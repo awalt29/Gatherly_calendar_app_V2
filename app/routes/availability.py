@@ -150,9 +150,9 @@ def get_week_availability(week_offset):
             'requested_week_offset': week_offset
         }
         
-        # Add day information
+        # Add day information - Sunday first (US calendar format)
         days = []
-        for day_offset in range(7):
+        for day_offset in [-1, 0, 1, 2, 3, 4, 5]:  # Sunday first, then Mon-Sat
             current_date = week_start + timedelta(days=day_offset)
             day_name = current_date.strftime('%A').lower()
             

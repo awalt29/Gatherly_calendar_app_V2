@@ -116,8 +116,9 @@ def get_month_data(month_offset):
                 'days': []
             }
             
-            # Generate 7 days of the week
-            for day_offset in range(7):
+            # Generate 7 days of the week, starting with Sunday (US calendar format)
+            # Backend week_start is Monday, so Sunday is -1 day, then Mon-Sat are 0-5
+            for day_offset in [-1, 0, 1, 2, 3, 4, 5]:  # Sunday first, then Mon-Sat
                 current_date = week_start + timedelta(days=day_offset)
                 day_name = current_date.strftime('%A').lower()
                 

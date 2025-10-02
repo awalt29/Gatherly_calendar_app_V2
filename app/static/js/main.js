@@ -211,18 +211,16 @@ function updateDayHeaders(weekData) {
     const dayHeaders = document.querySelectorAll('.day-header');
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']; // Sunday first
     
-    // Backend sends Monday-Sunday (0-6), we display Sunday-Monday-Saturday (6,0,1,2,3,4,5)
-    const backendToDisplayMapping = [6, 0, 1, 2, 3, 4, 5]; // Map backend indices to display indices
+    // Backend now sends Sunday-first, so no mapping needed
     console.log('Backend days data:', weekData.days); // Debug log
     
     dayHeaders.forEach((header, displayIndex) => {
-        const backendIndex = backendToDisplayMapping[displayIndex];
-        if (weekData.days && weekData.days[backendIndex]) {
-            const dayData = weekData.days[backendIndex];
+        if (weekData.days && weekData.days[displayIndex]) {
+            const dayData = weekData.days[displayIndex];
             const dayNumber = dayData.day_number;
             const dayName = dayData.day_name;
             
-            console.log(`${dayNames[displayIndex]} gets ${dayNumber} (${dayName} from backend[${backendIndex}])`);
+            console.log(`${dayNames[displayIndex]} gets ${dayNumber} (${dayName} from backend[${displayIndex}])`);
             
             // Update header to show day name and date
             header.innerHTML = `
@@ -830,11 +828,8 @@ function renderMonth(chunkData, chunkOffset) {
         weekRow.className = 'week-row';
         weekRow.dataset.chunkOffset = chunkOffset;
         
-        // Reorder days to Sunday-first: backend sends Mon-Sun (0-6), we want Sun-Mon-Sat (6,0,1,2,3,4,5)
-        const backendToDisplayMapping = [6, 0, 1, 2, 3, 4, 5];
-        const reorderedDays = backendToDisplayMapping.map(backendIndex => weekData.days[backendIndex]);
-        
-        reorderedDays.forEach(dayData => {
+        // Backend now sends days in Sunday-first order, so no reordering needed
+        weekData.days.forEach(dayData => {
             const dayColumn = document.createElement('div');
             dayColumn.className = 'day-column';
             dayColumn.dataset.date = dayData.date;
