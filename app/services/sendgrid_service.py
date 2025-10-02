@@ -63,6 +63,42 @@ class SendGridService:
             logger.error(f"SendGrid error traceback: {traceback.format_exc()}")
             return False
     
+    def send_template_email(self, to_email, template_id, dynamic_template_data):
+        """Send an email using SendGrid Dynamic Template"""
+        if not self.is_configured():
+            logger.error("SendGrid is not configured")
+            return False
+        
+        try:
+            logger.info(f"Sending template email via SendGrid to {to_email} with template: {template_id}")
+            
+            message = Mail(
+                from_email=self.from_email,
+                to_emails=to_email
+            )
+            
+            # Set the template ID
+            message.template_id = template_id
+            
+            # Add dynamic template data
+            message.dynamic_template_data = dynamic_template_data
+            
+            response = self.client.send(message)
+            
+            if response.status_code in [200, 201, 202]:
+                logger.info(f"Template email sent successfully via SendGrid to {to_email}")
+                return True
+            else:
+                logger.error(f"SendGrid API returned status code: {response.status_code}")
+                logger.error(f"Response body: {response.body}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to send template email via SendGrid to {to_email}: {str(e)}")
+            import traceback
+            logger.error(f"SendGrid template error traceback: {traceback.format_exc()}")
+            return False
+    
     def send_password_reset_email(self, user):
         """Send password reset email using SendGrid Dynamic Template"""
         try:
