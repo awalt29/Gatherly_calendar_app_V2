@@ -117,7 +117,7 @@ body {
     letter-spacing: 0.5px;
     padding: var(--space-2);
     background: var(--surface);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--surface); /* Match header background for invisible borders */
 }
 
 .sticky-day-headers .day-header:last-child {
@@ -153,7 +153,7 @@ body {
 
 .calendar-grid-continuous .day-column {
     background: rgba(255, 255, 255, 0.02);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid rgba(255, 255, 255, 0.02); /* Match cell background for invisible borders */
     padding: var(--space-3);
     min-height: calc((100vh - 200px) / 4 - 1px); /* 4 rows fit in viewport minus headers/padding */
     cursor: pointer;
