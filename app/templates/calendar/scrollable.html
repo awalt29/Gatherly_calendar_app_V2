@@ -427,12 +427,12 @@ body {
     }
     
     .floating-month-header {
-        font-size: var(--font-size-lg);
-        padding: var(--space-2) var(--space-3);
+        font-size: calc(var(--font-size-lg) * 1.5); /* Still bigger on mobile, but proportional */
+        padding: var(--space-3) var(--space-3); /* Increased padding */
     }
     
     .sticky-day-headers {
-        top: 50px; /* Adjusted for smaller floating header */
+        top: 70px; /* Adjusted for bigger floating header on mobile */
     }
     
     .sticky-day-headers .day-header {
