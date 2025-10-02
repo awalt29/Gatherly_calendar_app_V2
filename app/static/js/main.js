@@ -209,18 +209,20 @@ function loadAvailabilityWeek(weekOffset) {
 
 function updateDayHeaders(weekData) {
     const dayHeaders = document.querySelectorAll('.day-header');
-    const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']; // Sunday first
     
-    // No mapping needed - backend sends Monday-Sunday, we display Monday-Sunday
+    // Backend sends Monday-Sunday (0-6), we display Sunday-Monday-Saturday (6,0,1,2,3,4,5)
+    const backendToDisplayMapping = [6, 0, 1, 2, 3, 4, 5]; // Map backend indices to display indices
     console.log('Backend days data:', weekData.days); // Debug log
     
     dayHeaders.forEach((header, displayIndex) => {
-        if (weekData.days && weekData.days[displayIndex]) {
-            const dayData = weekData.days[displayIndex];
+        const backendIndex = backendToDisplayMapping[displayIndex];
+        if (weekData.days && weekData.days[backendIndex]) {
+            const dayData = weekData.days[backendIndex];
             const dayNumber = dayData.day_number;
             const dayName = dayData.day_name;
             
-            console.log(`${dayNames[displayIndex]} gets ${dayNumber} (${dayName} from backend[${displayIndex}])`);
+            console.log(`${dayNames[displayIndex]} gets ${dayNumber} (${dayName} from backend[${backendIndex}])`);
             
             // Update header to show day name and date
             header.innerHTML = `
@@ -828,7 +830,11 @@ function renderMonth(chunkData, chunkOffset) {
         weekRow.className = 'week-row';
         weekRow.dataset.chunkOffset = chunkOffset;
         
-        weekData.days.forEach(dayData => {
+        // Reorder days to Sunday-first: backend sends Mon-Sun (0-6), we want Sun-Mon-Sat (6,0,1,2,3,4,5)
+        const backendToDisplayMapping = [6, 0, 1, 2, 3, 4, 5];
+        const reorderedDays = backendToDisplayMapping.map(backendIndex => weekData.days[backendIndex]);
+        
+        reorderedDays.forEach(dayData => {
             const dayColumn = document.createElement('div');
             dayColumn.className = 'day-column';
             dayColumn.dataset.date = dayData.date;
