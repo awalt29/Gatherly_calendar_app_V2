@@ -190,8 +190,23 @@ def forgot_password():
                         flash('Password reset instructions have been sent to your email.', 'success')
                         logger.info(f"Password reset email sent successfully via SendGrid to {email}")
                     else:
-                        flash('Failed to send reset email. Please try again later.', 'error')
-                        logger.error(f"Failed to send password reset email via SendGrid to {email}")
+                        # SendGrid failed, try SMTP fallback if available
+                        logger.warning(f"SendGrid failed for {email}, trying SMTP fallback")
+                        if is_email_configured():
+                            logger.info("Falling back to SMTP for password reset email")
+                            token = user.generate_reset_token()
+                            db.session.commit()
+                            
+                            email_sent = send_password_reset_email(user)
+                            if email_sent:
+                                flash('Password reset instructions have been sent to your email.', 'success')
+                                logger.info(f"Password reset email sent successfully via SMTP fallback to {email}")
+                            else:
+                                flash('Email service is temporarily unavailable. Please contact support for assistance.', 'error')
+                                logger.error(f"Both SendGrid and SMTP failed for {email}")
+                        else:
+                            flash('Email service is temporarily unavailable. Please contact support for assistance.', 'error')
+                            logger.error(f"SendGrid failed and no SMTP fallback configured for {email}")
                         
                 elif is_email_configured():
                     logger.info("Using SMTP for password reset email")
@@ -263,3 +278,24 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
     
     return render_template('auth/reset_password.html', token=token)
+
+@bp.route('/debug-reset/<email>')
+def debug_reset(email):
+    """Temporary debug endpoint to generate reset token manually"""
+    if not current_app.debug:
+        return "Not available in production", 404
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"User with email {email} not found", 404
+    
+    token = user.generate_reset_token()
+    db.session.commit()
+    
+    reset_url = url_for('auth.reset_password', token=token, _external=True)
+    return f"""
+    <h1>Debug Password Reset</h1>
+    <p>Reset token generated for: {email}</p>
+    <p><a href="{reset_url}">Click here to reset password</a></p>
+    <p>Or go to: {reset_url}</p>
+    """
