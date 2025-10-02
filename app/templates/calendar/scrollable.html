@@ -86,7 +86,7 @@ body {
     top: 0;
     background: var(--background);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid transparent; /* Invisible border between month and weekdays */
     padding: var(--space-3) var(--space-4);
     text-align: center;
     font-size: var(--font-size-xl);
@@ -100,7 +100,7 @@ body {
     position: sticky;
     top: 60px; /* Height of floating month header */
     background: var(--background); /* Match calendar background */
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid transparent; /* Invisible border below weekdays */
     border-top: 1px solid transparent; /* Invisible top border */
     display: grid;
     grid-template-columns: repeat(7, 1fr);
