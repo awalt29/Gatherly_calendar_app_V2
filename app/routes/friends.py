@@ -4,6 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.friend import Friend
 from app.models.notification import Notification
+from app.utils.phone_utils import search_phone_patterns
 
 bp = Blueprint('friends', __name__)
 
@@ -52,8 +53,9 @@ def add_friend():
         if not phone_number:
             return jsonify({'error': 'Phone number is required'}), 400
         
-        # Search for user by phone number only
-        user = User.query.filter(User.phone == phone_number).first()
+        # Search for user by phone number with flexible matching
+        phone_patterns = search_phone_patterns(phone_number)
+        user = User.query.filter(User.phone.in_(phone_patterns)).first()
         
         if not user:
             return jsonify({
@@ -154,10 +156,21 @@ def search_friends():
     if len(query) < 3:
         return jsonify([])
     
-    # Search for users by phone number only
-    users = User.query.filter(
-        User.phone.ilike(f'%{query}%')
-    ).filter(User.id != current_user.id).limit(10).all()
+    # Search for users by phone number with flexible matching
+    phone_patterns = search_phone_patterns(query)
+    
+    # Create OR conditions for all possible patterns
+    phone_conditions = []
+    for pattern in phone_patterns:
+        phone_conditions.append(User.phone.ilike(f'%{pattern}%'))
+    
+    if phone_conditions:
+        from sqlalchemy import or_
+        users = User.query.filter(
+            or_(*phone_conditions)
+        ).filter(User.id != current_user.id).limit(10).all()
+    else:
+        users = []
     
     results = []
     for user in users:
@@ -243,7 +256,8 @@ def send_invite():
             return jsonify({'error': 'Phone number is required'}), 400
         
         # Check if user already exists (shouldn't happen, but safety check)
-        existing_user = User.query.filter(User.phone == phone_number).first()
+        phone_patterns = search_phone_patterns(phone_number)
+        existing_user = User.query.filter(User.phone.in_(phone_patterns)).first()
         if existing_user:
             return jsonify({'error': 'User already exists with this phone number'}), 400
         
