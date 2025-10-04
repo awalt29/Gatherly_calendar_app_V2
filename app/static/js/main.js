@@ -271,7 +271,7 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
         dayItem.classList.add('active');
     }
     
-    // Day header with name and date (no checkbox)
+    // Day header with name, date, and inline time controls
     const dayHeader = document.createElement('div');
     dayHeader.className = 'day-item-header';
     
@@ -283,10 +283,7 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
     dayDateEl.className = 'day-date';
     dayDateEl.textContent = dayData.date_formatted;
     
-    dayHeader.appendChild(dayNameEl);
-    dayHeader.appendChild(dayDateEl);
-    
-    // Time ranges container
+    // Time ranges container (inline with day)
     const timeRangesContainer = document.createElement('div');
     timeRangesContainer.className = 'time-ranges-container';
     timeRangesContainer.id = `${dayName}-time-ranges`;
@@ -307,17 +304,20 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
         timeRangesContainer.appendChild(unavailableState);
     }
     
-    // Add time range button (always present)
+    // Add time range button (simple + symbol)
     const addTimeBtn = document.createElement('button');
     addTimeBtn.className = 'add-time-btn';
-    addTimeBtn.innerHTML = '+ Add time';
+    addTimeBtn.innerHTML = '+';
+    addTimeBtn.title = 'Add time range';
     addTimeBtn.onclick = () => addTimeRange(dayName);
     
     timeRangesContainer.appendChild(addTimeBtn);
     
+    dayHeader.appendChild(dayNameEl);
+    dayHeader.appendChild(dayDateEl);
+    dayHeader.appendChild(timeRangesContainer);
     
     dayItem.appendChild(dayHeader);
-    dayItem.appendChild(timeRangesContainer);
     
     return dayItem;
 }
