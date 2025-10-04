@@ -143,8 +143,8 @@
 .day-item-header {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-3);
+    gap: var(--space-4);
+    margin-bottom: 0;
 }
 
 .day-checkbox-container {
@@ -211,7 +211,7 @@
     font-weight: 600;
     color: var(--text-primary);
     font-size: var(--font-size-base);
-    min-width: 100px;
+    min-width: 120px;
     flex-shrink: 0;
 }
 
@@ -221,12 +221,9 @@
 }
 
 .time-ranges-container {
-    margin-left: 45px;
-    display: none;
-}
-
-.availability-day-item.active .time-ranges-container {
+    margin-left: 0;
     display: block;
+    flex: 1;
 }
 
 .time-range-item {
@@ -293,6 +290,56 @@
 .time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-item:last-child {
     border-bottom-left-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-lg);
+}
+
+/* Unavailable state */
+.unavailable-state {
+    color: var(--text-secondary);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.add-time-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.add-time-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(0, 104, 177, 0.05);
+}
+
+.remove-time-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.remove-time-btn:hover {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
 }
 
 .time-input {

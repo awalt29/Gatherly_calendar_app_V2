@@ -271,18 +271,9 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
         dayItem.classList.add('active');
     }
     
-    // Day header with checkbox and name
+    // Day header with name and date (no checkbox)
     const dayHeader = document.createElement('div');
     dayHeader.className = 'day-item-header';
-    
-    const checkboxContainer = document.createElement('div');
-    checkboxContainer.className = 'day-checkbox-container';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'day-checkbox';
-    checkbox.id = `${dayName}-available`;
-    checkbox.checked = availabilityData.available || false;
     
     const dayNameEl = document.createElement('span');
     dayNameEl.className = 'day-name';
@@ -292,10 +283,7 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
     dayDateEl.className = 'day-date';
     dayDateEl.textContent = dayData.date_formatted;
     
-    checkboxContainer.appendChild(checkbox);
-    checkboxContainer.appendChild(dayNameEl);
-    
-    dayHeader.appendChild(checkboxContainer);
+    dayHeader.appendChild(dayNameEl);
     dayHeader.appendChild(dayDateEl);
     
     // Time ranges container
@@ -303,34 +291,30 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
     timeRangesContainer.className = 'time-ranges-container';
     timeRangesContainer.id = `${dayName}-time-ranges`;
     
-    // Add existing time ranges or default one
+    // Add existing time ranges or show unavailable
     const timeRanges = availabilityData.time_ranges || (availabilityData.available ? [{ start: '09:00', end: '17:00' }] : []);
     
-    timeRanges.forEach((timeRange, index) => {
-        const timeRangeItem = createTimeRangeItem(dayName, timeRange, index);
-        timeRangesContainer.appendChild(timeRangeItem);
-    });
+    if (timeRanges.length > 0) {
+        timeRanges.forEach((timeRange, index) => {
+            const timeRangeItem = createTimeRangeItem(dayName, timeRange, index);
+            timeRangesContainer.appendChild(timeRangeItem);
+        });
+    } else {
+        // Show unavailable state
+        const unavailableState = document.createElement('div');
+        unavailableState.className = 'unavailable-state';
+        unavailableState.innerHTML = '<span>Unavailable</span>';
+        timeRangesContainer.appendChild(unavailableState);
+    }
     
-    // Add time range button
+    // Add time range button (always present)
     const addTimeBtn = document.createElement('button');
     addTimeBtn.className = 'add-time-btn';
-    addTimeBtn.innerHTML = '<span>+</span> Add time range';
+    addTimeBtn.innerHTML = '+ Add time';
     addTimeBtn.onclick = () => addTimeRange(dayName);
     
     timeRangesContainer.appendChild(addTimeBtn);
     
-    // Checkbox event listener
-    checkbox.addEventListener('change', function() {
-        if (this.checked) {
-            dayItem.classList.add('active');
-            // Add default time range if none exist
-            if (timeRangesContainer.children.length === 1) { // Only the add button
-                addTimeRange(dayName, { start: '09:00', end: '17:00' });
-            }
-        } else {
-            dayItem.classList.remove('active');
-        }
-    });
     
     dayItem.appendChild(dayHeader);
     dayItem.appendChild(timeRangesContainer);
@@ -377,6 +361,12 @@ function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) 
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
     const addBtn = timeRangesContainer.querySelector('.add-time-btn');
     
+    // Remove unavailable state if it exists
+    const unavailableState = timeRangesContainer.querySelector('.unavailable-state');
+    if (unavailableState) {
+        unavailableState.remove();
+    }
+    
     const currentRanges = timeRangesContainer.querySelectorAll('.time-range-item');
     const newIndex = currentRanges.length;
     
@@ -389,13 +379,6 @@ function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) 
 function removeTimeRange(dayName, index) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
     const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
-    
-    // Don't allow removing the last time range if day is active
-    const dayCheckbox = document.getElementById(`${dayName}-available`);
-    if (dayCheckbox.checked && timeRangeItems.length <= 1) {
-        showNotification('A day must have at least one time range when enabled', 'error');
-        return;
-    }
     
     // Remove the specific time range
     const itemToRemove = timeRangesContainer.querySelector(`.time-range-item[data-index="${index}"]`);
@@ -411,6 +394,15 @@ function removeTimeRange(dayName, index) {
             if (startInput) startInput.name = `${dayName}_start_${newIndex}`;
             if (endInput) endInput.name = `${dayName}_end_${newIndex}`;
         });
+        
+        // If no time ranges left, show unavailable state
+        if (remainingItems.length === 0) {
+            const addBtn = timeRangesContainer.querySelector('.add-time-btn');
+            const unavailableState = document.createElement('div');
+            unavailableState.className = 'unavailable-state';
+            unavailableState.innerHTML = '<span>Unavailable</span>';
+            timeRangesContainer.insertBefore(unavailableState, addBtn);
+        }
     }
 }
 
@@ -468,32 +460,28 @@ function saveAvailability(weekStart) {
     const availabilityData = {};
     
     days.forEach(dayName => {
-        const checkbox = document.getElementById(`${dayName}-available`);
-        
-        if (!checkbox) return;
-        
-        const isAvailable = checkbox.checked;
         let timeRanges = [];
         
-        if (isAvailable) {
-            // Get times from time input containers (Calendly-style interface)
-            const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
-            if (timeRangesContainer) {
-                const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+        // Get times from time input containers (Calendly-style interface)
+        const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+        if (timeRangesContainer) {
+            const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+            
+            timeRangeItems.forEach(item => {
+                const startInput = item.querySelector('input[type="time"]:first-of-type');
+                const endInput = item.querySelector('input[type="time"]:last-of-type');
                 
-                timeRangeItems.forEach(item => {
-                    const startInput = item.querySelector('input[type="time"]:first-of-type');
-                    const endInput = item.querySelector('input[type="time"]:last-of-type');
-                    
-                    if (startInput && endInput && startInput.value && endInput.value) {
-                        timeRanges.push({
-                            start: startInput.value,
-                            end: endInput.value
-                        });
-                    }
-                });
-            }
+                if (startInput && endInput && startInput.value && endInput.value) {
+                    timeRanges.push({
+                        start: startInput.value,
+                        end: endInput.value
+                    });
+                }
+            });
         }
+        
+        // Day is available if it has time ranges
+        const isAvailable = timeRanges.length > 0;
         
         // Use first time range for backward compatibility, or default times
         const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
@@ -553,29 +541,28 @@ function saveAsDefaultSchedule() {
     const availabilityData = {};
     
     days.forEach(dayName => {
-        const checkbox = document.getElementById(`${dayName}-available`);
-        const isAvailable = checkbox ? checkbox.checked : false;
         let timeRanges = [];
         
-        if (isAvailable) {
-            // Get times from time input containers
-            const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
-            if (timeRangesContainer) {
-                const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+        // Get times from time input containers
+        const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+        if (timeRangesContainer) {
+            const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
+            
+            timeRangeItems.forEach(item => {
+                const startInput = item.querySelector('input[type="time"]:first-of-type');
+                const endInput = item.querySelector('input[type="time"]:last-of-type');
                 
-                timeRangeItems.forEach(item => {
-                    const startInput = item.querySelector('input[type="time"]:first-of-type');
-                    const endInput = item.querySelector('input[type="time"]:last-of-type');
-                    
-                    if (startInput && endInput && startInput.value && endInput.value) {
-                        timeRanges.push({
-                            start: startInput.value,
-                            end: endInput.value
-                        });
-                    }
-                });
-            }
+                if (startInput && endInput && startInput.value && endInput.value) {
+                    timeRanges.push({
+                        start: startInput.value,
+                        end: endInput.value
+                    });
+                }
+            });
         }
+        
+        // Day is available if it has time ranges
+        const isAvailable = timeRanges.length > 0;
         
         // Use first time range for backward compatibility, or default times
         const firstRange = timeRanges[0] || { start: '09:00', end: '17:00' };
