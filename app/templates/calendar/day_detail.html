@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const end = new Date(`2000-01-01T${endTime}`);
                         
                         if (start >= end) {
-                            alert('End time must be after start time');
+                            showNotification('End time must be after start time', 'error');
                             return false;
                         }
                         
@@ -881,12 +881,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const description = document.getElementById('event-description').value.trim();
         
         if (!title) {
-            alert('Please enter an activity.');
+            showNotification('Please enter an activity.', 'error');
             return;
         }
         
         if (!selectedSlot) {
-            alert('Please select a time slot.');
+            showNotification('Please select a time slot.', 'error');
             return;
         }
         
@@ -896,7 +896,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const endTime = selectedSlotElement.querySelector('.end-time').value;
         
         if (!startTime || !endTime) {
-            alert('Please set start and end times.');
+            showNotification('Please set start and end times.', 'error');
             return;
         }
         
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const end = new Date(`2000-01-01T${endTime}`);
         
         if (start >= end) {
-            alert('End time must be after start time.');
+            showNotification('End time must be after start time.', 'error');
             return;
         }
         
@@ -934,7 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Event created successfully!');
+                showNotification('Event created successfully!', 'success');
                 closeEventModal();
                 // Optionally reload the page or update the UI
                 window.location.reload();
@@ -944,7 +944,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error creating event:', error);
-            alert('Failed to create event. Please try again.');
+            showNotification('Failed to create event. Please try again.', 'error');
         })
         .finally(() => {
             finalizeEvent.disabled = false;

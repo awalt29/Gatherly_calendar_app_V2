@@ -440,7 +440,7 @@ function handleAddFriend(e) {
     
     const phoneNumber = document.getElementById('phoneNumber').value.trim();
     if (!phoneNumber) {
-        alert('Please enter a phone number');
+        showNotification('Please enter a phone number', 'error');
         return;
     }
     
@@ -459,7 +459,7 @@ function handleAddFriend(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showNotification(data.message, 'success');
             document.getElementById('phoneNumber').value = '';
             location.reload(); // Refresh to show updated requests
         } else if (data.user_not_found) {
@@ -474,12 +474,12 @@ function handleAddFriend(e) {
                 return; // Don't reset button state here, sendInvite will handle it
             }
         } else {
-            alert(data.error || 'Failed to send friend request');
+            showNotification(data.error || 'Failed to send friend request', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error sending friend request');
+        showNotification('Error sending friend request', 'error');
     })
     .finally(() => {
         submitBtn.disabled = false;
@@ -500,15 +500,15 @@ function sendInvite(phoneNumber, submitBtn, originalText) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showNotification(data.message, 'success');
             document.getElementById('phoneNumber').value = '';
         } else {
-            alert(data.error || 'Failed to send invite');
+            showNotification(data.error || 'Failed to send invite', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error sending invite');
+        showNotification('Error sending invite', 'error');
     })
     .finally(() => {
         submitBtn.disabled = false;
@@ -529,17 +529,17 @@ function handleAcceptFriend(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showNotification(data.message, 'success');
             location.reload();
         } else {
-            alert(data.error || 'Failed to accept friend request');
+            showNotification(data.error || 'Failed to accept friend request', 'error');
             btn.disabled = false;
             btn.textContent = 'Accept';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error accepting friend request');
+        showNotification('Error accepting friend request', 'error');
         btn.disabled = false;
         btn.textContent = 'Accept';
     });
@@ -558,17 +558,17 @@ function handleDeclineFriend(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showNotification(data.message, 'success');
             location.reload();
         } else {
-            alert(data.error || 'Failed to decline friend request');
+            showNotification(data.error || 'Failed to decline friend request', 'error');
             btn.disabled = false;
             btn.textContent = 'Decline';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error declining friend request');
+        showNotification('Error declining friend request', 'error');
         btn.disabled = false;
         btn.textContent = 'Decline';
     });
@@ -593,10 +593,10 @@ function handleRemoveFriend(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showNotification(data.message, 'success');
             location.reload();
         } else {
-            alert(data.error || 'Failed to remove friend');
+            showNotification(data.error || 'Failed to remove friend', 'error');
             btn.disabled = false;
             btn.style.opacity = '0.5';
             btn.textContent = '×';
@@ -604,7 +604,7 @@ function handleRemoveFriend(e) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error removing friend');
+        showNotification('Error removing friend', 'error');
         btn.disabled = false;
         btn.style.opacity = '0.5';
         btn.textContent = '×';

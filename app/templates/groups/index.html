@@ -2007,12 +2007,12 @@ function openGroupModal(groupId) {
                 document.body.style.overflow = 'hidden';
             } else {
                 console.error('Failed to fetch group details:', data.error);
-                alert('Failed to load group details');
+                showNotification('Failed to load group details', 'error');
             }
         })
         .catch(error => {
             console.error('Error fetching group details:', error);
-            alert('Error loading group details');
+            showNotification('Error loading group details', 'error');
         });
 }
 
@@ -2200,12 +2200,12 @@ function addModalActivity(groupId, venue, inputElement) {
             inputElement.value = '';
             loadModalActivities(groupId); // Reload activities
         } else {
-            alert(data.error || 'Failed to add activity');
+            showNotification(data.error || 'Failed to add activity', 'error');
         }
     })
     .catch(error => {
         console.error('Error adding activity:', error);
-        alert('Error adding activity');
+        showNotification('Error adding activity', 'error');
     })
     .finally(() => {
         addBtn.disabled = false;
@@ -2232,12 +2232,12 @@ function toggleModalActivityStatus(activityId, currentStatus) {
         if (data.success) {
             loadModalActivities(groupId); // Reload activities
         } else {
-            alert(data.error || 'Failed to update activity status');
+            showNotification(data.error || 'Failed to update activity status', 'error');
         }
     })
     .catch(error => {
         console.error('Error toggling activity status:', error);
-        alert('Error updating activity status');
+        showNotification('Error updating activity status', 'error');
     });
 }
 
@@ -2261,12 +2261,12 @@ function deleteModalActivity(activityId) {
         if (data.success) {
             loadModalActivities(groupId); // Reload activities
         } else {
-            alert(data.error || 'Failed to delete activity');
+            showNotification(data.error || 'Failed to delete activity', 'error');
         }
     })
     .catch(error => {
         console.error('Error deleting activity:', error);
-        alert('Error deleting activity');
+        showNotification('Error deleting activity', 'error');
     });
 }
 
@@ -2285,12 +2285,12 @@ function leaveGroup(groupId) {
             closeGroupModal();
             location.reload(); // Refresh page to update groups list
         } else {
-            alert(data.error || 'Failed to leave group');
+            showNotification(data.error || 'Failed to leave group', 'error');
         }
     })
     .catch(error => {
         console.error('Error leaving group:', error);
-        alert('Error leaving group');
+        showNotification('Error leaving group', 'error');
     });
 }
 
@@ -2317,12 +2317,12 @@ function deleteGroup(groupId) {
             closeGroupModal();
             location.reload(); // Refresh page to update groups list
         } else {
-            alert(data.error || 'Failed to delete group');
+            showNotification(data.error || 'Failed to delete group', 'error');
         }
     })
     .catch(error => {
         console.error('Error deleting group:', error);
-        alert('Error deleting group');
+        showNotification('Error deleting group', 'error');
     });
 }
 
@@ -2344,12 +2344,12 @@ function updateGroupName(groupId, newName) {
             // Could also update the card in the background, but reload is simpler
             setTimeout(() => location.reload(), 1000);
         } else {
-            alert(data.error || 'Failed to update group name');
+            showNotification(data.error || 'Failed to update group name', 'error');
         }
     })
     .catch(error => {
         console.error('Error updating group name:', error);
-        alert('Error updating group name');
+        showNotification('Error updating group name', 'error');
     });
 }
 
@@ -2389,12 +2389,12 @@ function openEditGroupModal(groupId) {
             document.getElementById('editGroupModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         } else {
-            alert('Failed to load group details');
+                showNotification('Failed to load group details', 'error');
         }
     })
     .catch(error => {
         console.error('Error loading edit modal data:', error);
-        alert('Error loading group data');
+        showNotification('Error loading group data', 'error');
     });
 }
 
@@ -2505,7 +2505,7 @@ function stageMemberAddition(userId, userName) {
 function stageMemberRemoval(userId, userName) {
     // Don't allow removing the creator
     if (userId === editGroupData.created_by.id) {
-        alert('Cannot remove the group creator');
+        showNotification('Cannot remove the group creator', 'error');
         return;
     }
     
@@ -2528,7 +2528,7 @@ function saveGroupChanges() {
     const newName = document.getElementById('editGroupName').value.trim();
     
     if (!newName) {
-        alert('Group name is required');
+        showNotification('Group name is required', 'error');
         return;
     }
     
@@ -2579,7 +2579,7 @@ function saveGroupChanges() {
         const failures = results.filter(result => !result.success);
         
         if (failures.length > 0) {
-            alert(`Some changes failed to save: ${failures.map(f => f.error).join(', ')}`);
+            showNotification(`Some changes failed to save: ${failures.map(f => f.error).join(', ')}`, 'error');
         }
         
         closeEditGroupModal();
@@ -2587,7 +2587,7 @@ function saveGroupChanges() {
     })
     .catch(error => {
         console.error('Error saving group changes:', error);
-        alert('Error saving changes');
+        showNotification('Error saving changes', 'error');
     });
 }
 
