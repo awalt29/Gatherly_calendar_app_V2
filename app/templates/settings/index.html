@@ -66,9 +66,6 @@
                 <div class="setting-info">
                     <h4>SMS Notifications</h4>
                     <p>Receive notifications via text message (friend requests, events, group updates)</p>
-                    <button id="test-sms-btn" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
-                        Send Test SMS
-                    </button>
                 </div>
                 <div class="setting-control">
                     <input type="checkbox" 
@@ -552,7 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailToggle = document.getElementById('email-notifications');
     const smsToggle = document.getElementById('sms-notifications');
     const weeklyRemindersToggle = document.getElementById('weekly-reminders');
-    const testSmsBtn = document.getElementById('test-sms-btn');
     const connectGoogleBtn = document.getElementById('connect-google-btn');
     const disconnectGoogleBtn = document.getElementById('disconnect-google-btn');
     const autoAddEventsToggle = document.getElementById('auto-add-events');
@@ -684,37 +680,6 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .finally(() => {
                 this.disabled = false;
-            });
-        });
-    }
-    
-    if (testSmsBtn) {
-        testSmsBtn.addEventListener('click', function() {
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = 'Sending...';
-            
-            fetch('/admin/test-sms', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification(data.message, 'success');
-                } else {
-                    throw new Error(data.error || 'Failed to send test SMS');
-                }
-            })
-            .catch(error => {
-                console.error('Error sending test SMS:', error);
-                showNotification('Failed to send test SMS. Please check your Twilio configuration.', 'error');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = originalText;
             });
         });
     }
