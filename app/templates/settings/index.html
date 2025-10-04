@@ -138,16 +138,6 @@
                 </div>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>Sync Now</h4>
-                    <p>Manually sync your availability from Google Calendar</p>
-                </div>
-                <div class="setting-control">
-                    <button id="sync-now-btn" class="btn btn-secondary btn-sm">Sync Availability</button>
-                </div>
-            </div>
-            
             {% endif %}
             
         </div>
@@ -185,16 +175,6 @@
                 <div class="setting-control">
                     <input type="checkbox" id="auto-add-events-outlook" {% if outlook_calendar_sync and outlook_calendar_sync.auto_add_events %}checked{% endif %}>
                     <label for="auto-add-events-outlook" class="toggle-label"></label>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>Sync Now</h4>
-                    <p>Manually sync your availability from Outlook Calendar</p>
-                </div>
-                <div class="setting-control">
-                    <button id="sync-now-outlook-btn" class="btn btn-secondary btn-sm">Sync Availability</button>
                 </div>
             </div>
             
@@ -583,13 +563,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const connectGoogleBtn = document.getElementById('connect-google-btn');
     const disconnectGoogleBtn = document.getElementById('disconnect-google-btn');
     const autoAddEventsToggle = document.getElementById('auto-add-events');
-    const syncNowBtn = document.getElementById('sync-now-btn');
     
     // Outlook Calendar elements
     const connectOutlookBtn = document.getElementById('connect-outlook-btn');
     const disconnectOutlookBtn = document.getElementById('disconnect-outlook-btn');
     const autoAddEventsOutlookToggle = document.getElementById('auto-add-events-outlook');
-    const syncNowOutlookBtn = document.getElementById('sync-now-outlook-btn');
     
     // Change password modal elements
     const changePasswordBtn = document.getElementById('change-password-btn');
@@ -724,54 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Sync now button
-    if (syncNowBtn) {
-        syncNowBtn.addEventListener('click', function() {
-            console.log('Sync button clicked!');
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = 'Syncing...';
-            
-            console.log('Making fetch request to /availability/sync-google');
-            fetch('/availability/sync-google', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                if (data.success) {
-                    showNotification('Availability synced successfully from Google Calendar!', 'success');
-                    
-                    // Refresh the availability calendar if we're on that page
-                    if (window.location.pathname === '/availability' && typeof loadAvailabilityWeek === 'function') {
-                        // Reload the current week to show updated availability
-                        if (typeof Gatherly !== 'undefined' && Gatherly.availabilityCurrentWeek !== undefined) {
-                            loadAvailabilityWeek(Gatherly.availabilityCurrentWeek);
-                        }
-                    }
-                } else {
-                    throw new Error(data.error || 'Failed to sync availability');
-                }
-            })
-            .catch(error => {
-                console.error('Detailed error syncing availability:', error);
-                console.error('Error stack:', error.stack);
-                showNotification('Failed to sync availability. Please try again.', 'error');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = originalText;
-            });
-        });
-    }
-    
     // Outlook Calendar Connect
     if (connectOutlookBtn) {
         connectOutlookBtn.addEventListener('click', function() {
@@ -820,54 +750,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (autoAddEventsOutlookToggle) {
         autoAddEventsOutlookToggle.addEventListener('change', function() {
             updateOutlookCalendarSetting('auto_add_events', this.checked);
-        });
-    }
-    
-    // Sync now button for Outlook
-    if (syncNowOutlookBtn) {
-        syncNowOutlookBtn.addEventListener('click', function() {
-            console.log('Outlook Sync button clicked!');
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = 'Syncing...';
-            
-            console.log('Making fetch request to /availability/sync-outlook');
-            fetch('/availability/sync-outlook', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                if (data.success) {
-                    showNotification('Availability synced successfully from Outlook Calendar!', 'success');
-                    
-                    // Refresh the availability calendar if we're on that page
-                    if (window.location.pathname === '/availability' && typeof loadAvailabilityWeek === 'function') {
-                        // Reload the current week to show updated availability
-                        if (typeof Gatherly !== 'undefined' && Gatherly.availabilityCurrentWeek !== undefined) {
-                            loadAvailabilityWeek(Gatherly.availabilityCurrentWeek);
-                        }
-                    }
-                } else {
-                    throw new Error(data.error || 'Failed to sync availability');
-                }
-            })
-            .catch(error => {
-                console.error('Detailed error syncing Outlook availability:', error);
-                console.error('Error stack:', error.stack);
-                showNotification('Failed to sync Outlook availability. Please try again.', 'error');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = originalText;
-            });
         });
     }
     
