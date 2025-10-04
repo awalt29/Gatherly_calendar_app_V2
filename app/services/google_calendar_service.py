@@ -112,6 +112,7 @@ class GoogleCalendarService:
             sync_record.access_token = credentials.token
             sync_record.token_expires_at = credentials.expiry
             sync_record.sync_enabled = True
+            sync_record.auto_sync_availability = True  # Always enable auto-sync when connecting
             
             # Update user's Google Calendar status
             user = User.query.get(user_id)

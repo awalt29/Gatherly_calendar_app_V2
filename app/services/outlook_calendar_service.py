@@ -114,6 +114,7 @@ class OutlookCalendarService:
             expires_in = result.get('expires_in', 3600)  # Default to 1 hour
             sync_record.token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
             sync_record.sync_enabled = True
+            sync_record.auto_sync_availability = True  # Always enable auto-sync when connecting
             
             # Update user's Outlook Calendar status
             user = User.query.get(user_id)

@@ -129,17 +129,6 @@
             {% if user.google_calendar_enabled %}
             <div class="setting-item">
                 <div class="setting-info">
-                    <h4>Auto-Sync Availability</h4>
-                    <p>Automatically update your Gatherly availability based on Google Calendar events</p>
-                </div>
-                <div class="setting-control">
-                    <input type="checkbox" id="auto-sync-availability" {% if google_calendar_sync and google_calendar_sync.auto_sync_availability %}checked{% endif %}>
-                    <label for="auto-sync-availability" class="toggle-label"></label>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
                     <h4>Auto-Add Events</h4>
                     <p>Automatically add accepted Gatherly events to your Google Calendar</p>
                 </div>
@@ -188,17 +177,6 @@
             </div>
             
             {% if user.outlook_calendar_enabled %}
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>Auto-Sync Availability</h4>
-                    <p>Automatically update your Gatherly availability based on Outlook Calendar events</p>
-                </div>
-                <div class="setting-control">
-                    <input type="checkbox" id="auto-sync-availability-outlook" {% if outlook_calendar_sync and outlook_calendar_sync.auto_sync_availability %}checked{% endif %}>
-                    <label for="auto-sync-availability-outlook" class="toggle-label"></label>
-                </div>
-            </div>
-            
             <div class="setting-item">
                 <div class="setting-info">
                     <h4>Auto-Add Events</h4>
@@ -604,14 +582,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const testSmsBtn = document.getElementById('test-sms-btn');
     const connectGoogleBtn = document.getElementById('connect-google-btn');
     const disconnectGoogleBtn = document.getElementById('disconnect-google-btn');
-    const autoSyncToggle = document.getElementById('auto-sync-availability');
     const autoAddEventsToggle = document.getElementById('auto-add-events');
     const syncNowBtn = document.getElementById('sync-now-btn');
     
     // Outlook Calendar elements
     const connectOutlookBtn = document.getElementById('connect-outlook-btn');
     const disconnectOutlookBtn = document.getElementById('disconnect-outlook-btn');
-    const autoSyncOutlookToggle = document.getElementById('auto-sync-availability-outlook');
     const autoAddEventsOutlookToggle = document.getElementById('auto-add-events-outlook');
     const syncNowOutlookBtn = document.getElementById('sync-now-outlook-btn');
     
@@ -741,13 +717,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Auto-sync availability toggle
-    if (autoSyncToggle) {
-        autoSyncToggle.addEventListener('change', function() {
-            updateGoogleCalendarSetting('auto_sync_availability', this.checked);
-        });
-    }
-    
     // Auto-add events toggle
     if (autoAddEventsToggle) {
         autoAddEventsToggle.addEventListener('change', function() {
@@ -844,13 +813,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.textContent = originalText;
                 });
             }
-        });
-    }
-    
-    // Auto-sync availability toggle for Outlook
-    if (autoSyncOutlookToggle) {
-        autoSyncOutlookToggle.addEventListener('change', function() {
-            updateOutlookCalendarSetting('auto_sync_availability', this.checked);
         });
     }
     
