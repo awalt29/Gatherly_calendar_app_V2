@@ -41,6 +41,10 @@ def update_settings():
             sms_notifications = data.get('sms_notifications') == 'true' or data.get('sms_notifications') == True
             current_user.sms_notifications = sms_notifications
         
+        if 'weekly_reminders' in data:
+            weekly_reminders = data.get('weekly_reminders') == 'true' or data.get('weekly_reminders') == True
+            current_user.weekly_reminders = weekly_reminders
+        
         # Update other profile fields if provided
         if 'first_name' in data:
             current_user.first_name = data.get('first_name', '').strip()

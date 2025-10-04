@@ -24,15 +24,15 @@ class SMSScheduler:
             return
         
         try:
-            # Get all users who have SMS notifications enabled and have phone numbers
+            # Get all users who have weekly reminders enabled and have phone numbers
             users_to_notify = User.query.filter(
-                User.sms_notifications == True,
+                User.weekly_reminders == True,
                 User.phone.isnot(None),
                 User.phone != '',
                 User.is_active == True
             ).all()
             
-            logger.info(f"Found {len(users_to_notify)} users eligible for SMS reminders")
+            logger.info(f"Found {len(users_to_notify)} users eligible for weekly availability reminders")
             
             if not users_to_notify:
                 logger.info("No users to notify. Job completed.")
@@ -62,15 +62,15 @@ class SMSScheduler:
             return
         
         try:
-            # Get all users who have SMS notifications enabled and have phone numbers
+            # Get all users who have weekly reminders enabled and have phone numbers
             users_to_notify = User.query.filter(
-                User.sms_notifications == True,
+                User.weekly_reminders == True,
                 User.phone.isnot(None),
                 User.phone != '',
                 User.is_active == True
             ).all()
             
-            logger.info(f"Found {len(users_to_notify)} users eligible for weekend planning SMS reminders")
+            logger.info(f"Found {len(users_to_notify)} users eligible for weekend planning reminders")
             
             if not users_to_notify:
                 logger.info("No users to notify. Weekend planning job completed.")

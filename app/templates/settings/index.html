@@ -65,7 +65,7 @@
             <div class="setting-item">
                 <div class="setting-info">
                     <h4>SMS Notifications</h4>
-                    <p>Receive all notifications via text message (friend requests, events, reminders)</p>
+                    <p>Receive notifications via text message (friend requests, events, group updates)</p>
                     <button id="test-sms-btn" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
                         Send Test SMS
                     </button>
@@ -75,6 +75,19 @@
                            id="sms-notifications" 
                            {% if user.sms_notifications %}checked{% endif %}>
                     <label for="sms-notifications" class="toggle-label"></label>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Weekly Reminders</h4>
+                    <p>Get weekly text reminders to update availability and plan hangouts</p>
+                </div>
+                <div class="setting-control">
+                    <input type="checkbox" 
+                           id="weekly-reminders" 
+                           {% if user.weekly_reminders %}checked{% endif %}>
+                    <label for="weekly-reminders" class="toggle-label"></label>
                 </div>
             </div>
             
@@ -538,6 +551,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const emailToggle = document.getElementById('email-notifications');
     const smsToggle = document.getElementById('sms-notifications');
+    const weeklyRemindersToggle = document.getElementById('weekly-reminders');
     const testSmsBtn = document.getElementById('test-sms-btn');
     const connectGoogleBtn = document.getElementById('connect-google-btn');
     const disconnectGoogleBtn = document.getElementById('disconnect-google-btn');
@@ -628,6 +642,43 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error updating SMS settings:', error);
                 showNotification('Failed to update SMS settings. Please try again.', 'error');
+                // Revert the toggle
+                this.checked = !isEnabled;
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    }
+
+    // Weekly reminders toggle
+    if (weeklyRemindersToggle) {
+        weeklyRemindersToggle.addEventListener('change', function() {
+            const isEnabled = this.checked;
+            
+            // Show loading state
+            this.disabled = true;
+            
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    weekly_reminders: isEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to update weekly reminders settings');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating weekly reminders settings:', error);
+                showNotification('Failed to update weekly reminders settings. Please try again.', 'error');
                 // Revert the toggle
                 this.checked = !isEnabled;
             })

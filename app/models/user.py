@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     email_notifications = db.Column(db.Boolean, default=True)
     sms_notifications = db.Column(db.Boolean, default=False)
+    weekly_reminders = db.Column(db.Boolean, default=False)
     
     # Calendar integrations
     google_calendar_enabled = db.Column(db.Boolean, default=False)
