@@ -117,3 +117,19 @@ class Notification(db.Model):
         )
         db.session.add(notification)
         return notification
+    
+    @staticmethod
+    def create_event_deleted_notification(user_id, from_user_id, event_title):
+        """Create a notification for when an event is deleted"""
+        from app.models.user import User
+        from_user = User.query.get(from_user_id)
+        
+        notification = Notification(
+            user_id=user_id,
+            type='event_deleted',
+            title='Event Cancelled',
+            message=f'{from_user.get_full_name()} cancelled the event "{event_title}"',
+            from_user_id=from_user_id
+        )
+        db.session.add(notification)
+        return notification

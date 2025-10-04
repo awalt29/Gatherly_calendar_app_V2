@@ -255,6 +255,24 @@ def delete_event(event_id):
         return jsonify({'success': False, 'error': 'Not authorized'}), 403
     
     try:
+        # Get all attendees before deleting the event
+        attendees = event.attendees.all()
+        event_title = event.title  # Store title before deletion
+        
+        # Create notifications for all attendees (except the creator)
+        for attendee in attendees:
+            if attendee.id != current_user.id:  # Don't notify the creator
+                try:
+                    Notification.create_event_deleted_notification(
+                        user_id=attendee.id,
+                        from_user_id=current_user.id,
+                        event_title=event_title
+                    )
+                    logger.info(f"Created event deletion notification for user {attendee.id}")
+                except Exception as e:
+                    logger.error(f"Failed to create event deletion notification: {str(e)}")
+                    # Don't fail the deletion if notification fails
+        
         # Delete all related invitations first
         EventInvitation.query.filter_by(event_id=event_id).delete()
         
