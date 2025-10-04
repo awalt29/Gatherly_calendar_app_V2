@@ -32,9 +32,14 @@ def update_settings():
     try:
         data = request.get_json() if request.is_json else request.form
         
-        # Update SMS notifications preference
-        sms_notifications = data.get('sms_notifications') == 'true' or data.get('sms_notifications') == True
-        current_user.sms_notifications = sms_notifications
+        # Update notification preferences
+        if 'email_notifications' in data:
+            email_notifications = data.get('email_notifications') == 'true' or data.get('email_notifications') == True
+            current_user.email_notifications = email_notifications
+        
+        if 'sms_notifications' in data:
+            sms_notifications = data.get('sms_notifications') == 'true' or data.get('sms_notifications') == True
+            current_user.sms_notifications = sms_notifications
         
         # Update other profile fields if provided
         if 'first_name' in data:

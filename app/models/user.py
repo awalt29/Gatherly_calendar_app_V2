@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    email_notifications = db.Column(db.Boolean, default=True)
     sms_notifications = db.Column(db.Boolean, default=False)
     
     # Calendar integrations

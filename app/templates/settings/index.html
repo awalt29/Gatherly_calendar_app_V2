@@ -54,40 +54,18 @@
             <div class="setting-item">
                 <div class="setting-info">
                     <h4>Email Notifications</h4>
-                    <p>Receive email notifications for friend requests and events</p>
+                    <p>Receive all notifications via email (friend requests, events, group updates)</p>
                 </div>
                 <div class="setting-control">
-                    <input type="checkbox" id="email-notifications" checked disabled>
+                    <input type="checkbox" id="email-notifications" {% if user.email_notifications %}checked{% endif %}>
                     <label for="email-notifications" class="toggle-label"></label>
                 </div>
             </div>
             
             <div class="setting-item">
                 <div class="setting-info">
-                    <h4>Friend Request Notifications</h4>
-                    <p>Get notified when someone sends you a friend request</p>
-                </div>
-                <div class="setting-control">
-                    <input type="checkbox" id="friend-notifications" checked disabled>
-                    <label for="friend-notifications" class="toggle-label"></label>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>Event Reminders</h4>
-                    <p>Receive reminders about upcoming events</p>
-                </div>
-                <div class="setting-control">
-                    <input type="checkbox" id="event-notifications" checked disabled>
-                    <label for="event-notifications" class="toggle-label"></label>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <h4>SMS Availability Reminders</h4>
-                    <p>Get weekly text reminders to update your availability</p>
+                    <h4>SMS Notifications</h4>
+                    <p>Receive all notifications via text message (friend requests, events, reminders)</p>
                     <button id="test-sms-btn" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
                         Send Test SMS
                     </button>
@@ -558,6 +536,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const emailToggle = document.getElementById('email-notifications');
     const smsToggle = document.getElementById('sms-notifications');
     const testSmsBtn = document.getElementById('test-sms-btn');
     const connectGoogleBtn = document.getElementById('connect-google-btn');
@@ -584,7 +563,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditProfile = document.getElementById('cancel-edit-profile');
     const editProfileForm = document.getElementById('edit-profile-form');
     
-        if (smsToggle) {
+    // Email notifications toggle
+    if (emailToggle) {
+        emailToggle.addEventListener('change', function() {
+            const isEnabled = this.checked;
+            
+            // Show loading state
+            this.disabled = true;
+            
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email_notifications: isEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to update email notification settings');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating email notification settings:', error);
+                showNotification('Failed to update email notification settings. Please try again.', 'error');
+                // Revert the toggle
+                this.checked = !isEnabled;
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    }
+
+    // SMS notifications toggle
+    if (smsToggle) {
         smsToggle.addEventListener('change', function() {
             const isEnabled = this.checked;
             
