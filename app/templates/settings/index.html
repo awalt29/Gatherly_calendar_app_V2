@@ -259,15 +259,6 @@
                 </button>
             </div>
             
-            <div class="danger-zone">
-                <h4 class="danger-title">Danger Zone</h4>
-                <p class="danger-description">
-                    These actions cannot be undone. Please be careful.
-                </p>
-                <button id="delete-account-btn" class="btn btn-danger">
-                    Delete Account
-                </button>
-            </div>
             
         </div>
     </div>
@@ -665,8 +656,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const changePasswordBtn = document.getElementById('change-password-btn');
     const changePasswordModal = document.getElementById('change-password-modal');
     
-    // Delete account button
-    const deleteAccountBtn = document.getElementById('delete-account-btn');
     const closeChangePasswordModal = document.getElementById('close-change-password-modal');
     const cancelChangePassword = document.getElementById('cancel-change-password');
     const changePasswordForm = document.getElementById('change-password-form');
@@ -1255,50 +1244,6 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-    // Delete Account functionality
-    if (deleteAccountBtn) {
-        deleteAccountBtn.addEventListener('click', function() {
-            // First confirmation
-            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                // Second confirmation with typing requirement
-                const confirmText = prompt('To confirm account deletion, please type "DELETE" (in capital letters):');
-                
-                if (confirmText === 'DELETE') {
-                    const originalText = this.textContent;
-                    this.disabled = true;
-                    this.textContent = 'Deleting...';
-                    
-                    fetch('/settings/delete-account', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification('Account deleted successfully. You will be redirected to the login page.', 'success');
-                            // Redirect to login page after 2 seconds
-                            setTimeout(() => {
-                                window.location.href = '/auth/login';
-                            }, 2000);
-                        } else {
-                            throw new Error(data.error || 'Failed to delete account');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error deleting account:', error);
-                        showNotification('Failed to delete account. Please try again or contact support.', 'error');
-                        this.disabled = false;
-                        this.textContent = originalText;
-                    });
-                } else if (confirmText !== null) {
-                    // User typed something but not "DELETE"
-                    showNotification('Account deletion cancelled. You must type "DELETE" exactly to confirm.', 'error');
-                }
-            }
-        });
-    }
 });
 </script>
 {% endblock %}
