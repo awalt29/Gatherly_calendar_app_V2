@@ -83,8 +83,10 @@ def signup():
         db.session.add(user)
         db.session.commit()
         
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
+        # Automatically log in the new user
+        login_user(user)
+        flash('Welcome to Gatherly! Your account has been created successfully.', 'success')
+        return redirect(url_for('calendar.index'))
     
     return render_template('auth/signup.html')
 
