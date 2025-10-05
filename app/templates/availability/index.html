@@ -148,6 +148,11 @@
     width: 100%;
 }
 
+/* When there are multiple time ranges, align day header to top */
+.day-item-header:has(.time-ranges-container .time-range-item:nth-child(2)) {
+    align-items: flex-start;
+}
+
 .day-checkbox-container {
     display: flex;
     align-items: center;
@@ -229,6 +234,13 @@
     flex: 1;
     flex-wrap: nowrap;
     min-width: 0;
+}
+
+/* When there are multiple time ranges, stack them vertically */
+.time-ranges-container:has(.time-range-item:nth-child(2)) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
 }
 
 .time-range-item {
@@ -653,9 +665,18 @@
         overflow-x: auto;
     }
     
-    /* Ensure inline layout on mobile */
+    /* Ensure inline layout on mobile for single ranges, but allow stacking for multiple */
     .day-item-header {
         flex-wrap: nowrap !important;
+        gap: var(--space-1) !important;
+    }
+    
+    /* Mobile: when multiple ranges, keep vertical stacking but tighter spacing */
+    .day-item-header:has(.time-ranges-container .time-range-item:nth-child(2)) {
+        align-items: flex-start !important;
+    }
+    
+    .time-ranges-container:has(.time-range-item:nth-child(2)) {
         gap: var(--space-1) !important;
     }
     
