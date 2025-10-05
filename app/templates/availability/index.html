@@ -260,39 +260,7 @@
     margin-bottom: 0;
 }
 
-/* Multiple time ranges styling */
-.time-ranges-container:has(.time-range-item:nth-child(2)) {
-    background: rgba(0, 104, 177, 0.03);
-    border-radius: var(--radius-lg);
-    padding: var(--space-3);
-    border: 1px solid rgba(0, 104, 177, 0.1);
-    position: relative;
-}
-
-.time-ranges-container:has(.time-range-item:nth-child(2))::before {
-    content: "Multiple availability windows";
-    position: absolute;
-    top: -8px;
-    left: var(--space-3);
-    background: var(--card);
-    color: var(--text-secondary);
-    font-size: var(--font-size-xs);
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(0, 104, 177, 0.2);
-}
-
-/* Add connecting lines between multiple ranges */
-.time-ranges-container .time-range-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    right: -15px;
-    top: 50%;
-    width: 2px;
-    height: calc(100% + var(--space-2));
-    background: rgba(0, 104, 177, 0.2);
-    transform: translateY(-50%);
-}
+/* Multiple time ranges styling - clean without header */
 
 /* Enhance visual grouping for multiple ranges */
 .time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-item {
