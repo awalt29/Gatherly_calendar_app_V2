@@ -143,7 +143,7 @@
 .day-item-header {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-2);
     margin-bottom: 0;
     width: 100%;
 }
@@ -212,7 +212,7 @@
     font-weight: 600;
     color: var(--text-primary);
     font-size: var(--font-size-base);
-    min-width: 120px;
+    min-width: 80px;
     flex-shrink: 0;
 }
 
@@ -225,7 +225,7 @@
     margin-left: 0;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-1);
     flex: 1;
     flex-wrap: nowrap;
     min-width: 0;
@@ -355,11 +355,11 @@
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: var(--space-2);
+    padding: var(--space-1);
     color: var(--text-primary);
     font-size: var(--font-size-sm);
-    width: 120px;
-    min-width: 120px;
+    width: 80px;
+    min-width: 80px;
 }
 
 .time-input:focus {
@@ -656,28 +656,36 @@
     /* Ensure inline layout on mobile */
     .day-item-header {
         flex-wrap: nowrap !important;
-        overflow-x: auto;
+        gap: var(--space-1) !important;
     }
     
     .day-name {
-        min-width: 80px !important;
+        min-width: 60px !important;
         flex-shrink: 0;
+        font-size: var(--font-size-sm) !important;
     }
     
     .day-date {
-        min-width: 60px !important;
+        min-width: 50px !important;
         flex-shrink: 0;
+        font-size: var(--font-size-xs) !important;
     }
     
     .time-ranges-container {
         flex-wrap: nowrap !important;
-        overflow-x: auto;
         gap: var(--space-1) !important;
     }
     
     .time-input {
-        min-width: 70px !important;
+        width: 65px !important;
+        min-width: 65px !important;
         font-size: var(--font-size-xs) !important;
+        padding: 4px !important;
+    }
+    
+    .time-range-item {
+        padding: var(--space-1) !important;
+        gap: var(--space-1) !important;
     }
 }
     
