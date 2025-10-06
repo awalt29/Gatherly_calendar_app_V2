@@ -75,6 +75,7 @@ body {
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    padding-top: 60px; /* Account for fixed navigation height */
 }
 
 /* App Container */
@@ -91,8 +92,10 @@ body {
 .top-nav {
     background: var(--background); /* Match calendar background */
     border-bottom: 1px solid transparent; /* Invisible bottom border */
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 10000;
 }
 
