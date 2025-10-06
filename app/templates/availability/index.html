@@ -555,18 +555,19 @@
 }
 
 /* Action buttons integrated into days list */
-.actions-item {
+.availability-day-item.actions-item {
     border-top: 1px solid var(--border);
-    background: transparent; /* Let it inherit from parent container */
+    background: var(--surface) !important; /* Force container background */
     border-bottom-left-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-lg);
     min-height: 72px; /* Match other sections */
     display: flex;
     align-items: center;
+    border: 3px solid red !important; /* TEMPORARY: Test if CSS is applying */
 }
 
-.actions-item:hover {
-    background: transparent; /* No hover effect for actions section */
+.availability-day-item.actions-item:hover {
+    background: transparent !important; /* No hover effect for actions section */
 }
 
 .actions-header {
@@ -797,8 +798,8 @@
     }
     
     /* Mobile action button styles */
-    .actions-item {
-        min-height: 60px; /* Match mobile day items */
+    .availability-day-item.actions-item {
+        min-height: 60px !important; /* Match mobile day items */
     }
     
     .actions-header {
