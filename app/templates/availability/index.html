@@ -95,76 +95,88 @@
     background: rgba(0, 104, 177, 0.05);
 }
 
-/* Action buttons integrated into days list */
+/* Truly integrated action buttons - seamless part of container */
 .availability-days-list .availability-day-item.actions-item {
-    border-top: 1px solid var(--border) !important;
-    background: var(--surface) !important;
-    border-bottom-left-radius: var(--radius-lg) !important;
-    border-bottom-right-radius: var(--radius-lg) !important;
-    min-height: 72px !important;
-    display: flex !important;
-    align-items: center !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    border-right: none !important;
+    background: var(--surface);
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0;
 }
 
 .availability-days-list .availability-day-item.actions-item:hover {
-    background: var(--surface) !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    border-right: none !important;
+    background: var(--surface);
 }
 
-.actions-header {
+.actions-content {
     display: flex;
+    width: 100%;
+    gap: 0;
     padding: var(--space-4);
-    gap: var(--space-3);
+}
+
+/* Integrated action buttons - no borders, seamless design */
+.integrated-action-btn {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    height: 48px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-md);
+    margin: 0 var(--space-1);
 }
 
-/* WORKING BUTTON STYLES - Override global .btn styles by ID */
-#saveAvailability, #saveAsDefault {
-    flex: 1 !important;
-    padding: var(--space-3) var(--space-4) !important;
-    border-radius: var(--radius-md) !important;
-    font-weight: 600 !important;
-    font-size: var(--font-size-base) !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    box-shadow: none !important;
-    transform: none !important;
-    text-decoration: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    gap: var(--space-2) !important;
-    white-space: nowrap !important;
+.integrated-action-btn.primary-action {
+    background: var(--primary);
+    color: white;
 }
 
-#saveAvailability {
-    background: var(--primary) !important;
-    color: white !important;
-    border: 1px solid var(--primary) !important;
+.integrated-action-btn.primary-action:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
 }
 
-#saveAvailability:hover {
-    background: var(--primary-hover) !important;
-    border-color: var(--primary-hover) !important;
-    transform: translateY(-1px) !important;
+.integrated-action-btn.secondary-action {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
 }
 
-#saveAsDefault {
-    background: var(--background) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border) !important;
+.integrated-action-btn.secondary-action:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-#saveAsDefault:hover {
-    background: var(--surface-hover) !important;
-    border-color: var(--text-secondary) !important;
+.btn-icon {
+    font-size: var(--font-size-sm);
+}
+
+/* Mobile responsive adjustments for integrated buttons */
+@media (max-width: 768px) {
+    .actions-content {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+    }
+    
+    .integrated-action-btn {
+        margin: 0;
+        height: 44px;
+        font-size: var(--font-size-sm);
+    }
 }
 </style>
 {% endblock %}

@@ -366,25 +366,25 @@ function createActionButtonsItem(weekStart) {
     const actionsItem = document.createElement('div');
     actionsItem.className = 'availability-day-item actions-item';
     
-    const actionsHeader = document.createElement('div');
-    actionsHeader.className = 'day-item-header actions-header';
+    const actionsContent = document.createElement('div');
+    actionsContent.className = 'actions-content';
     
-    // Save availability button
+    // Save availability button - integrated style
     const saveButton = document.createElement('button');
     saveButton.id = 'saveAvailability';
-    saveButton.className = 'action-btn btn-primary';
+    saveButton.className = 'integrated-action-btn primary-action';
     saveButton.textContent = 'Save Availability';
     saveButton.onclick = () => saveAvailability(weekStart);
     
-    // Set as default button
+    // Set as default button - integrated style
     const defaultButton = document.createElement('button');
     defaultButton.id = 'saveAsDefault';
-    defaultButton.className = 'action-btn btn-secondary';
+    defaultButton.className = 'integrated-action-btn secondary-action';
     defaultButton.innerHTML = '<span class="btn-icon">💾</span> Set as Default Schedule';
     
-    actionsHeader.appendChild(saveButton);
-    actionsHeader.appendChild(defaultButton);
-    actionsItem.appendChild(actionsHeader);
+    actionsContent.appendChild(saveButton);
+    actionsContent.appendChild(defaultButton);
+    actionsItem.appendChild(actionsContent);
     
     return actionsItem;
 }
