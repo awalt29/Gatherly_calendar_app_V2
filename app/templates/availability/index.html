@@ -38,29 +38,32 @@
 /* Week navigation integrated into days list */
 .week-nav-item {
     border-bottom: 1px solid var(--border);
+    background: rgba(0, 104, 177, 0.05);
 }
 
 .week-nav-header {
     justify-content: space-between;
     padding: var(--space-4);
+    align-items: center;
 }
 
 .week-display {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
     text-align: center;
     flex: 1;
     margin: 0 var(--space-3);
+    font-size: var(--font-size-lg);
 }
 
 .nav-btn {
-    background: transparent;
-    border: 1px solid rgba(0, 104, 177, 0.2);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-4);
-    color: var(--text-secondary);
+    padding: var(--space-2) var(--space-3);
+    color: var(--text-primary);
     font-size: var(--font-size-sm);
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -71,13 +74,12 @@
     min-height: 44px;
     max-height: 44px;
     white-space: nowrap;
-    backdrop-filter: blur(5px);
 }
 
 .nav-btn:hover {
-    background: rgba(0, 104, 177, 0.1);
-    border-color: rgba(0, 104, 177, 0.4);
-    color: var(--text-primary);
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
     transform: translateY(-1px);
 }
 
@@ -549,12 +551,14 @@
 /* Action buttons integrated into days list */
 .actions-item {
     border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .actions-header {
-    justify-content: space-between;
+    display: flex;
     padding: var(--space-4);
     gap: var(--space-3);
+    align-items: center;
 }
 
 .action-btn {
@@ -570,6 +574,8 @@
     justify-content: center;
     gap: var(--space-2);
     border: none;
+    white-space: nowrap;
+    min-height: 48px;
 }
 
 .action-btn.btn-primary {
@@ -589,6 +595,10 @@
 
 .action-btn.btn-secondary:hover {
     background: var(--card);
+}
+
+.btn-icon {
+    font-size: var(--font-size-sm);
 }
 
 .default-schedule-controls {
