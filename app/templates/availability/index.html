@@ -39,15 +39,15 @@
 .week-nav-item {
     border-bottom: 1px solid var(--border);
     background: rgba(0, 104, 177, 0.05);
-    min-height: 72px; /* Ensure consistent height with day items */
+    min-height: 56px; /* Reduced height for compact navigation */
 }
 
 .week-nav-header {
     display: flex;
     justify-content: space-between;
-    padding: var(--space-4);
+    padding: var(--space-2) var(--space-4);
     align-items: center;
-    min-height: 60px; /* Match typical day item height */
+    min-height: 48px; /* Reduced height for compact design */
     gap: var(--space-3);
 }
 
@@ -637,12 +637,12 @@
     
     /* Mobile styles for integrated week navigation */
     .week-nav-item {
-        min-height: 60px; /* Slightly smaller on mobile */
+        min-height: 52px; /* Compact mobile height */
     }
     
     .week-nav-header {
-        padding: var(--space-3);
-        min-height: 50px;
+        padding: var(--space-2) var(--space-3);
+        min-height: 44px; /* Compact mobile header */
     }
     
     .nav-btn {

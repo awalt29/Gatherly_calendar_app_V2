@@ -138,7 +138,6 @@ function setupFlashMessages() {
 // ============================================
 
 function initializeAvailability() {
-    setupAvailabilityWeekNavigation();
     loadAvailabilityWeek(0);
     initializeDefaultScheduleButtons();
 }
@@ -195,6 +194,7 @@ function loadAvailabilityWeek(weekOffset) {
             
             renderAvailabilityForm(data);
             updateAvailabilityWeekDisplay(data); // Pass the actual week data from backend
+            setupAvailabilityWeekNavigation(); // Setup event listeners after buttons are created
             
             // Show notification if default schedule was auto-applied
             if (data.auto_applied_default && Object.keys(data.availability_data).length > 0) {
