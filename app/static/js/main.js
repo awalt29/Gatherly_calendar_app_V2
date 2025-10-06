@@ -304,14 +304,7 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
         timeRangesContainer.appendChild(unavailableState);
     }
     
-    // Add time range button (simple + symbol)
-    const addTimeBtn = document.createElement('button');
-    addTimeBtn.className = 'add-time-btn';
-    addTimeBtn.innerHTML = '+';
-    addTimeBtn.title = 'Add time range';
-    addTimeBtn.onclick = () => addTimeRange(dayName);
-    
-    timeRangesContainer.appendChild(addTimeBtn);
+    // + button is now included in each time range row
     
     dayHeader.appendChild(dayNameEl);
     dayHeader.appendChild(dayDateEl);
@@ -323,6 +316,11 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
 }
 
 function createTimeRangeItem(dayName, timeRange, index) {
+    // Create row wrapper
+    const timeRangeRow = document.createElement('div');
+    timeRangeRow.className = 'time-range-row';
+    
+    // Create the actual time range item
     const timeRangeItem = document.createElement('div');
     timeRangeItem.className = 'time-range-item';
     timeRangeItem.dataset.index = index;
@@ -354,12 +352,22 @@ function createTimeRangeItem(dayName, timeRange, index) {
     timeRangeItem.appendChild(endTimeInput);
     timeRangeItem.appendChild(removeBtn);
     
-    return timeRangeItem;
+    // Create + button for this row
+    const addTimeBtn = document.createElement('button');
+    addTimeBtn.className = 'add-time-btn';
+    addTimeBtn.innerHTML = '+';
+    addTimeBtn.title = 'Add time range';
+    addTimeBtn.onclick = () => addTimeRange(dayName);
+    
+    // Add time range item and + button to row
+    timeRangeRow.appendChild(timeRangeItem);
+    timeRangeRow.appendChild(addTimeBtn);
+    
+    return timeRangeRow;
 }
 
 function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
-    const addBtn = timeRangesContainer.querySelector('.add-time-btn');
     
     // Remove unavailable state if it exists
     const unavailableState = timeRangesContainer.querySelector('.unavailable-state');
@@ -370,20 +378,22 @@ function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) 
     const currentRanges = timeRangesContainer.querySelectorAll('.time-range-item');
     const newIndex = currentRanges.length;
     
-    const newTimeRange = createTimeRangeItem(dayName, defaultRange, newIndex);
+    const newTimeRangeRow = createTimeRangeItem(dayName, defaultRange, newIndex);
     
-    // Insert before the add button
-    timeRangesContainer.insertBefore(newTimeRange, addBtn);
+    // Append the new row to the container
+    timeRangesContainer.appendChild(newTimeRangeRow);
 }
 
 function removeTimeRange(dayName, index) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
-    const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
     
-    // Remove the specific time range
+    // Remove the specific time range row
     const itemToRemove = timeRangesContainer.querySelector(`.time-range-item[data-index="${index}"]`);
     if (itemToRemove) {
-        itemToRemove.remove();
+        const rowToRemove = itemToRemove.closest('.time-range-row');
+        if (rowToRemove) {
+            rowToRemove.remove();
+        }
         
         // Reindex remaining items
         const remainingItems = timeRangesContainer.querySelectorAll('.time-range-item');
@@ -397,11 +407,10 @@ function removeTimeRange(dayName, index) {
         
         // If no time ranges left, show unavailable state
         if (remainingItems.length === 0) {
-            const addBtn = timeRangesContainer.querySelector('.add-time-btn');
             const unavailableState = document.createElement('div');
             unavailableState.className = 'unavailable-state';
             unavailableState.innerHTML = '<span>Unavailable</span>';
-            timeRangesContainer.insertBefore(unavailableState, addBtn);
+            timeRangesContainer.appendChild(unavailableState);
         }
     }
 }
