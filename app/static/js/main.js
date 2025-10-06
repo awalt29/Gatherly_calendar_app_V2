@@ -313,8 +313,8 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
         timeRangesContainer.appendChild(unavailableState);
     }
     
-    // Update + button visibility after creating all ranges
-    updateAddButtonVisibility(dayName);
+    // Update + button visibility after creating all ranges (with small delay to ensure DOM is ready)
+    setTimeout(() => updateAddButtonVisibility(dayName), 0);
     
     dayHeader.appendChild(dayNameEl);
     dayHeader.appendChild(dayDateEl);
@@ -370,6 +370,11 @@ function createTimeRangeItem(dayName, timeRange, index) {
 
 function updateAddButtonVisibility(dayName) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+    if (!timeRangesContainer) {
+        console.warn(`Time ranges container not found for day: ${dayName}`);
+        return;
+    }
+    
     const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
     const addButtons = timeRangesContainer.querySelectorAll('.add-time-btn');
     
@@ -388,6 +393,10 @@ function updateAddButtonVisibility(dayName) {
 
 function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+    if (!timeRangesContainer) {
+        console.warn(`Time ranges container not found for day: ${dayName}`);
+        return;
+    }
     
     // Remove unavailable state if it exists
     const unavailableState = timeRangesContainer.querySelector('.unavailable-state');
@@ -409,6 +418,10 @@ function addTimeRange(dayName, defaultRange = { start: '09:00', end: '17:00' }) 
 
 function removeTimeRange(dayName, index) {
     const timeRangesContainer = document.getElementById(`${dayName}-time-ranges`);
+    if (!timeRangesContainer) {
+        console.warn(`Time ranges container not found for day: ${dayName}`);
+        return;
+    }
     
     // Remove the specific time range
     const itemToRemove = timeRangesContainer.querySelector(`.time-range-item[data-index="${index}"]`);
@@ -430,6 +443,15 @@ function removeTimeRange(dayName, index) {
             const unavailableState = document.createElement('div');
             unavailableState.className = 'unavailable-state';
             unavailableState.innerHTML = '<span>Unavailable</span>';
+            
+            // Add + button for unavailable state
+            const addTimeBtn = document.createElement('button');
+            addTimeBtn.className = 'add-time-btn';
+            addTimeBtn.innerHTML = '+';
+            addTimeBtn.title = 'Add time range';
+            addTimeBtn.onclick = () => addTimeRange(dayName);
+            
+            unavailableState.appendChild(addTimeBtn);
             timeRangesContainer.appendChild(unavailableState);
         }
         
