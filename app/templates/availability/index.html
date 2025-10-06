@@ -6,30 +6,26 @@
 <div class="availability-container">
     <div class="availability-header">
         <h1 class="page-title">Set Your Availability</h1>
-        <p class="page-description">
-            Let your friends know when you're free to hang out. 
-            Set your availability for each day of the week.
-        </p>
     </div>
     
-    <!-- Week Navigation -->
-    <div class="availability-week-nav">
-        <button id="availabilityPrevWeek" class="nav-btn">← Previous Week</button>
-        <div id="availabilityWeekDisplay">This Week</div>
-        <button id="availabilityNextWeek" class="nav-btn">Next Week →</button>
-    </div>
-    
-    <!-- Availability Days List -->
+    <!-- Availability Days List with integrated controls -->
     <div class="availability-days-list" id="availabilityDaysList">
-        <!-- Days will be populated by JavaScript -->
-    </div>
+        <!-- Week Navigation at top -->
+        <div class="availability-day-item week-nav-item">
+            <div class="day-item-header week-nav-header">
+                <button id="availabilityPrevWeek" class="nav-btn">← Previous Week</button>
+                <div id="availabilityWeekDisplay" class="week-display">This Week</div>
+                <button id="availabilityNextWeek" class="nav-btn">Next Week →</button>
+            </div>
+        </div>
         
-        <div class="grid-controls">
-            <button id="saveAvailability" class="btn btn-primary">Save Availability</button>
-            
-            <!-- Default Schedule Controls -->
-            <div class="default-schedule-controls">
-                <button id="saveAsDefault" class="btn btn-secondary">
+        <!-- Days will be populated by JavaScript -->
+        
+        <!-- Action buttons at bottom -->
+        <div class="availability-day-item actions-item">
+            <div class="day-item-header actions-header">
+                <button id="saveAvailability" class="action-btn btn-primary">Save Availability</button>
+                <button id="saveAsDefault" class="action-btn btn-secondary">
                     <span class="btn-icon">💾</span>
                     Set as Default Schedule
                 </button>
@@ -38,40 +34,43 @@
     </div>
     
 </div>
+    
+</div>
 
 <style>
 .availability-header {
     text-align: center;
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
 }
 
 .page-title {
     font-size: var(--font-size-2xl);
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: var(--space-3);
+    margin-bottom: 0;
 }
 
-.page-description {
-    font-size: var(--font-size-lg);
-    color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.5;
-}
-
+/* Legacy week nav styles - now integrated into days list */
 .availability-week-nav {
-    display: flex;
-    align-items: center;
+    display: none; /* Hidden since we moved it into the days list */
+}
+
+/* Week navigation integrated into days list */
+.week-nav-item {
+    border-bottom: 1px solid var(--border);
+}
+
+.week-nav-header {
     justify-content: space-between;
-    gap: var(--space-2);
-    margin-bottom: var(--space-6);
     padding: var(--space-4);
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    min-height: 60px;
-    flex-wrap: nowrap;
+}
+
+.week-display {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    flex: 1;
+    margin: 0 var(--space-3);
 }
 
 .nav-btn {
@@ -564,13 +563,52 @@
 }
 
 .grid-controls {
-    margin-top: var(--space-6);
-    text-align: center;
-    padding-top: var(--space-4);
+    display: none; /* Hidden since we moved buttons into days list */
+}
+
+/* Action buttons integrated into days list */
+.actions-item {
     border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
+}
+
+.actions-header {
+    justify-content: space-between;
+    padding: var(--space-4);
     gap: var(--space-3);
+}
+
+.action-btn {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border: none;
+}
+
+.action-btn.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.action-btn.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.action-btn.btn-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.action-btn.btn-secondary:hover {
+    background: var(--card);
 }
 
 .default-schedule-controls {
