@@ -48,6 +48,7 @@
     padding: var(--space-4);
     align-items: center;
     min-height: 60px; /* Match typical day item height */
+    gap: var(--space-3);
 }
 
 .week-display {
@@ -63,19 +64,19 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-2);
     color: var(--text-primary);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
+    font-size: var(--font-size-lg);
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-1);
-    min-width: 100px;
-    height: 36px;
-    white-space: nowrap;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
 }
 
 .nav-btn:hover {
@@ -645,11 +646,11 @@
     }
     
     .nav-btn {
-        min-width: 90px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        padding: var(--space-1) var(--space-2) !important;
-        font-size: var(--font-size-xs) !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: var(--space-1) !important;
+        font-size: var(--font-size-base) !important;
     }
     
     #availabilityWeekDisplay {

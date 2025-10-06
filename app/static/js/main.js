@@ -338,7 +338,8 @@ function createWeekNavigationItem() {
     const prevButton = document.createElement('button');
     prevButton.id = 'availabilityPrevWeek';
     prevButton.className = 'nav-btn';
-    prevButton.innerHTML = '← Previous Week';
+    prevButton.innerHTML = '←';
+    prevButton.title = 'Previous Week';
     
     // Week display
     const weekDisplay = document.createElement('div');
@@ -350,7 +351,8 @@ function createWeekNavigationItem() {
     const nextButton = document.createElement('button');
     nextButton.id = 'availabilityNextWeek';
     nextButton.className = 'nav-btn';
-    nextButton.innerHTML = 'Next Week →';
+    nextButton.innerHTML = '→';
+    nextButton.title = 'Next Week';
     
     weekNavHeader.appendChild(prevButton);
     weekNavHeader.appendChild(weekDisplay);
