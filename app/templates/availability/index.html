@@ -39,12 +39,15 @@
 .week-nav-item {
     border-bottom: 1px solid var(--border);
     background: rgba(0, 104, 177, 0.05);
+    min-height: 72px; /* Ensure consistent height with day items */
 }
 
 .week-nav-header {
+    display: flex;
     justify-content: space-between;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4);
     align-items: center;
+    min-height: 60px; /* Match typical day item height */
 }
 
 .week-display {
@@ -110,6 +113,9 @@
     border-bottom: 1px solid var(--border);
     padding: var(--space-4);
     transition: background-color 0.2s ease;
+    min-height: 72px; /* Ensure consistent height across all items */
+    display: flex;
+    align-items: center;
 }
 
 .availability-day-item:last-child {
@@ -628,6 +634,16 @@
         min-height: 50px;
     }
     
+    /* Mobile styles for integrated week navigation */
+    .week-nav-item {
+        min-height: 60px; /* Slightly smaller on mobile */
+    }
+    
+    .week-nav-header {
+        padding: var(--space-3);
+        min-height: 50px;
+    }
+    
     .nav-btn {
         min-width: 90px !important;
         min-height: 36px !important;
@@ -762,6 +778,7 @@
     
     .availability-day-item {
         padding: var(--space-3);
+        min-height: 60px; /* Match week nav on mobile */
     }
     
     .time-input {
