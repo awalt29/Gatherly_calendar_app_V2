@@ -377,16 +377,30 @@ function updateAddButtonVisibility(dayName) {
     
     const timeRangeItems = timeRangesContainer.querySelectorAll('.time-range-item');
     const addButtons = timeRangesContainer.querySelectorAll('.add-time-btn');
+    const unavailableState = timeRangesContainer.querySelector('.unavailable-state');
     
-    // Hide all + buttons first
-    addButtons.forEach(btn => btn.style.display = 'none');
+    // Hide all + buttons in time range items first
+    addButtons.forEach(btn => {
+        // Don't hide + buttons that are in unavailable states
+        if (!btn.closest('.unavailable-state')) {
+            btn.style.display = 'none';
+        }
+    });
     
-    // Show only the + button on the last time range item
+    // Show only the + button on the last time range item (if any time ranges exist)
     if (timeRangeItems.length > 0) {
         const lastItem = timeRangeItems[timeRangeItems.length - 1];
         const lastAddBtn = lastItem.querySelector('.add-time-btn');
         if (lastAddBtn) {
             lastAddBtn.style.display = 'flex';
+        }
+    }
+    
+    // Ensure + button in unavailable state is always visible
+    if (unavailableState) {
+        const unavailableAddBtn = unavailableState.querySelector('.add-time-btn');
+        if (unavailableAddBtn) {
+            unavailableAddBtn.style.display = 'flex';
         }
     }
 }
