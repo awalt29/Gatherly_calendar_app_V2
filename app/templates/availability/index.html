@@ -243,9 +243,16 @@
     gap: var(--space-2);
 }
 
-/* + button positioning - simple and reliable */
+/* + button positioning - every time range has one, only last is visible */
 .add-time-btn {
     margin-left: var(--space-1);
+    display: none; /* Hidden by default, shown via JavaScript */
+}
+
+/* + button in unavailable state */
+.unavailable-state .add-time-btn {
+    display: flex;
+    margin-left: var(--space-2);
 }
 
 .time-range-item {
