@@ -244,6 +244,10 @@ function renderAvailabilityForm(weekData) {
     
     daysListContainer.innerHTML = '';
     
+    // Add week navigation at the top
+    const weekNavItem = createWeekNavigationItem();
+    daysListContainer.appendChild(weekNavItem);
+    
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
@@ -255,11 +259,9 @@ function renderAvailabilityForm(weekData) {
         daysListContainer.appendChild(dayItem);
     });
     
-    // Set up save button handler
-    const saveButton = document.getElementById('saveAvailability');
-    if (saveButton) {
-        saveButton.onclick = () => saveAvailability(weekData.week_start);
-    }
+    // Add action buttons at the bottom
+    const actionsItem = createActionButtonsItem(weekData.week_start);
+    daysListContainer.appendChild(actionsItem);
 }
 
 function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) {
@@ -323,6 +325,66 @@ function createCalendlyDayItem(dayName, displayName, dayData, availabilityData) 
     dayItem.appendChild(dayHeader);
     
     return dayItem;
+}
+
+function createWeekNavigationItem() {
+    const weekNavItem = document.createElement('div');
+    weekNavItem.className = 'availability-day-item week-nav-item';
+    
+    const weekNavHeader = document.createElement('div');
+    weekNavHeader.className = 'day-item-header week-nav-header';
+    
+    // Previous week button
+    const prevButton = document.createElement('button');
+    prevButton.id = 'availabilityPrevWeek';
+    prevButton.className = 'nav-btn';
+    prevButton.innerHTML = '← Previous Week';
+    
+    // Week display
+    const weekDisplay = document.createElement('div');
+    weekDisplay.id = 'availabilityWeekDisplay';
+    weekDisplay.className = 'week-display';
+    weekDisplay.textContent = 'This Week';
+    
+    // Next week button
+    const nextButton = document.createElement('button');
+    nextButton.id = 'availabilityNextWeek';
+    nextButton.className = 'nav-btn';
+    nextButton.innerHTML = 'Next Week →';
+    
+    weekNavHeader.appendChild(prevButton);
+    weekNavHeader.appendChild(weekDisplay);
+    weekNavHeader.appendChild(nextButton);
+    weekNavItem.appendChild(weekNavHeader);
+    
+    return weekNavItem;
+}
+
+function createActionButtonsItem(weekStart) {
+    const actionsItem = document.createElement('div');
+    actionsItem.className = 'availability-day-item actions-item';
+    
+    const actionsHeader = document.createElement('div');
+    actionsHeader.className = 'day-item-header actions-header';
+    
+    // Save availability button
+    const saveButton = document.createElement('button');
+    saveButton.id = 'saveAvailability';
+    saveButton.className = 'action-btn btn-primary';
+    saveButton.textContent = 'Save Availability';
+    saveButton.onclick = () => saveAvailability(weekStart);
+    
+    // Set as default button
+    const defaultButton = document.createElement('button');
+    defaultButton.id = 'saveAsDefault';
+    defaultButton.className = 'action-btn btn-secondary';
+    defaultButton.innerHTML = '<span class="btn-icon">💾</span> Set as Default Schedule';
+    
+    actionsHeader.appendChild(saveButton);
+    actionsHeader.appendChild(defaultButton);
+    actionsItem.appendChild(actionsHeader);
+    
+    return actionsItem;
 }
 
 function createTimeRangeItem(dayName, timeRange, index) {
