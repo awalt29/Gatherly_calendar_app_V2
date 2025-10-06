@@ -256,7 +256,7 @@ def delete_event(event_id):
     
     try:
         # Get all attendees before deleting the event
-        attendees = event.attendees.all()
+        attendees = event.attendees  # attendees is already a list, not a query
         event_title = event.title  # Store title before deletion
         
         # Create notifications for all attendees (except the creator)
