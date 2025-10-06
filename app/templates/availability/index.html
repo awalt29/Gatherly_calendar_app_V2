@@ -243,26 +243,9 @@
     gap: var(--space-2);
 }
 
-/* Create a row wrapper for time ranges with + button */
-.time-range-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    width: 100%;
-}
-
-/* In single range mode, + button is inline */
-.time-ranges-container:not(:has(.time-range-item:nth-child(2))) .add-time-btn {
+/* + button positioning - simple and reliable */
+.add-time-btn {
     margin-left: var(--space-1);
-}
-
-/* In multiple range mode, + button is only on the last row */
-.time-ranges-container:has(.time-range-item:nth-child(2)) .add-time-btn {
-    display: none;
-}
-
-.time-ranges-container:has(.time-range-item:nth-child(2)) .time-range-row:last-of-type .add-time-btn {
-    display: flex;
 }
 
 .time-range-item {
