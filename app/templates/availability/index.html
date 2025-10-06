@@ -2,6 +2,173 @@
 
 {% block title %}Availability - Gatherly{% endblock %}
 
+{% block extra_css %}
+<style>
+.availability-header {
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0;
+}
+
+/* Week navigation integrated into days list */
+.week-nav-item {
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 104, 177, 0.05);
+    min-height: 56px;
+}
+
+.week-nav-header {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    align-items: center;
+    min-height: 48px;
+    gap: var(--space-3);
+}
+
+.week-display {
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    flex: 1;
+    margin: 0 var(--space-3);
+    font-size: var(--font-size-lg);
+}
+
+.nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+}
+
+.nav-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* Calendly-Style Availability List */
+.availability-days-list {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto var(--space-4);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.availability-day-item {
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4);
+    transition: background-color 0.2s ease;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+}
+
+.availability-day-item:last-child {
+    border-bottom: none;
+}
+
+.availability-day-item:hover {
+    background: rgba(0, 104, 177, 0.05);
+}
+
+/* Action buttons integrated into days list */
+.availability-days-list .availability-day-item.actions-item {
+    border-top: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    border-bottom-left-radius: var(--radius-lg) !important;
+    border-bottom-right-radius: var(--radius-lg) !important;
+    min-height: 72px !important;
+    display: flex !important;
+    align-items: center !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.availability-days-list .availability-day-item.actions-item:hover {
+    background: var(--surface) !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.actions-header {
+    display: flex;
+    padding: var(--space-4);
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* WORKING BUTTON STYLES - Override global .btn styles by ID */
+#saveAvailability, #saveAsDefault {
+    flex: 1 !important;
+    padding: var(--space-3) var(--space-4) !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    font-size: var(--font-size-base) !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    box-shadow: none !important;
+    transform: none !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    gap: var(--space-2) !important;
+    white-space: nowrap !important;
+}
+
+#saveAvailability {
+    background: var(--primary) !important;
+    color: white !important;
+    border: 1px solid var(--primary) !important;
+}
+
+#saveAvailability:hover {
+    background: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+    transform: translateY(-1px) !important;
+}
+
+#saveAsDefault {
+    background: var(--background) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border) !important;
+}
+
+#saveAsDefault:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--text-secondary) !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="availability-container">
     <div class="availability-header">
