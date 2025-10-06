@@ -554,21 +554,25 @@
     display: none; /* Hidden since we moved buttons into days list */
 }
 
-/* Action buttons integrated into days list */
-.availability-day-item.actions-item {
-    border-top: 1px solid var(--border);
+/* Action buttons integrated into days list - FORCE OVERRIDE */
+.availability-days-list .availability-day-item.actions-item {
+    border-top: 1px solid var(--border) !important;
     background: var(--surface) !important; /* Force container background */
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
-    min-height: 72px; /* Match other sections */
-    display: flex;
-    align-items: center;
-    /* Remove the border-bottom to create seamless integration */
-    border-bottom: none;
+    border-bottom-left-radius: var(--radius-lg) !important;
+    border-bottom-right-radius: var(--radius-lg) !important;
+    min-height: 72px !important; /* Match other sections */
+    display: flex !important;
+    align-items: center !important;
+    border-bottom: none !important; /* Remove the border-bottom to create seamless integration */
+    border-left: none !important;
+    border-right: none !important;
 }
 
-.availability-day-item.actions-item:hover {
+.availability-days-list .availability-day-item.actions-item:hover {
     background: var(--surface) !important; /* Maintain same background on hover */
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
 }
 
 .actions-header {
@@ -799,8 +803,12 @@
     }
     
     /* Mobile action button styles */
-    .availability-day-item.actions-item {
+    .availability-days-list .availability-day-item.actions-item {
         min-height: 60px !important; /* Match mobile day items */
+        background: var(--surface) !important;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
     }
     
     .actions-header {
