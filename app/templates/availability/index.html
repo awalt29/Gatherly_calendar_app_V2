@@ -233,6 +233,29 @@
     white-space: nowrap;
 }
 
+/* Mobile optimizations for bottom menu */
+@media (max-width: 768px) {
+    .bottom-menu-bar {
+        bottom: 35px; /* Keep the 5mm upward movement on mobile */
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4); /* Keep the enhanced mobile padding for size */
+    }
+    
+    .menu-item {
+        min-width: 50px;
+        gap: 4px;
+    }
+    
+    .menu-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .menu-label {
+        font-size: 10px;
+    }
+}
+
 /* Mobile responsive adjustments for integrated buttons */
 @media (max-width: 768px) {
     .actions-content {
