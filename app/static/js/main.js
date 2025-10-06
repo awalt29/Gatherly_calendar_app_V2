@@ -380,7 +380,7 @@ function createActionButtonsItem(weekStart) {
     const defaultButton = document.createElement('button');
     defaultButton.id = 'saveAsDefault';
     defaultButton.className = 'integrated-action-btn secondary-action';
-    defaultButton.innerHTML = '<span class="btn-icon">💾</span> Set as Default Schedule';
+    defaultButton.textContent = 'Set as Default Schedule';
     defaultButton.onclick = () => saveAsDefaultSchedule();
     
     actionsContent.appendChild(saveButton);
