@@ -563,11 +563,12 @@
     min-height: 72px; /* Match other sections */
     display: flex;
     align-items: center;
-    border: 3px solid red !important; /* TEMPORARY: Test if CSS is applying */
+    /* Remove the border-bottom to create seamless integration */
+    border-bottom: none;
 }
 
 .availability-day-item.actions-item:hover {
-    background: transparent !important; /* No hover effect for actions section */
+    background: var(--surface) !important; /* Maintain same background on hover */
 }
 
 .actions-header {
