@@ -141,9 +141,14 @@ def get_week_availability(week_offset):
         current_week_start = Availability.get_week_start(today)
         actual_week_offset = (week_start - current_week_start).days // 7
         
+        # Calculate display week range (Sunday to Saturday for US format)
+        # Backend week_start is Monday, so Sunday is -1 day, Saturday is +5 days
+        display_week_start = week_start - timedelta(days=1)  # Sunday
+        display_week_end = week_start + timedelta(days=5)    # Saturday
+        
         week_data = {
-            'week_start': week_start.strftime('%Y-%m-%d'),
-            'week_end': (week_start + timedelta(days=6)).strftime('%Y-%m-%d'),
+            'week_start': display_week_start.strftime('%Y-%m-%d'),
+            'week_end': display_week_end.strftime('%Y-%m-%d'),
             'availability_data': availability.get_availability_data() if availability else {},
             'auto_applied_default': auto_applied_this_request,
             'actual_week_offset': actual_week_offset,
