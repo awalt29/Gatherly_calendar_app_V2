@@ -692,6 +692,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function findOverlappingWindows(users) {
         console.log('Finding overlapping windows for users:', users);
+        console.log('Raw user data before normalization:');
+        users.forEach(user => {
+            console.log(`${user.name} original times:`, user.originalTimeRanges);
+            console.log(`${user.name} normalized times:`, user.timeRanges);
+        });
+        
         if (users.length < 2) return [];
         
         
@@ -714,7 +720,13 @@ document.addEventListener('DOMContentLoaded', function() {
         users.forEach(user => {
             user.timeRanges.forEach(range => {
                 const startMinutes = timeToMinutes(range.start);
-                const endMinutes = timeToMinutes(range.end);
+                let endMinutes = timeToMinutes(range.end);
+                
+                // Handle cross-midnight times (e.g., 18:00 - 12:00 means 6 PM to 12 AM next day)
+                if (endMinutes < startMinutes) {
+                    endMinutes += 24 * 60; // Add 24 hours
+                }
+                
                 console.log(`User ${user.name}: ${range.start} (${startMinutes}min) - ${range.end} (${endMinutes}min)`);
                 allSegments.push({
                     start: startMinutes,
@@ -751,7 +763,13 @@ document.addEventListener('DOMContentLoaded', function() {
             users.forEach(user => {
                 const isAvailable = user.timeRanges.some(range => {
                     const rangeStart = timeToMinutes(range.start);
-                    const rangeEnd = timeToMinutes(range.end);
+                    let rangeEnd = timeToMinutes(range.end);
+                    
+                    // Handle cross-midnight times
+                    if (rangeEnd < rangeStart) {
+                        rangeEnd += 24 * 60; // Add 24 hours
+                    }
+                    
                     return rangeStart <= intervalStart && intervalEnd <= rangeEnd;
                 });
                 
