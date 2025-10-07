@@ -88,14 +88,8 @@ def submit_availability():
             week_start
         )
         
-        # Add timezone information to availability data
-        timezone_aware_data = {
-            'timezone': current_user.timezone or 'America/New_York',
-            'availability': availability_data
-        }
-        
-        # Update availability data
-        availability.set_availability_data(timezone_aware_data)
+        # Store availability data directly (all times stored in server timezone)
+        availability.set_availability_data(availability_data)
         availability.updated_at = datetime.utcnow()
         db.session.commit()
         

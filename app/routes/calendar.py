@@ -51,18 +51,12 @@ def day_detail(date):
             if user_availability and user_availability.is_available_on_day(day_name):
                 # Get time ranges converted to the viewing user's timezone for display
                 viewer_timezone = current_user.timezone if current_user.timezone else None
-                display_time_ranges = user_availability.get_time_ranges(day_name, viewer_timezone)
-                
-                # Also get original time ranges for overlap calculation
-                original_time_ranges = user_availability.get_time_ranges(day_name, None)
-                creation_timezone = user_availability.get_creation_timezone()
+                time_ranges = user_availability.get_time_ranges(day_name, viewer_timezone)
                 
                 available_users.append({
                     'user': friend,
-                    'time_ranges': display_time_ranges,  # For display in viewer's timezone
-                    'original_time_ranges': original_time_ranges,  # For overlap calculation
-                    'user_timezone': getattr(friend, 'timezone', None),  # User's current timezone
-                    'creation_timezone': creation_timezone  # Timezone when availability was created
+                    'time_ranges': time_ranges,
+                    'user_timezone': getattr(friend, 'timezone', None)
                 })
         
         return render_template('calendar/day_detail.html', 

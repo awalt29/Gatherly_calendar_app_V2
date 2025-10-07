@@ -27,18 +27,10 @@ class Availability(db.Model):
             data = json.loads(self.availability_data)
             # Handle both old format (direct availability data) and new format (with timezone)
             if 'timezone' in data and 'availability' in data:
-                return data['availability']  # New format
+                return data['availability']  # New format (backward compatibility)
             else:
-                return data  # Old format (backward compatibility)
+                return data  # Standard format
         return {}
-    
-    def get_creation_timezone(self):
-        """Get the timezone this availability was created in"""
-        if self.availability_data:
-            data = json.loads(self.availability_data)
-            if 'timezone' in data:
-                return data['timezone']
-        return 'America/New_York'  # Default fallback
 
     def get_day_availability(self, day_name):
         """Get availability for a specific day"""
@@ -104,9 +96,8 @@ class Availability(db.Model):
     def _convert_time_to_timezone(self, start_time_str, end_time_str, user_timezone):
         """Convert time strings to user's timezone"""
         try:
-            # Use the actual creation timezone instead of assuming server timezone
-            creation_timezone = self.get_creation_timezone()
-            source_tz = pytz.timezone(creation_timezone)
+            # All times are stored in server timezone (America/New_York)
+            server_tz = pytz.timezone('America/New_York')
             user_tz = pytz.timezone(user_timezone)
             
             # Parse time strings
@@ -118,9 +109,9 @@ class Availability(db.Model):
             start_dt = datetime.combine(today, start_time)
             end_dt = datetime.combine(today, end_time)
             
-            # Localize to creation timezone
-            start_dt_localized = source_tz.localize(start_dt)
-            end_dt_localized = source_tz.localize(end_dt)
+            # Localize to server timezone
+            start_dt_localized = server_tz.localize(start_dt)
+            end_dt_localized = server_tz.localize(end_dt)
             
             # Convert to user timezone
             start_dt_user = start_dt_localized.astimezone(user_tz)
