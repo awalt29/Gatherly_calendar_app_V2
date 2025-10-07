@@ -91,6 +91,40 @@
         </div>
     </div>
     
+    <!-- Timezone Settings -->
+    <div class="friends-section">
+        <h2 class="section-title">Timezone Settings</h2>
+        <div class="settings-card">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>Your Timezone</h4>
+                    <p>Set your timezone to see events and availability in your local time</p>
+                    <small class="text-muted">Current timezone: {{ user.timezone or 'America/New_York' }}</small>
+                </div>
+                <div class="setting-control">
+                    <select id="timezone-select" class="form-control">
+                        <option value="America/New_York" {% if user.timezone == 'America/New_York' or not user.timezone %}selected{% endif %}>Eastern Time (ET)</option>
+                        <option value="America/Chicago" {% if user.timezone == 'America/Chicago' %}selected{% endif %}>Central Time (CT)</option>
+                        <option value="America/Denver" {% if user.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time (MT)</option>
+                        <option value="America/Los_Angeles" {% if user.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (PT)</option>
+                        <option value="America/Anchorage" {% if user.timezone == 'America/Anchorage' %}selected{% endif %}>Alaska Time (AKT)</option>
+                        <option value="Pacific/Honolulu" {% if user.timezone == 'Pacific/Honolulu' %}selected{% endif %}>Hawaii Time (HST)</option>
+                        <option value="Europe/London" {% if user.timezone == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
+                        <option value="Europe/Paris" {% if user.timezone == 'Europe/Paris' %}selected{% endif %}>Paris (CET/CEST)</option>
+                        <option value="Europe/Berlin" {% if user.timezone == 'Europe/Berlin' %}selected{% endif %}>Berlin (CET/CEST)</option>
+                        <option value="Europe/Rome" {% if user.timezone == 'Europe/Rome' %}selected{% endif %}>Rome (CET/CEST)</option>
+                        <option value="Asia/Tokyo" {% if user.timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo (JST)</option>
+                        <option value="Asia/Shanghai" {% if user.timezone == 'Asia/Shanghai' %}selected{% endif %}>Shanghai (CST)</option>
+                        <option value="Asia/Kolkata" {% if user.timezone == 'Asia/Kolkata' %}selected{% endif %}>India (IST)</option>
+                        <option value="Australia/Sydney" {% if user.timezone == 'Australia/Sydney' %}selected{% endif %}>Sydney (AEST/AEDT)</option>
+                        <option value="UTC" {% if user.timezone == 'UTC' %}selected{% endif %}>UTC (Coordinated Universal Time)</option>
+                    </select>
+                    <button id="save-timezone-btn" class="btn btn-primary btn-sm" style="margin-top: 8px;">Save Timezone</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Google Calendar Integration -->
     <div class="friends-section">
         <h2 class="section-title">Google Calendar Integration</h2>
@@ -702,6 +736,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditProfile = document.getElementById('cancel-edit-profile');
     const editProfileForm = document.getElementById('edit-profile-form');
     
+    // Timezone elements
+    const timezoneSelect = document.getElementById('timezone-select');
+    const saveTimezoneBtn = document.getElementById('save-timezone-btn');
+    
     // Email notifications toggle
     if (emailToggle) {
         emailToggle.addEventListener('change', function() {
@@ -1114,6 +1152,54 @@ document.addEventListener('DOMContentLoaded', function() {
             .finally(() => {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
+            });
+        });
+    }
+    
+    // Timezone save functionality
+    if (saveTimezoneBtn) {
+        saveTimezoneBtn.addEventListener('click', function() {
+            const selectedTimezone = timezoneSelect.value;
+            
+            if (!selectedTimezone) {
+                showNotification('Please select a timezone.', 'error');
+                return;
+            }
+            
+            // Disable button during request
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Saving...';
+            
+            fetch('/settings/update-timezone', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    timezone: selectedTimezone
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Timezone updated successfully!', 'success');
+                    // Update the current timezone display
+                    const currentTimezoneText = document.querySelector('.setting-info small');
+                    if (currentTimezoneText) {
+                        currentTimezoneText.textContent = `Current timezone: ${selectedTimezone}`;
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to update timezone');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating timezone:', error);
+                showNotification('Failed to update timezone. Please try again.', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = originalText;
             });
         });
     }

@@ -69,6 +69,41 @@ def update_settings():
             flash('Error updating settings. Please try again.', 'error')
             return redirect(url_for('settings.index'))
 
+@bp.route('/settings/update-timezone', methods=['POST'])
+@login_required
+def update_timezone():
+    """Update user's timezone preference"""
+    try:
+        data = request.get_json()
+        timezone = data.get('timezone')
+        
+        if not timezone:
+            return jsonify({'success': False, 'error': 'Timezone is required'}), 400
+        
+        # Validate timezone (basic validation - you could add more comprehensive validation)
+        valid_timezones = [
+            'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+            'America/Anchorage', 'Pacific/Honolulu', 'Europe/London', 'Europe/Paris',
+            'Europe/Berlin', 'Europe/Rome', 'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata',
+            'Australia/Sydney', 'UTC'
+        ]
+        
+        if timezone not in valid_timezones:
+            return jsonify({'success': False, 'error': 'Invalid timezone'}), 400
+        
+        # Update user's timezone
+        current_user.timezone = timezone
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Timezone updated successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @bp.route('/settings/google-calendar', methods=['POST'])
 @login_required
 def update_google_calendar_settings():
