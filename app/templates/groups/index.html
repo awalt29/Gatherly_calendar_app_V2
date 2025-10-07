@@ -737,6 +737,7 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--space-6);
     margin-bottom: var(--space-8);
+    justify-content: center;
 }
 
 .group-card {
@@ -1463,44 +1464,9 @@
     }
 }
 
-/* Simplified Shared Group Cards */
-.shared-group-card {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
+/* Remove legacy shared group styles - using compact layout now */
 
-.shared-group-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.shared-group-header {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 8px 12px;
-}
-
-.shared-group-header .group-name {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-/* Center friend bubbles in shared group cards */
-.centered-members {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px 12px;
-}
+/* Legacy centered-members class removed - using compact layout now */
 
 /* Compact Group Cards - Single Line Layout */
 .compact-group-card {
@@ -1553,35 +1519,7 @@
     flex-shrink: 0;
 }
 
-/* Legacy styles for backward compatibility */
-.private-group-card {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.private-group-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.private-group-header {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 8px 12px;
-}
-
-.private-group-header .group-name {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
+/* Remove legacy private group styles - using compact layout now */
 
 /* Group Modal Styles */
 .modal-overlay {
