@@ -606,32 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize styling on page load
     updateCreateEventButton();
     
-    // Format time displays to 12-hour format (with slight delay to ensure DOM is ready)
-    setTimeout(formatTimeDisplays, 100);
-    
-    // Function to format time displays from 24-hour to 12-hour format
-    function formatTimeDisplays() {
-        const timeBadges = document.querySelectorAll('.time-badge');
-        timeBadges.forEach(badge => {
-            const timeText = badge.textContent.trim();
-            if (timeText.includes(' - ')) {
-                const [startTime, endTime] = timeText.split(' - ');
-                const formattedStart = formatTime(startTime);
-                const formattedEnd = formatTime(endTime);
-                badge.textContent = `${formattedStart} - ${formattedEnd}`;
-            }
-        });
-    }
-    
-    // Format time helper function (convert 24-hour to 12-hour)
-    function formatTime(timeString) {
-        const [hours, minutes] = timeString.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour % 12 || 12;
-        return `${displayHour}:${minutes} ${ampm}`;
-    }
-    
     // Calculate overlapping time windows
     function calculateOverlaps() {
         const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');

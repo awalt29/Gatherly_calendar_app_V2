@@ -75,8 +75,17 @@ class Availability(db.Model):
                         'end': converted_end
                     })
                 return converted_ranges
-            
-            return ranges
+            else:
+                # Format original times to 12-hour format if they're in 24-hour format
+                formatted_ranges = []
+                for time_range in ranges:
+                    start_formatted = self._format_time_to_12hour(time_range['start'])
+                    end_formatted = self._format_time_to_12hour(time_range['end'])
+                    formatted_ranges.append({
+                        'start': start_formatted,
+                        'end': end_formatted
+                    })
+                return formatted_ranges
         return []
     
     def _convert_time_to_timezone(self, start_time_str, end_time_str, user_timezone):
@@ -103,11 +112,24 @@ class Availability(db.Model):
             start_dt_user = start_dt_localized.astimezone(user_tz)
             end_dt_user = end_dt_localized.astimezone(user_tz)
             
-            # Return formatted time strings
-            return start_dt_user.strftime('%H:%M'), end_dt_user.strftime('%H:%M')
+            # Return formatted time strings in 12-hour format
+            start_formatted = start_dt_user.strftime('%I:%M %p').lstrip('0')
+            end_formatted = end_dt_user.strftime('%I:%M %p').lstrip('0')
+            return start_formatted, end_formatted
         except Exception:
             # If conversion fails, return original times
             return start_time_str, end_time_str
+    
+    def _format_time_to_12hour(self, time_str):
+        """Convert time string from 24-hour to 12-hour format"""
+        try:
+            # Parse the time string
+            time_obj = datetime.strptime(time_str, '%H:%M').time()
+            # Format to 12-hour format
+            return time_obj.strftime('%I:%M %p').lstrip('0')
+        except Exception:
+            # If parsing fails, return original
+            return time_str
 
     @staticmethod
     def get_week_start(date):
