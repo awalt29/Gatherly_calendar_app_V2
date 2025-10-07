@@ -462,22 +462,18 @@
 }
 
 .page-title {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: var(--space-4);
-    background: linear-gradient(135deg, var(--primary) 0%, #0068B1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    margin-bottom: var(--space-3);
 }
 
 .page-description {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     color: var(--text-secondary);
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 /* How It Works Section */
@@ -846,7 +842,11 @@
     }
     
     .page-title {
-        font-size: 2rem;
+        font-size: var(--font-size-xl);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
     }
     
     .steps-container {
@@ -874,7 +874,7 @@
 
 @media (max-width: 480px) {
     .page-title {
-        font-size: 1.75rem;
+        font-size: var(--font-size-lg);
     }
     
     .how-it-works-title {
