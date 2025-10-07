@@ -640,6 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function findOverlappingWindows(users) {
+        console.log('Finding overlapping windows for users:', users);
         if (users.length < 2) return [];
         
         
@@ -678,9 +679,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         users.forEach(user => {
             user.timeRanges.forEach(range => {
+                const startMinutes = timeToMinutes(range.start);
+                const endMinutes = timeToMinutes(range.end);
+                console.log(`User ${user.name}: ${range.start} (${startMinutes}min) - ${range.end} (${endMinutes}min)`);
                 allSegments.push({
-                    start: timeToMinutes(range.start),
-                    end: timeToMinutes(range.end),
+                    start: startMinutes,
+                    end: endMinutes,
                     user: user
                 });
             });
@@ -725,6 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // If all users are available during this interval
             if (availableUsers.length === totalUsers) {
                 const durationMinutes = intervalEnd - intervalStart;
+                console.log(`Found overlap: ${minutesToTime(intervalStart)} - ${minutesToTime(intervalEnd)} (${durationMinutes} minutes) with ${availableUsers.length}/${totalUsers} users`);
                 
                 // Only include intervals of at least 2 hours
                 if (durationMinutes >= 120) {
@@ -733,10 +738,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         endTime: minutesToTime(intervalEnd),
                         attendees: availableUsers
                     });
+                    console.log('Added overlap to results');
+                } else {
+                    console.log('Overlap too short, need at least 120 minutes');
                 }
+            } else {
+                console.log(`Interval ${minutesToTime(intervalStart)} - ${minutesToTime(intervalEnd)}: only ${availableUsers.length}/${totalUsers} users available`);
             }
         }
         
+        console.log('Final overlaps found:', overlaps);
         return overlaps;
     }
     
