@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+import pytz
 from app import db
 import json
 
@@ -47,21 +48,66 @@ class Availability(db.Model):
             }
         return None
     
-    def get_time_ranges(self, day_name):
-        """Get all time ranges for a specific day"""
+    def get_time_ranges(self, day_name, user_timezone=None):
+        """Get all time ranges for a specific day, optionally in user's timezone"""
         day_data = self.get_day_availability(day_name)
         if day_data.get('available', False):
             # Check if we have multiple time ranges
             time_ranges = day_data.get('time_ranges', [])
             if time_ranges:
-                return time_ranges
+                ranges = time_ranges
             else:
                 # Fall back to single time range for backward compatibility
-                return [{
+                ranges = [{
                     'start': day_data.get('start', '09:00'),
                     'end': day_data.get('end', '17:00')
                 }]
+            
+            # Convert to user timezone if specified
+            if user_timezone:
+                converted_ranges = []
+                for time_range in ranges:
+                    converted_start, converted_end = self._convert_time_to_timezone(
+                        time_range['start'], time_range['end'], user_timezone
+                    )
+                    converted_ranges.append({
+                        'start': converted_start,
+                        'end': converted_end
+                    })
+                return converted_ranges
+            
+            return ranges
         return []
+    
+    def _convert_time_to_timezone(self, start_time_str, end_time_str, user_timezone):
+        """Convert time strings to user's timezone"""
+        try:
+            # Assume stored times are in server timezone (America/New_York by default)
+            server_tz = pytz.timezone('America/New_York')
+            user_tz = pytz.timezone(user_timezone)
+            
+            # Parse time strings
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+            
+            # Create datetime objects for today (date doesn't matter for time conversion)
+            today = datetime.now().date()
+            start_dt = datetime.combine(today, start_time)
+            end_dt = datetime.combine(today, end_time)
+            
+            # Localize to server timezone
+            start_dt_localized = server_tz.localize(start_dt)
+            end_dt_localized = server_tz.localize(end_dt)
+            
+            # Convert to user timezone
+            start_dt_user = start_dt_localized.astimezone(user_tz)
+            end_dt_user = end_dt_localized.astimezone(user_tz)
+            
+            # Return formatted time strings
+            return start_dt_user.strftime('%H:%M'), end_dt_user.strftime('%H:%M')
+        except Exception:
+            # If conversion fails, return original times
+            return start_time_str, end_time_str
 
     @staticmethod
     def get_week_start(date):

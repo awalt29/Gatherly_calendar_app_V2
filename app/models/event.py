@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 from app import db
 
 # Association table for many-to-many relationship between events and users
@@ -26,11 +27,56 @@ class Event(db.Model):
     def __repr__(self):
         return f'<Event {self.title} on {self.date}>'
     
-    def get_time_range(self):
-        """Get formatted time range string"""
-        start_formatted = self.start_time.strftime('%I:%M %p').lstrip('0')
-        end_formatted = self.end_time.strftime('%I:%M %p').lstrip('0')
+    def get_time_range(self, user_timezone=None):
+        """Get formatted time range string, optionally in user's timezone"""
+        if user_timezone:
+            # Convert times to user's timezone
+            start_time, end_time = self.get_times_in_timezone(user_timezone)
+            start_formatted = start_time.strftime('%I:%M %p').lstrip('0')
+            end_formatted = end_time.strftime('%I:%M %p').lstrip('0')
+        else:
+            # Use original times (assumed to be in server timezone)
+            start_formatted = self.start_time.strftime('%I:%M %p').lstrip('0')
+            end_formatted = self.end_time.strftime('%I:%M %p').lstrip('0')
         return f"{start_formatted} - {end_formatted}"
+    
+    def get_times_in_timezone(self, user_timezone):
+        """Convert event times to user's timezone"""
+        try:
+            # Assume stored times are in UTC or server timezone (America/New_York by default)
+            server_tz = pytz.timezone('America/New_York')  # or UTC
+            user_tz = pytz.timezone(user_timezone)
+            
+            # Create datetime objects for the event date with times
+            start_dt = datetime.combine(self.date, self.start_time)
+            end_dt = datetime.combine(self.date, self.end_time)
+            
+            # Localize to server timezone first
+            start_dt_localized = server_tz.localize(start_dt)
+            end_dt_localized = server_tz.localize(end_dt)
+            
+            # Convert to user timezone
+            start_dt_user = start_dt_localized.astimezone(user_tz)
+            end_dt_user = end_dt_localized.astimezone(user_tz)
+            
+            return start_dt_user.time(), end_dt_user.time()
+        except Exception:
+            # If timezone conversion fails, return original times
+            return self.start_time, self.end_time
+    
+    def get_date_in_timezone(self, user_timezone):
+        """Get event date in user's timezone (in case it shifts due to timezone conversion)"""
+        try:
+            server_tz = pytz.timezone('America/New_York')
+            user_tz = pytz.timezone(user_timezone)
+            
+            start_dt = datetime.combine(self.date, self.start_time)
+            start_dt_localized = server_tz.localize(start_dt)
+            start_dt_user = start_dt_localized.astimezone(user_tz)
+            
+            return start_dt_user.date()
+        except Exception:
+            return self.date
     
     def get_attendee_names(self):
         """Get list of attendee names"""

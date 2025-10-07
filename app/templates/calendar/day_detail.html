@@ -12,6 +12,9 @@
             </div>
             <div class="header-divider"></div>
             <h2 class="section-title">Available Friends</h2>
+            {% if user_timezone %}
+                <p class="timezone-indicator">Times shown in {{ user_timezone.split('/')[-1] }} timezone</p>
+            {% endif %}
         </div>
         
         {% if available_users %}
@@ -64,6 +67,13 @@
 
 .section-header {
     margin-bottom: var(--space-4);
+}
+
+.timezone-indicator {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: var(--space-2) 0 0 0;
+    font-style: italic;
 }
 
 .date-header {

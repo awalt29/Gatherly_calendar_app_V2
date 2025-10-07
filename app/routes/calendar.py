@@ -49,7 +49,9 @@ def day_detail(date):
             )
             
             if user_availability and user_availability.is_available_on_day(day_name):
-                time_ranges = user_availability.get_time_ranges(day_name)
+                # Use current user's timezone for display
+                user_timezone = current_user.timezone if current_user.timezone else None
+                time_ranges = user_availability.get_time_ranges(day_name, user_timezone)
                 available_users.append({
                     'user': friend,
                     'time_ranges': time_ranges
@@ -57,7 +59,8 @@ def day_detail(date):
         
         return render_template('calendar/day_detail.html', 
                              date=date_obj,
-                             available_users=available_users)
+                             available_users=available_users,
+                             user_timezone=current_user.timezone)
     
     except ValueError:
         return "Invalid date format", 400

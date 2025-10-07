@@ -71,15 +71,26 @@
                         <div class="event-header">
                             <h3 class="event-title">{{ event.title }}</h3>
                             <div class="event-date">
-                                {{ event.date.strftime('%B %d, %Y') }}
+                                {% if current_user.timezone %}
+                                    {{ event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y') }}
+                                {% else %}
+                                    {{ event.date.strftime('%B %d, %Y') }}
+                                {% endif %}
                             </div>
                         </div>
                         
                         <div class="event-details">
                             <div class="event-time">
                                 <span class="time-badge">
-                                    {{ event.get_time_range() }}
+                                    {% if current_user.timezone %}
+                                        {{ event.get_time_range(current_user.timezone) }}
+                                    {% else %}
+                                        {{ event.get_time_range() }}
+                                    {% endif %}
                                 </span>
+                                {% if current_user.timezone %}
+                                    <small class="timezone-info">{{ current_user.timezone.split('/')[-1] }} time</small>
+                                {% endif %}
                             </div>
                             
                             {% if event.location %}
@@ -315,6 +326,14 @@
 .events-container {
     max-width: 800px;
     margin: 0 auto;
+}
+
+.timezone-info {
+    display: block;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    margin-top: 4px;
+    font-style: italic;
 }
 
 /* Bottom Menu Bar - Match calendar page exactly */
