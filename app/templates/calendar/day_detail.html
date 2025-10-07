@@ -22,7 +22,8 @@
                 {% for user_data in available_users %}
                     <div class="user-availability-card" 
                          data-user-id="{{ user_data.user.id }}" 
-                         data-time-ranges='{{ user_data.time_ranges | tojson }}'
+                         data-time-ranges='{{ user_data.original_time_ranges | tojson }}'
+                         data-display-time-ranges='{{ user_data.time_ranges | tojson }}'
                          data-user-timezone="{{ user_data.user_timezone or 'America/New_York' }}"
                          data-creation-timezone="{{ user_data.creation_timezone or 'America/New_York' }}">
                         <div class="user-checkbox">
@@ -696,21 +697,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = checkbox.closest('.user-availability-card');
             const userId = card.dataset.userId;
             const userName = card.querySelector('.name-text').textContent;
-            const timeRangesStr = card.dataset.timeRanges;
+            const originalTimeRangesStr = card.dataset.timeRanges; // Original for calculation
+            const displayTimeRangesStr = card.dataset.displayTimeRanges; // Converted for display
             const userTimezone = card.dataset.userTimezone || 'America/New_York';
             const creationTimezone = card.dataset.creationTimezone || 'America/New_York';
             // Use user ID for avatar class since we removed friend avatars
             const avatarClass = `friend-color-${userId % 8}`;
             
             try {
-                const timeRanges = JSON.parse(timeRangesStr);
-                // Convert all time ranges to UTC based on their creation timezone
-                const utcTimeRanges = convertTimeRangesToUTC(timeRanges, creationTimezone);
+                const originalTimeRanges = JSON.parse(originalTimeRangesStr);
+                const displayTimeRanges = JSON.parse(displayTimeRangesStr);
+                
+                // Convert original time ranges to UTC for overlap calculation
+                const utcTimeRanges = convertTimeRangesToUTC(originalTimeRanges, creationTimezone);
+                
                 users.push({
                     id: userId,
                     name: userName,
-                    timeRanges: utcTimeRanges,
-                    originalTimeRanges: timeRanges, // Keep original for display
+                    timeRanges: utcTimeRanges, // UTC for overlap calculation
+                    displayTimeRanges: displayTimeRanges, // Converted times for display
+                    originalTimeRanges: originalTimeRanges, // Original times
                     userTimezone: userTimezone,
                     creationTimezone: creationTimezone,
                     avatarClass: avatarClass
@@ -729,10 +735,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function findOverlappingWindows(users) {
         console.log('Finding overlapping windows for users:', users);
-        console.log('Raw user data before normalization:');
+        console.log('User availability data:');
         users.forEach(user => {
-            console.log(`${user.name} original times:`, user.originalTimeRanges);
-            console.log(`${user.name} normalized times:`, user.timeRanges);
+            console.log(`${user.name}:`);
+            console.log(`  - Original (${user.creationTimezone}):`, user.originalTimeRanges);
+            console.log(`  - Display (viewer timezone):`, user.displayTimeRanges);
+            console.log(`  - UTC (for calculation):`, user.timeRanges);
         });
         
         if (users.length < 2) return [];

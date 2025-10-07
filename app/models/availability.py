@@ -104,8 +104,9 @@ class Availability(db.Model):
     def _convert_time_to_timezone(self, start_time_str, end_time_str, user_timezone):
         """Convert time strings to user's timezone"""
         try:
-            # Assume stored times are in server timezone (America/New_York by default)
-            server_tz = pytz.timezone('America/New_York')
+            # Use the actual creation timezone instead of assuming server timezone
+            creation_timezone = self.get_creation_timezone()
+            source_tz = pytz.timezone(creation_timezone)
             user_tz = pytz.timezone(user_timezone)
             
             # Parse time strings
@@ -117,9 +118,9 @@ class Availability(db.Model):
             start_dt = datetime.combine(today, start_time)
             end_dt = datetime.combine(today, end_time)
             
-            # Localize to server timezone
-            start_dt_localized = server_tz.localize(start_dt)
-            end_dt_localized = server_tz.localize(end_dt)
+            # Localize to creation timezone
+            start_dt_localized = source_tz.localize(start_dt)
+            end_dt_localized = source_tz.localize(end_dt)
             
             # Convert to user timezone
             start_dt_user = start_dt_localized.astimezone(user_tz)
