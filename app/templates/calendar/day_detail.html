@@ -13,7 +13,7 @@
             <div class="header-divider"></div>
             <h2 class="section-title">Available Friends</h2>
             {% if user_timezone %}
-                <p class="timezone-indicator">Times shown in {{ user_timezone.split('/')[-1] }} timezone</p>
+                <p class="timezone-indicator">All times shown in your local timezone</p>
             {% endif %}
         </div>
         
@@ -43,9 +43,6 @@
                                     {{ time_range.start }} - {{ time_range.end }}
                                 </span>
                             {% endfor %}
-                            {% if user_data.user_timezone and user_data.user_timezone != user_timezone %}
-                                <small class="timezone-note">{{ user_data.user_timezone.split('/')[-1] }} time</small>
-                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
