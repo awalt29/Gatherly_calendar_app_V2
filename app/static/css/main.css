@@ -2,40 +2,40 @@
    GATHERLY - MOBILE-FIRST DARK THEME CSS
    ============================================ */
 
-/* CSS Variables - Custom Teal Palette */
+/* CSS Variables - Superhuman Inspired Palette */
 :root {
-    /* Background Colors - Based on your palette */
-    --background: #0F1726;          /* Deep navy background */
-    --surface: #0B2626;            /* Dark teal for cards */
-    --surface-hover: #1a3535;      /* Lighter teal for hover states */
-    --border: #44A6A6;             /* Medium teal for borders */
+    /* Superhuman Background Colors */
+    --background: #0a0e1a;          /* Deep navy background */
+    --surface: #1a1f2e;            /* Slightly lighter navy for cards */
+    --surface-hover: #252b3d;      /* Hover state - even lighter */
+    --border: #2d3548;             /* Subtle borders */
     
-    /* Text Colors - High contrast */
-    --text-primary: #F2F2F2;       /* Light gray for primary text */
-    --text-secondary: #44A6A6;     /* Medium teal for secondary text */
-    --text-muted: #63F2F2;         /* Light teal for muted text */
+    /* Text Colors - High contrast like Superhuman */
+    --text-primary: #ffffff;       /* Pure white for primary text */
+    --text-secondary: #b8c5d6;     /* Light blue-gray for secondary */
+    --text-muted: #7a8ba3;         /* Muted blue-gray */
     
-    /* Primary Colors - Teal Theme */
-    --primary: #63F2F2;            /* Light teal - main brand color */
-    --primary-rgb: 99, 242, 242;   /* RGB values for transparency effects */
-    --primary-hover: #44A6A6;      /* Medium teal for hover states */
-    --primary-light: #8ff5f5;      /* Even lighter teal for accents */
+    /* Superhuman's Signature Colors */
+    --primary: #0068B1;            /* Honolulu Blue - Superhuman's main brand color */
+    --primary-rgb: 0, 104, 177;    /* RGB values for transparency effects */
+    --primary-hover: #005a9a;      /* Darker blue for hover states */
+    --primary-light: #1a7bc4;      /* Lighter blue for accents */
     
-    /* Status Colors - Adapted to teal theme */
-    --error: #ff6b6b;              /* Soft red for errors */
-    --success: #63F2F2;            /* Light teal for success */
-    --warning: #ffd93d;            /* Warm yellow for warnings */
-    --accent: #63F2F2;             /* Light teal for highlights */
+    /* Status Colors */
+    --error: #D3001F;              /* Blood Orange for errors/urgent */
+    --success: #00b894;            /* Teal green for success */
+    --warning: #FDB603;            /* UCLA Gold for warnings */
+    --accent: #FFDD00;             /* Golden Yellow for highlights */
     
-    /* Friend Colors - Teal-based palette */
-    --friend-color-1: #63F2F2;     /* Light teal */
-    --friend-color-2: #44A6A6;     /* Medium teal */
-    --friend-color-3: #0B2626;     /* Dark teal */
-    --friend-color-4: #8ff5f5;     /* Very light teal */
-    --friend-color-5: #2dd4bf;     /* Cyan teal */
-    --friend-color-6: #14b8a6;     /* Emerald teal */
-    --friend-color-7: #0891b2;     /* Sky teal */
-    --friend-color-8: #0e7490;     /* Deep teal */
+    /* Friend Colors - Superhuman-inspired palette */
+    --friend-color-1: #0068B1;     /* Honolulu Blue */
+    --friend-color-2: #00b894;     /* Success Teal */
+    --friend-color-3: #FDB603;     /* UCLA Gold */
+    --friend-color-4: #D3001F;     /* Blood Orange */
+    --friend-color-5: #6c5ce7;     /* Purple accent */
+    --friend-color-6: #fd79a8;     /* Pink accent */
+    --friend-color-7: #00cec9;     /* Cyan accent */
+    --friend-color-8: #fdcb6e;     /* Orange accent */
     
     /* Spacing */
     --space-1: 4px;
