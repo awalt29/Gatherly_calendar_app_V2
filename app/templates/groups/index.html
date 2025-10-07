@@ -17,17 +17,16 @@
             <h2 class="section-title">Your Private Groups</h2>
             <div class="groups-list">
                 {% for group in created_groups %}
-                    <div class="group-card private-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
-                        <div class="private-group-header">
-                            <h3 class="group-name">{{ group.name }}</h3>
-                        </div>
-                        
-                        <div class="group-members centered-members">
-                            {% for member in group.get_members() %}
-                                <div class="member-avatar" title="{{ member.get_full_name() }}">
-                                    {{ member.get_initials() }}
-                                </div>
-                            {% endfor %}
+                    <div class="group-card private-group-card compact-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
+                        <div class="compact-group-content">
+                            <h3 class="compact-group-name">{{ group.name }}</h3>
+                            <div class="compact-group-members">
+                                {% for member in group.get_members() %}
+                                    <div class="compact-member-avatar" title="{{ member.get_full_name() }}">
+                                        {{ member.get_initials() }}
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -41,17 +40,16 @@
             <h2 class="section-title">Shared Groups</h2>
             <div class="groups-list">
                 {% for group in shared_groups %}
-                    <div class="group-card shared-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
-                        <div class="shared-group-header">
-                            <h3 class="group-name">{{ group.name }}</h3>
-                        </div>
-                        
-                        <div class="group-members centered-members">
-                            {% for member in group.get_members() %}
-                                <div class="member-avatar" title="{{ member.get_full_name() }}">
-                                    {{ member.get_initials() }}
-                                </div>
-                            {% endfor %}
+                    <div class="group-card shared-group-card compact-group-card" data-group-id="{{ group.id }}" onclick="openGroupModal({{ group.id }});">
+                        <div class="compact-group-content">
+                            <h3 class="compact-group-name">{{ group.name }}</h3>
+                            <div class="compact-group-members">
+                                {% for member in group.get_members() %}
+                                    <div class="compact-member-avatar" title="{{ member.get_full_name() }}">
+                                        {{ member.get_initials() }}
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -1430,6 +1428,26 @@
     .activity-actions {
         justify-content: flex-end;
     }
+    
+    /* Compact group cards mobile adjustments */
+    .compact-group-content {
+        gap: var(--space-2);
+    }
+    
+    .compact-group-name {
+        font-size: var(--font-size-sm);
+    }
+    
+    .compact-member-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+    
+    .groups-list {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
 }
 
 /* Simplified Shared Group Cards */
@@ -1471,7 +1489,58 @@
     padding: 6px 12px 12px;
 }
 
-/* Private Group Cards - Match Shared Group Style */
+/* Compact Group Cards - Single Line Layout */
+.compact-group-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 60px;
+    padding: var(--space-4);
+}
+
+.compact-group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.compact-group-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.compact-group-name {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+    text-align: left;
+}
+
+.compact-group-members {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+}
+
+.compact-member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Legacy styles for backward compatibility */
 .private-group-card {
     cursor: pointer;
     transition: all 0.2s ease;
