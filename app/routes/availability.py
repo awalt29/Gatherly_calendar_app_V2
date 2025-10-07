@@ -73,6 +73,8 @@ def get_availability_data(date):
 def submit_availability():
     """Submit availability data for a week"""
     try:
+        import pytz
+        
         data = request.get_json()
         week_start_str = data.get('week_start')
         availability_data = data.get('availability_data', {})
@@ -82,13 +84,39 @@ def submit_availability():
         
         week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
         
+        # Convert all times from user's timezone to UTC before storing
+        user_timezone = current_user.timezone or 'America/New_York'
+        user_tz = pytz.timezone(user_timezone)
+        utc_tz = pytz.UTC
+        
+        # Convert each day's time ranges to UTC
+        for day_name, day_data in availability_data.items():
+            if day_data.get('available') and day_data.get('time_ranges'):
+                converted_ranges = []
+                for time_range in day_data['time_ranges']:
+                    # Convert start and end times to UTC
+                    start_utc = convert_time_to_utc(time_range['start'], user_tz, utc_tz)
+                    end_utc = convert_time_to_utc(time_range['end'], user_tz, utc_tz)
+                    
+                    converted_ranges.append({
+                        'start': start_utc,
+                        'end': end_utc
+                    })
+                
+                # Update the day data with UTC times
+                day_data['time_ranges'] = converted_ranges
+                # Also update the legacy start/end fields for backward compatibility
+                if converted_ranges:
+                    day_data['start'] = converted_ranges[0]['start']
+                    day_data['end'] = converted_ranges[0]['end']
+        
         # Get or create availability record
         availability = Availability.get_or_create_availability(
             current_user.id, 
             week_start
         )
         
-        # Store availability data directly (all times stored in server timezone)
+        # Store availability data (now with UTC times)
         availability.set_availability_data(availability_data)
         availability.updated_at = datetime.utcnow()
         db.session.commit()
@@ -99,6 +127,24 @@ def submit_availability():
         return jsonify({'error': 'Invalid date format'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def convert_time_to_utc(time_str, user_tz, utc_tz):
+    """Convert a time string from user timezone to UTC"""
+    # Parse time string
+    time_obj = datetime.strptime(time_str, '%H:%M').time()
+    
+    # Create datetime object for today (date doesn't matter for time conversion)
+    today = datetime.now().date()
+    dt = datetime.combine(today, time_obj)
+    
+    # Localize to user timezone
+    dt_localized = user_tz.localize(dt)
+    
+    # Convert to UTC
+    dt_utc = dt_localized.astimezone(utc_tz)
+    
+    # Return as time string
+    return dt_utc.strftime('%H:%M')
 
 @bp.route('/availability/week/<int:week_offset>')
 @login_required

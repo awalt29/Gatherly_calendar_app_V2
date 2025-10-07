@@ -23,6 +23,7 @@
                     <div class="user-availability-card" 
                          data-user-id="{{ user_data.user.id }}" 
                          data-time-ranges='{{ user_data.time_ranges | tojson }}'
+                         data-utc-time-ranges='{{ user_data.utc_time_ranges | tojson }}'
                          data-user-timezone="{{ user_data.user_timezone or 'America/New_York' }}">
                         <div class="user-checkbox">
                             <input type="checkbox" id="user-{{ user_data.user.id }}" class="user-select-checkbox" {% if user_data.user.id == current_user.id %}checked{% endif %}>
@@ -650,18 +651,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = checkbox.closest('.user-availability-card');
             const userId = card.dataset.userId;
             const userName = card.querySelector('.name-text').textContent;
-            const timeRangesStr = card.dataset.timeRanges;
+            const displayTimeRangesStr = card.dataset.timeRanges;
+            const utcTimeRangesStr = card.dataset.utcTimeRanges;
             const userTimezone = card.dataset.userTimezone || 'America/New_York';
             // Use user ID for avatar class since we removed friend avatars
             const avatarClass = `friend-color-${userId % 8}`;
             
             try {
-                const timeRanges = JSON.parse(timeRangesStr);
+                const displayTimeRanges = JSON.parse(displayTimeRangesStr);
+                const utcTimeRanges = JSON.parse(utcTimeRangesStr);
                 
                 users.push({
                     id: userId,
                     name: userName,
-                    timeRanges: timeRanges, // Already converted to viewer's timezone for display
+                    timeRanges: utcTimeRanges, // UTC times for overlap calculation
+                    displayTimeRanges: displayTimeRanges, // Converted times for display
                     userTimezone: userTimezone,
                     avatarClass: avatarClass
                 });
@@ -679,9 +683,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function findOverlappingWindows(users) {
         console.log('Finding overlapping windows for users:', users);
-        console.log('User availability data (all in viewer timezone):');
+        console.log('User availability data:');
         users.forEach(user => {
-            console.log(`${user.name}:`, user.timeRanges);
+            console.log(`${user.name}:`);
+            console.log(`  - Display (viewer timezone):`, user.displayTimeRanges);
+            console.log(`  - UTC (for calculation):`, user.timeRanges);
         });
         
         if (users.length < 2) return [];
@@ -689,9 +695,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Convert times to minutes for easier comparison
         function timeToMinutes(timeStr) {
-            // Convert to 24-hour format first if needed
-            const time24 = convertTo24Hour(timeStr);
-            const [hours, minutes] = time24.split(':').map(Number);
+            // UTC times are already in 24-hour format (HH:MM)
+            const [hours, minutes] = timeStr.split(':').map(Number);
             return hours * 60 + minutes;
         }
         
