@@ -622,10 +622,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Normalize time ranges to server timezone for comparison
     function normalizeTimeRangesToServerTimezone(timeRanges, userTimezone) {
-        // For now, we'll assume all times are already in the same reference frame
-        // since we're not converting them in the backend anymore
-        // This function can be enhanced later for true timezone conversion
-        return timeRanges;
+        // Since all availability is stored in 24-hour format in the database
+        // and then converted to 12-hour format for display, we need to convert
+        // back to a common 24-hour format for comparison
+        return timeRanges.map(range => ({
+            start: convertTo24Hour(range.start),
+            end: convertTo24Hour(range.end)
+        }));
+    }
+    
+    // Convert 12-hour format to 24-hour format for comparison
+    function convertTo24Hour(timeStr) {
+        if (!timeStr.includes('AM') && !timeStr.includes('PM')) {
+            // Already in 24-hour format
+            return timeStr;
+        }
+        
+        const isPM = timeStr.includes('PM');
+        const timeOnly = timeStr.replace(' AM', '').replace(' PM', '');
+        const [hours, minutes] = timeOnly.split(':').map(Number);
+        
+        let adjustedHours = hours;
+        if (isPM && hours !== 12) {
+            adjustedHours += 12;
+        } else if (!isPM && hours === 12) {
+            adjustedHours = 0;
+        }
+        
+        return `${adjustedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
     
     // Calculate overlapping time windows
@@ -673,26 +697,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Convert times to minutes for easier comparison
         function timeToMinutes(timeStr) {
-            // Handle both 12-hour format (H:MM AM/PM) and 24-hour format (HH:MM)
-            if (timeStr.includes('AM') || timeStr.includes('PM')) {
-                // Parse 12-hour format
-                const isPM = timeStr.includes('PM');
-                const timeOnly = timeStr.replace(' AM', '').replace(' PM', '');
-                const [hours, minutes] = timeOnly.split(':').map(Number);
-                
-                let adjustedHours = hours;
-                if (isPM && hours !== 12) {
-                    adjustedHours += 12;
-                } else if (!isPM && hours === 12) {
-                    adjustedHours = 0;
-                }
-                
-                return adjustedHours * 60 + minutes;
-            } else {
-                // Parse 24-hour format
-                const [hours, minutes] = timeStr.split(':').map(Number);
-                return hours * 60 + minutes;
-            }
+            // Since we normalize all times to 24-hour format, we only need to handle that
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
         }
         
         function minutesToTime(minutes) {
