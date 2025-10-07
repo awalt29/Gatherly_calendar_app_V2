@@ -645,8 +645,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Convert times to minutes for easier comparison
         function timeToMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
+            // Handle both 12-hour format (H:MM AM/PM) and 24-hour format (HH:MM)
+            if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                // Parse 12-hour format
+                const isPM = timeStr.includes('PM');
+                const timeOnly = timeStr.replace(' AM', '').replace(' PM', '');
+                const [hours, minutes] = timeOnly.split(':').map(Number);
+                
+                let adjustedHours = hours;
+                if (isPM && hours !== 12) {
+                    adjustedHours += 12;
+                } else if (!isPM && hours === 12) {
+                    adjustedHours = 0;
+                }
+                
+                return adjustedHours * 60 + minutes;
+            } else {
+                // Parse 24-hour format
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
         }
         
         function minutesToTime(minutes) {
