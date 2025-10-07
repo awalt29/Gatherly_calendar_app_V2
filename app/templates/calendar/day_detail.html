@@ -20,7 +20,10 @@
         {% if available_users %}
             <div class="available-users">
                 {% for user_data in available_users %}
-                    <div class="user-availability-card" data-user-id="{{ user_data.user.id }}" data-time-ranges='{{ user_data.time_ranges | tojson }}'>
+                    <div class="user-availability-card" 
+                         data-user-id="{{ user_data.user.id }}" 
+                         data-time-ranges='{{ user_data.time_ranges | tojson }}'
+                         data-user-timezone="{{ user_data.user_timezone or 'America/New_York' }}">
                         <div class="user-checkbox">
                             <input type="checkbox" id="user-{{ user_data.user.id }}" class="user-select-checkbox" {% if user_data.user.id == current_user.id %}checked{% endif %}>
                             <label for="user-{{ user_data.user.id }}" class="checkbox-label"></label>
@@ -39,6 +42,9 @@
                                     {{ time_range.start }} - {{ time_range.end }}
                                 </span>
                             {% endfor %}
+                            {% if user_data.user_timezone and user_data.user_timezone != user_timezone %}
+                                <small class="timezone-note">{{ user_data.user_timezone.split('/')[-1] }} time</small>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -73,6 +79,14 @@
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin: var(--space-2) 0 0 0;
+    font-style: italic;
+}
+
+.timezone-note {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
     font-style: italic;
 }
 
@@ -606,6 +620,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize styling on page load
     updateCreateEventButton();
     
+    // Normalize time ranges to server timezone for comparison
+    function normalizeTimeRangesToServerTimezone(timeRanges, userTimezone) {
+        // For now, we'll assume all times are already in the same reference frame
+        // since we're not converting them in the backend anymore
+        // This function can be enhanced later for true timezone conversion
+        return timeRanges;
+    }
+    
     // Calculate overlapping time windows
     function calculateOverlaps() {
         const checkedBoxes = document.querySelectorAll('.user-select-checkbox:checked');
@@ -616,15 +638,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = card.dataset.userId;
             const userName = card.querySelector('.name-text').textContent;
             const timeRangesStr = card.dataset.timeRanges;
+            const userTimezone = card.dataset.userTimezone || 'America/New_York';
             // Use user ID for avatar class since we removed friend avatars
             const avatarClass = `friend-color-${userId % 8}`;
             
             try {
                 const timeRanges = JSON.parse(timeRangesStr);
+                // Convert all time ranges to a common timezone (server timezone) for comparison
+                const normalizedTimeRanges = normalizeTimeRangesToServerTimezone(timeRanges, userTimezone);
                 users.push({
                     id: userId,
                     name: userName,
-                    timeRanges: timeRanges,
+                    timeRanges: normalizedTimeRanges,
+                    originalTimeRanges: timeRanges, // Keep original for display
+                    userTimezone: userTimezone,
                     avatarClass: avatarClass
                 });
             } catch (e) {

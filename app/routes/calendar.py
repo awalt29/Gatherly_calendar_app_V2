@@ -49,12 +49,13 @@ def day_detail(date):
             )
             
             if user_availability and user_availability.is_available_on_day(day_name):
-                # Use current user's timezone for display
-                user_timezone = current_user.timezone if current_user.timezone else None
-                time_ranges = user_availability.get_time_ranges(day_name, user_timezone)
+                # Get time ranges in original timezone (no conversion for overlap detection)
+                # We'll handle timezone display in the frontend
+                time_ranges = user_availability.get_time_ranges(day_name, None)
                 available_users.append({
                     'user': friend,
-                    'time_ranges': time_ranges
+                    'time_ranges': time_ranges,
+                    'user_timezone': getattr(friend, 'timezone', None)  # Include user's timezone
                 })
         
         return render_template('calendar/day_detail.html', 
