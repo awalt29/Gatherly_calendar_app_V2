@@ -24,8 +24,21 @@ class Availability(db.Model):
     def get_availability_data(self):
         """Retrieve availability data from JSON string"""
         if self.availability_data:
-            return json.loads(self.availability_data)
+            data = json.loads(self.availability_data)
+            # Handle both old format (direct availability data) and new format (with timezone)
+            if 'timezone' in data and 'availability' in data:
+                return data['availability']  # New format
+            else:
+                return data  # Old format (backward compatibility)
         return {}
+    
+    def get_creation_timezone(self):
+        """Get the timezone this availability was created in"""
+        if self.availability_data:
+            data = json.loads(self.availability_data)
+            if 'timezone' in data:
+                return data['timezone']
+        return 'America/New_York'  # Default fallback
 
     def get_day_availability(self, day_name):
         """Get availability for a specific day"""

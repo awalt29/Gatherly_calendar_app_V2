@@ -23,7 +23,8 @@
                     <div class="user-availability-card" 
                          data-user-id="{{ user_data.user.id }}" 
                          data-time-ranges='{{ user_data.time_ranges | tojson }}'
-                         data-user-timezone="{{ user_data.user_timezone or 'America/New_York' }}">
+                         data-user-timezone="{{ user_data.user_timezone or 'America/New_York' }}"
+                         data-creation-timezone="{{ user_data.creation_timezone or 'America/New_York' }}">
                         <div class="user-checkbox">
                             <input type="checkbox" id="user-{{ user_data.user.id }}" class="user-select-checkbox" {% if user_data.user.id == current_user.id %}checked{% endif %}>
                             <label for="user-{{ user_data.user.id }}" class="checkbox-label"></label>
@@ -620,15 +621,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize styling on page load
     updateCreateEventButton();
     
-    // Normalize time ranges to server timezone for comparison
-    function normalizeTimeRangesToServerTimezone(timeRanges, userTimezone) {
-        // Since all availability is stored in 24-hour format in the database
-        // and then converted to 12-hour format for display, we need to convert
-        // back to a common 24-hour format for comparison
-        return timeRanges.map(range => ({
-            start: convertTo24Hour(range.start),
-            end: convertTo24Hour(range.end)
-        }));
+    // Convert time ranges to UTC for proper overlap comparison
+    function convertTimeRangesToUTC(timeRanges, creationTimezone) {
+        // For now, we'll do a simplified conversion
+        // This is a basic implementation - in production you'd want a proper timezone library
+        const timezoneOffsets = {
+            'America/New_York': -5,    // EST (UTC-5)
+            'America/Chicago': -6,     // CST (UTC-6)  
+            'America/Denver': -7,      // MST (UTC-7)
+            'America/Los_Angeles': -8, // PST (UTC-8)
+            'Europe/London': 0,        // GMT (UTC+0)
+            'UTC': 0
+        };
+        
+        const offset = timezoneOffsets[creationTimezone] || -5; // Default to EST
+        
+        return timeRanges.map(range => {
+            const start24 = convertTo24Hour(range.start);
+            const end24 = convertTo24Hour(range.end);
+            
+            // Convert to UTC by subtracting the timezone offset
+            const startUTC = convertTimeWithOffset(start24, -offset);
+            const endUTC = convertTimeWithOffset(end24, -offset);
+            
+            return {
+                start: startUTC,
+                end: endUTC
+            };
+        });
+    }
+    
+    // Helper function to apply timezone offset to time
+    function convertTimeWithOffset(timeStr, offsetHours) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        let totalMinutes = hours * 60 + minutes + (offsetHours * 60);
+        
+        // Handle day overflow/underflow
+        if (totalMinutes < 0) totalMinutes += 24 * 60;
+        if (totalMinutes >= 24 * 60) totalMinutes -= 24 * 60;
+        
+        const newHours = Math.floor(totalMinutes / 60);
+        const newMinutes = totalMinutes % 60;
+        
+        return `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
     }
     
     // Convert 12-hour format to 24-hour format for comparison
@@ -663,19 +698,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const userName = card.querySelector('.name-text').textContent;
             const timeRangesStr = card.dataset.timeRanges;
             const userTimezone = card.dataset.userTimezone || 'America/New_York';
+            const creationTimezone = card.dataset.creationTimezone || 'America/New_York';
             // Use user ID for avatar class since we removed friend avatars
             const avatarClass = `friend-color-${userId % 8}`;
             
             try {
                 const timeRanges = JSON.parse(timeRangesStr);
-                // Convert all time ranges to a common timezone (server timezone) for comparison
-                const normalizedTimeRanges = normalizeTimeRangesToServerTimezone(timeRanges, userTimezone);
+                // Convert all time ranges to UTC based on their creation timezone
+                const utcTimeRanges = convertTimeRangesToUTC(timeRanges, creationTimezone);
                 users.push({
                     id: userId,
                     name: userName,
-                    timeRanges: normalizedTimeRanges,
+                    timeRanges: utcTimeRanges,
                     originalTimeRanges: timeRanges, // Keep original for display
                     userTimezone: userTimezone,
+                    creationTimezone: creationTimezone,
                     avatarClass: avatarClass
                 });
             } catch (e) {
