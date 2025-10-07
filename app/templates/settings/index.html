@@ -91,35 +91,20 @@
         </div>
     </div>
     
-    <!-- Timezone Settings -->
+    <!-- Timezone Settings (Automatic) -->
     <div class="friends-section">
         <h2 class="section-title">Timezone Settings</h2>
         <div class="settings-card">
             <div class="setting-item">
                 <div class="setting-info">
                     <h4>Your Timezone</h4>
-                    <p>Set your timezone to see events and availability in your local time</p>
-                    <small class="text-muted">Current timezone: {{ user.timezone or 'America/New_York' }}</small>
+                    <p>Your timezone is automatically detected from your device</p>
+                    <small class="text-muted" id="current-timezone-display">Current timezone: {{ user.timezone or 'Detecting...' }}</small>
                 </div>
                 <div class="setting-control">
-                    <select id="timezone-select" class="timezone-select">
-                        <option value="America/New_York" {% if user.timezone == 'America/New_York' or not user.timezone %}selected{% endif %}>Eastern Time (ET)</option>
-                        <option value="America/Chicago" {% if user.timezone == 'America/Chicago' %}selected{% endif %}>Central Time (CT)</option>
-                        <option value="America/Denver" {% if user.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time (MT)</option>
-                        <option value="America/Los_Angeles" {% if user.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (PT)</option>
-                        <option value="America/Anchorage" {% if user.timezone == 'America/Anchorage' %}selected{% endif %}>Alaska Time (AKT)</option>
-                        <option value="Pacific/Honolulu" {% if user.timezone == 'Pacific/Honolulu' %}selected{% endif %}>Hawaii Time (HST)</option>
-                        <option value="Europe/London" {% if user.timezone == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
-                        <option value="Europe/Paris" {% if user.timezone == 'Europe/Paris' %}selected{% endif %}>Paris (CET/CEST)</option>
-                        <option value="Europe/Berlin" {% if user.timezone == 'Europe/Berlin' %}selected{% endif %}>Berlin (CET/CEST)</option>
-                        <option value="Europe/Rome" {% if user.timezone == 'Europe/Rome' %}selected{% endif %}>Rome (CET/CEST)</option>
-                        <option value="Asia/Tokyo" {% if user.timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo (JST)</option>
-                        <option value="Asia/Shanghai" {% if user.timezone == 'Asia/Shanghai' %}selected{% endif %}>Shanghai (CST)</option>
-                        <option value="Asia/Kolkata" {% if user.timezone == 'Asia/Kolkata' %}selected{% endif %}>India (IST)</option>
-                        <option value="Australia/Sydney" {% if user.timezone == 'Australia/Sydney' %}selected{% endif %}>Sydney (AEST/AEDT)</option>
-                        <option value="UTC" {% if user.timezone == 'UTC' %}selected{% endif %}>UTC (Coordinated Universal Time)</option>
-                    </select>
-                    <button id="save-timezone-btn" class="btn btn-primary btn-sm timezone-save-btn">Save Timezone</button>
+                    <div class="timezone-status">
+                        <span class="status-indicator" id="timezone-status">🌍 Auto-detected</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -346,46 +331,22 @@
     padding-bottom: 120px; /* Add space for fixed bottom menu */
 }
 
-/* Custom timezone dropdown styling */
-.timezone-select {
-    width: 100%;
+/* Timezone status styling */
+.timezone-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: var(--space-3) var(--space-4);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--surface);
-    color: var(--text-primary);
+    min-height: 48px;
+}
+
+.status-indicator {
     font-size: var(--font-size-base);
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right var(--space-3) center;
-    background-size: 16px;
-    padding-right: calc(var(--space-4) + 24px);
-}
-
-.timezone-select:hover {
-    border-color: var(--primary);
-    background-color: var(--surface-hover);
-}
-
-.timezone-select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-}
-
-.timezone-select option {
-    background: var(--surface);
-    color: var(--text-primary);
-    padding: var(--space-2);
-}
-
-.timezone-save-btn {
-    margin-top: var(--space-3);
-    width: 100%;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 /* Bottom Menu Bar - Match calendar page exactly */
@@ -779,9 +740,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditProfile = document.getElementById('cancel-edit-profile');
     const editProfileForm = document.getElementById('edit-profile-form');
     
-    // Timezone elements
-    const timezoneSelect = document.getElementById('timezone-select');
-    const saveTimezoneBtn = document.getElementById('save-timezone-btn');
+    // Timezone display elements
+    const timezoneDisplay = document.getElementById('current-timezone-display');
+    const timezoneStatus = document.getElementById('timezone-status');
     
     // Email notifications toggle
     if (emailToggle) {
@@ -1199,53 +1160,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Timezone save functionality
-    if (saveTimezoneBtn) {
-        saveTimezoneBtn.addEventListener('click', function() {
-            const selectedTimezone = timezoneSelect.value;
-            
-            if (!selectedTimezone) {
-                showNotification('Please select a timezone.', 'error');
-                return;
-            }
-            
-            // Disable button during request
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = 'Saving...';
-            
-            fetch('/settings/update-timezone', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    timezone: selectedTimezone
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Timezone updated successfully!', 'success');
-                    // Update the current timezone display
-                    const currentTimezoneText = document.querySelector('.setting-info small');
-                    if (currentTimezoneText) {
-                        currentTimezoneText.textContent = `Current timezone: ${selectedTimezone}`;
-                    }
-                } else {
-                    throw new Error(data.error || 'Failed to update timezone');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating timezone:', error);
-                showNotification('Failed to update timezone. Please try again.', 'error');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = originalText;
-            });
-        });
+    // Update timezone display when automatically detected
+    function updateTimezoneDisplay(timezone) {
+        if (timezoneDisplay) {
+            timezoneDisplay.textContent = `Current timezone: ${timezone}`;
+        }
+        if (timezoneStatus) {
+            timezoneStatus.textContent = '🌍 Auto-detected';
+        }
     }
+    
+    // Listen for timezone updates from the base template
+    window.addEventListener('timezoneUpdated', function(event) {
+        updateTimezoneDisplay(event.detail.timezone);
+    });
 
 function updateGoogleCalendarSetting(setting, value) {
     const data = {};

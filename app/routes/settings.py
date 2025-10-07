@@ -69,10 +69,42 @@ def update_settings():
             flash('Error updating settings. Please try again.', 'error')
             return redirect(url_for('settings.index'))
 
+@bp.route('/api/update-timezone', methods=['POST'])
+@login_required
+def update_timezone_api():
+    """Update user's timezone automatically from device detection"""
+    try:
+        import pytz
+        
+        data = request.get_json()
+        timezone = data.get('timezone')
+        
+        if not timezone:
+            return jsonify({'success': False, 'error': 'Timezone is required'}), 400
+        
+        # Validate timezone using pytz (more comprehensive than hardcoded list)
+        try:
+            pytz.timezone(timezone)  # This will raise an exception if invalid
+        except pytz.exceptions.UnknownTimeZoneError:
+            return jsonify({'success': False, 'error': 'Invalid timezone'}), 400
+        
+        # Update user's timezone
+        current_user.timezone = timezone
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Timezone updated automatically'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @bp.route('/settings/update-timezone', methods=['POST'])
 @login_required
 def update_timezone():
-    """Update user's timezone preference"""
+    """Update user's timezone preference (legacy endpoint for manual settings)"""
     try:
         data = request.get_json()
         timezone = data.get('timezone')

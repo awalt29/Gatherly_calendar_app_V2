@@ -235,6 +235,49 @@
     
     <!-- Main JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}?v=3.1"></script>
+    
+    <!-- Device Timezone Detection -->
+    <script>
+        // Detect and send device timezone to server
+        function detectAndSetTimezone() {
+            try {
+                const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                console.log('Detected device timezone:', deviceTimezone);
+                
+                // Send to server to update user's timezone
+                fetch('/api/update-timezone', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        timezone: deviceTimezone
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Timezone updated to:', deviceTimezone);
+                        // Dispatch event for settings page to update display
+                        window.dispatchEvent(new CustomEvent('timezoneUpdated', {
+                            detail: { timezone: deviceTimezone }
+                        }));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating timezone:', error);
+                });
+            } catch (error) {
+                console.error('Error detecting timezone:', error);
+            }
+        }
+        
+        // Run timezone detection on page load (only for authenticated users)
+        {% if current_user.is_authenticated %}
+        document.addEventListener('DOMContentLoaded', detectAndSetTimezone);
+        {% endif %}
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
