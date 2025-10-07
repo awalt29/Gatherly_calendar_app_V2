@@ -9,6 +9,12 @@
         <p class="page-description">
             Create groups to get notified when everyone is free, auto-plan events, set meetup reminders, and track activities.
         </p>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openCreateGroupModal()">
+                <span class="btn-icon">✨</span>
+                Create New Group
+            </button>
+        </div>
     </div>
     
     <!-- Your Groups -->
@@ -163,102 +169,102 @@
     </div>
     {% endif %}
     
-    <!-- Create Group Form -->
-    <div class="friends-section">
-        <h2 class="section-title">Create New Group</h2>
-        <div class="settings-card">
-            <form id="createGroupForm" class="create-group-form">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>🏷️ Group Name</h4>
-                    </div>
-                    <div class="setting-control">
-                        <input type="text" id="group_name" name="name" class="form-input modern-input" 
-                               placeholder="e.g., College Friends, Work Buddies, Gaming Squad" required maxlength="100">
-                    </div>
-                </div>
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>⚙️ Group Type</h4>
-                    </div>
-                    <div class="setting-control">
-                        <div class="group-type-options">
-                            <label class="group-type-option">
-                                <input type="radio" name="group_type" value="private" checked class="group-type-radio">
-                                <div class="group-type-card">
-                                    <div class="group-type-icon">🔒</div>
-                                    <div class="group-type-info">
-                                        <h4 class="group-type-title">Private</h4>
-                                        <p class="group-type-desc">Only you can see and manage this group</p>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="group-type-option">
-                                <input type="radio" name="group_type" value="shared" class="group-type-radio">
-                                <div class="group-type-card">
-                                    <div class="group-type-icon">🤝</div>
-                                    <div class="group-type-info">
-                                        <h4 class="group-type-title">Shared</h4>
-                                        <p class="group-type-desc">All members can see and add activities</p>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                {% if friends %}
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal-overlay" onclick="closeCreateGroupModal(event)">
+        <div class="group-modal-content create-group-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Group</h2>
+                <button class="modal-close-btn" onclick="closeCreateGroupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createGroupForm" class="create-group-form">
                     <div class="setting-item">
                         <div class="setting-info">
-                            <h4>👥 Add Friends to Group</h4>
+                            <h4>🏷️ Group Name</h4>
                         </div>
                         <div class="setting-control">
-                            <div class="friends-grid">
-                                {% for friend in friends %}
-                                    <label class="friend-card">
-                                        <input type="checkbox" name="member_ids" value="{{ friend.id }}" class="friend-checkbox-input">
-                                        <div class="friend-card-content">
-                                            <div class="friend-avatar">{{ friend.get_initials() }}</div>
-                                            <span class="friend-name">{{ friend.get_full_name() }}</span>
-                                            <div class="checkmark">✓</div>
+                            <input type="text" id="group_name" name="name" class="form-input modern-input" 
+                                   placeholder="e.g., College Friends, Work Buddies, Gaming Squad" required maxlength="100">
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>⚙️ Group Type</h4>
+                        </div>
+                        <div class="setting-control">
+                            <div class="group-type-options">
+                                <label class="group-type-option">
+                                    <input type="radio" name="group_type" value="private" checked class="group-type-radio">
+                                    <div class="group-type-card">
+                                        <div class="group-type-icon">🔒</div>
+                                        <div class="group-type-info">
+                                            <h4 class="group-type-title">Private</h4>
+                                            <p class="group-type-desc">Only you can see and manage this group</p>
                                         </div>
-                                    </label>
-                                {% endfor %}
+                                    </div>
+                                </label>
+                                <label class="group-type-option">
+                                    <input type="radio" name="group_type" value="shared" class="group-type-radio">
+                                    <div class="group-type-card">
+                                        <div class="group-type-icon">🤝</div>
+                                        <div class="group-type-info">
+                                            <h4 class="group-type-title">Shared</h4>
+                                            <p class="group-type-desc">All members can see and add activities</p>
+                                        </div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
                     </div>
-                {% else %}
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>👥 Add Friends to Group</h4>
-                        </div>
-                        <div class="setting-control">
-                            <div class="empty-friends-state">
-                                <div class="empty-icon">👥</div>
-                                <h3>No Friends Yet</h3>
-                                <p>Add some friends first to include them in groups!</p>
-                                <a href="{{ url_for('friends.index') }}" class="btn btn-secondary">
-                                    <span class="btn-icon">➕</span>
-                                    Add Friends
-                                </a>
+                    
+                    {% if friends %}
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>👥 Add Friends to Group</h4>
+                            </div>
+                            <div class="setting-control">
+                                <div class="friends-grid">
+                                    {% for friend in friends %}
+                                        <label class="friend-card">
+                                            <input type="checkbox" name="member_ids" value="{{ friend.id }}" class="friend-checkbox-input">
+                                            <div class="friend-card-content">
+                                                <div class="friend-avatar">{{ friend.get_initials() }}</div>
+                                                <span class="friend-name">{{ friend.get_full_name() }}</span>
+                                                <div class="checkmark">✓</div>
+                                            </div>
+                                        </label>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endif %}
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>✨ Ready to Create</h4>
-                    </div>
-                    <div class="setting-control" style="display: flex; justify-content: center;">
-                        <button type="submit" class="btn btn-primary btn-large" id="submitCreateGroup">
-                            <span class="btn-icon">✨</span>
-                            Create Group
-                        </button>
-                    </div>
-                </div>
-            </form>
+                    {% else %}
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>👥 Add Friends to Group</h4>
+                            </div>
+                            <div class="setting-control">
+                                <div class="empty-friends-state">
+                                    <div class="empty-icon">👥</div>
+                                    <h3>No Friends Yet</h3>
+                                    <p>Add some friends first to include them in groups!</p>
+                                    <a href="{{ url_for('friends.index') }}" class="btn btn-secondary">
+                                        <span class="btn-icon">➕</span>
+                                        Add Friends
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCreateGroupModal()">Cancel</button>
+                <button type="submit" form="createGroupForm" class="btn btn-primary" id="submitCreateGroup">
+                    <span class="btn-icon">✨</span>
+                    Create Group
+                </button>
+            </div>
         </div>
     </div>
     
@@ -446,6 +452,12 @@
     text-align: center;
     margin-bottom: var(--space-10);
     padding: var(--space-8) 0;
+}
+
+.header-actions {
+    margin-top: var(--space-6);
+    display: flex;
+    justify-content: center;
 }
 
 .page-title {
@@ -1712,6 +1724,20 @@
     background: var(--card-background);
     position: relative;
     z-index: 10002;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+}
+
+/* Create Group Modal Specific Styles */
+.create-group-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.create-group-modal-content .modal-body {
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
 }
 
 .modal-actions {
@@ -1772,6 +1798,39 @@
 </style>
 
 <script>
+// Create Group Modal Functions
+function openCreateGroupModal() {
+    const modal = document.getElementById('createGroupModal');
+    if (modal) {
+        modal.classList.add('active');
+        // Reset form
+        const form = document.getElementById('createGroupForm');
+        if (form) {
+            form.reset();
+            // Reset radio button to private
+            const privateRadio = form.querySelector('input[name="group_type"][value="private"]');
+            if (privateRadio) {
+                privateRadio.checked = true;
+            }
+        }
+        // Focus on group name input
+        const groupNameInput = document.getElementById('group_name');
+        if (groupNameInput) {
+            setTimeout(() => groupNameInput.focus(), 100);
+        }
+    }
+}
+
+function closeCreateGroupModal(event) {
+    if (event && event.target !== event.currentTarget && !event.target.classList.contains('modal-close-btn')) {
+        return;
+    }
+    const modal = document.getElementById('createGroupModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const createGroupForm = document.getElementById('createGroupForm');
     
@@ -1822,6 +1881,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Response data:', data);
                 if (data.success) {
                     showNotification(data.message, 'success');
+                    closeCreateGroupModal();
                     setTimeout(() => {
                         window.location.reload();
                     }, 1000);
