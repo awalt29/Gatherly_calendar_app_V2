@@ -193,7 +193,21 @@ def delete_user(user_id):
         from app.models.outlook_calendar_sync import OutlookCalendarSync
         OutlookCalendarSync.query.filter_by(user_id=user_id).delete()
         
-        # 11. Finally, delete the user
+        # 11. Handle groups created by this user and group memberships
+        from app.models.group import Group, GroupMembership
+        
+        # Delete groups created by this user
+        user_groups = Group.query.filter_by(created_by_id=user_id).all()
+        for group in user_groups:
+            # Delete all memberships for this group first
+            GroupMembership.query.filter_by(group_id=group.id).delete()
+            # Then delete the group
+            db.session.delete(group)
+        
+        # Remove user from groups they're a member of
+        GroupMembership.query.filter_by(user_id=user_id).delete()
+        
+        # 12. Finally, delete the user
         db.session.delete(user)
         db.session.commit()
         
