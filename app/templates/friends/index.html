@@ -74,6 +74,12 @@
                         </div>
                         <div class="friend-actions">
                             <span class="status-badge pending">Pending</span>
+                            <button class="btn btn-secondary btn-sm cancel-request" 
+                                    data-request-id="{{ request_data.request.id }}"
+                                    data-recipient-name="{{ request_data.user.get_full_name() }}"
+                                    title="Cancel request">
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 {% endfor %}
@@ -567,6 +573,11 @@ function initializeFriends() {
     document.querySelectorAll('.remove-friend-btn').forEach(btn => {
         btn.addEventListener('click', handleRemoveFriend);
     });
+    
+    // Handle cancel friend request
+    document.querySelectorAll('.cancel-request').forEach(btn => {
+        btn.addEventListener('click', handleCancelRequest);
+    });
 }
 
 function handleAddFriend(e) {
@@ -742,6 +753,40 @@ function handleRemoveFriend(e) {
         btn.disabled = false;
         btn.style.opacity = '0.5';
         btn.textContent = '×';
+    });
+}
+
+function handleCancelRequest(e) {
+    const requestId = e.target.getAttribute('data-request-id');
+    const recipientName = e.target.getAttribute('data-recipient-name');
+    const btn = e.target;
+    
+    if (!confirm(`Are you sure you want to cancel your friend request to ${recipientName}?`)) {
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+    
+    fetch(`/friends/cancel/${requestId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            location.reload();
+        } else {
+            showNotification(data.error || 'Failed to cancel friend request', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Cancel';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error cancelling friend request', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Cancel';
     });
 }
 </script>

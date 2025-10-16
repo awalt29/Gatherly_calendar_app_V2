@@ -244,6 +244,38 @@ def remove_friend(friend_user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@bp.route('/friends/cancel/<int:friend_request_id>', methods=['POST'])
+@login_required
+def cancel_friend_request(friend_request_id):
+    """Cancel a sent friend request"""
+    try:
+        friend_request = Friend.query.get_or_404(friend_request_id)
+        
+        # Verify this request was sent by the current user
+        if friend_request.user_id != current_user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Only allow canceling pending requests
+        if friend_request.status != 'pending':
+            return jsonify({'error': 'Cannot cancel this request'}), 400
+        
+        # Get the recipient's name for the response
+        recipient = User.query.get(friend_request.friend_id)
+        recipient_name = recipient.get_full_name() if recipient else 'Unknown'
+        
+        # Delete the friend request
+        db.session.delete(friend_request)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Friend request to {recipient_name} has been cancelled'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/friends/invite', methods=['POST'])
 @login_required
 def send_invite():
