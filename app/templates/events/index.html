@@ -1057,6 +1057,9 @@ textarea.form-input {
 .modal-actions .btn {
     flex: 1;
     text-align: center;
+    white-space: nowrap;
+    min-width: 0;
+    font-size: var(--font-size-sm);
 }
 
 @media (max-width: 768px) {
@@ -1073,7 +1076,7 @@ textarea.form-input {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 400px) {
     .modal-actions {
         flex-direction: column;
     }
@@ -1162,13 +1165,13 @@ function displayEventDetails(event) {
         actionsHtml = `
             <div class="modal-actions">
                 <button class="btn btn-secondary edit-event-btn" data-event-id="${event.id}">
-                    ✏️ Edit Event
+                    ✏️ Edit
                 </button>
                 <button class="btn btn-danger delete-event-btn" data-event-id="${event.id}">
-                    🗑️ Delete Event
+                    🗑️ Delete
                 </button>
                 <button class="btn btn-primary send-reminders-btn" data-event-id="${event.id}">
-                    📱 Send RSVP Reminders
+                    📱 Remind
                 </button>
             </div>
         `;
@@ -1212,9 +1215,14 @@ function displayEventDetails(event) {
 }
 
 function attachModalEventListeners() {
+    console.log('Attaching modal event listeners...');
+    
     // Handle edit event buttons in modal
-    document.querySelectorAll('.modal-actions .edit-event-btn').forEach(button => {
+    const editButtons = document.querySelectorAll('.modal-actions .edit-event-btn');
+    console.log('Found edit buttons:', editButtons.length);
+    editButtons.forEach(button => {
         button.addEventListener('click', function() {
+            console.log('Edit button clicked');
             const eventId = this.dataset.eventId;
             closeEventModal();
             openEditEventModal(eventId);
@@ -1222,8 +1230,11 @@ function attachModalEventListeners() {
     });
     
     // Handle delete event buttons in modal
-    document.querySelectorAll('.modal-actions .delete-event-btn').forEach(button => {
+    const deleteButtons = document.querySelectorAll('.modal-actions .delete-event-btn');
+    console.log('Found delete buttons:', deleteButtons.length);
+    deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
+            console.log('Delete button clicked');
             const eventId = this.dataset.eventId;
             closeEventModal();
             deleteEvent(eventId);
@@ -1231,8 +1242,11 @@ function attachModalEventListeners() {
     });
     
     // Handle send reminders buttons in modal
-    document.querySelectorAll('.modal-actions .send-reminders-btn').forEach(button => {
+    const reminderButtons = document.querySelectorAll('.modal-actions .send-reminders-btn');
+    console.log('Found reminder buttons:', reminderButtons.length);
+    reminderButtons.forEach(button => {
         button.addEventListener('click', function() {
+            console.log('Reminder button clicked');
             const eventId = this.dataset.eventId;
             sendRSVPReminders(eventId, this);
         });
