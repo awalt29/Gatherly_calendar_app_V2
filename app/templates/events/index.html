@@ -67,121 +67,60 @@
             <h2 class="section-title">Your Events</h2>
             <div class="events-list">
                 {% for event in events %}
-                    <div class="event-card">
+                    <div class="event-card" onclick="openEventModal({{ event.id }})" data-event-id="{{ event.id }}">
                         <div class="event-header">
                             <h3 class="event-title">{{ event.title }}</h3>
-                            <div class="event-date">
-                                {% if current_user.timezone %}
-                                    {{ event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y') }}
-                                {% else %}
-                                    {{ event.date.strftime('%B %d, %Y') }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="event-details">
-                            <div class="event-time">
-                                <span class="time-badge">
+                            <div class="event-meta">
+                                <div class="event-date">
+                                    {% if current_user.timezone %}
+                                        {{ event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y') }}
+                                    {% else %}
+                                        {{ event.date.strftime('%B %d, %Y') }}
+                                    {% endif %}
+                                </div>
+                                <div class="event-time">
                                     {% if current_user.timezone %}
                                         {{ event.get_time_range(current_user.timezone) }}
                                     {% else %}
                                         {{ event.get_time_range() }}
                                     {% endif %}
-                                </span>
-                                {% if current_user.timezone %}
-                                    <small class="timezone-info">{{ current_user.timezone.split('/')[-1] }} time</small>
-                                {% endif %}
-                            </div>
-                            
-                            {% if event.location %}
-                                <div class="event-location">
-                                    📍 {{ event.location }}
-                                </div>
-                            {% endif %}
-                            
-                            {% if event.description %}
-                                <p class="event-description">{{ event.description }}</p>
-                            {% endif %}
-                            
-                            <div class="event-attendees">
-                                <span class="attendees-label">Attendees & Invitations:</span>
-                                <div class="attendees-list">
-                                    {% set invitation_statuses = event.get_invitation_statuses() %}
-                                    
-                                    <!-- Show the creator first -->
-                                    <div class="attendee-item creator">
-                                        <div class="friend-avatar {% if event.created_by.id == current_user.id %}current-user-block{% else %}friend-color-{{ event.created_by.id % 8 }}{% endif %}">
-                                            {{ event.created_by.get_initials() }}
-                                        </div>
-                                        <span class="attendee-name">
-                                            {{ event.created_by.get_full_name() }}
-                                            {% if event.created_by.id == current_user.id %}(You){% endif %}
-                                        </span>
-                                        <span class="status-badge creator-badge">Organizer</span>
-                                    </div>
-                                    
-                                    <!-- Show all invited users with their status -->
-                                    {% for user_id, invitation_info in invitation_statuses.items() %}
-                                        {% if invitation_info.user.id != event.created_by.id %}
-                                            <div class="attendee-item {{ invitation_info.status }}">
-                                                <div class="friend-avatar {% if invitation_info.user.id == current_user.id %}current-user-block{% else %}friend-color-{{ invitation_info.user.id % 8 }}{% endif %}">
-                                                    {{ invitation_info.user.get_initials() }}
-                                                </div>
-                                                <span class="attendee-name">
-                                                    {{ invitation_info.user.get_full_name() }}
-                                                    {% if invitation_info.user.id == current_user.id %}(You){% endif %}
-                                                </span>
-                                                {% if invitation_info.status == 'accepted' %}
-                                                    <span class="status-badge accepted">✓ Accepted</span>
-                                                {% elif invitation_info.status == 'declined' %}
-                                                    <span class="status-badge declined">✗ Declined</span>
-                                                {% else %}
-                                                    <span class="status-badge pending">⏳ Pending</span>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    <!-- Show attendees who don't have invitations (legacy events) -->
-                                    {% for attendee in event.attendees %}
-                                        {% if attendee.id not in invitation_statuses and attendee.id != event.created_by.id %}
-                                            <div class="attendee-item accepted">
-                                                <div class="friend-avatar {% if attendee.id == current_user.id %}current-user-block{% else %}friend-color-{{ attendee.id % 8 }}{% endif %}">
-                                                    {{ attendee.get_initials() }}
-                                                </div>
-                                                <span class="attendee-name">
-                                                    {{ attendee.get_full_name() }}
-                                                    {% if attendee.id == current_user.id %}(You){% endif %}
-                                                </span>
-                                                <span class="status-badge accepted">✓ Attending</span>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
                                 </div>
                             </div>
-                            
-                            <div class="event-actions">
-                                {% if event.created_by_id == current_user.id %}
-                                    <button class="btn btn-secondary btn-small edit-event-btn" 
-                                            data-event-id="{{ event.id }}">
-                                        ✏️ Edit Event
-                                    </button>
-                                    <button class="btn btn-danger btn-small delete-event-btn" 
-                                            data-event-id="{{ event.id }}">
-                                        🗑️ Delete
-                                    </button>
-                                    <button class="btn btn-primary btn-small send-reminders-btn" 
-                                            data-event-id="{{ event.id }}">
-                                        📱 Send RSVP Reminders
-                                    </button>
-                                {% endif %}
-                            </div>
+                        </div>
+                        <div class="event-click-hint">
+                            <span>Tap for details</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
-    {% else %}
+    {% endif %}
+    
+    <!-- Event Details Modal -->
+    <div class="event-modal" id="eventModal" style="display: none;">
+        <div class="event-modal-overlay" id="eventModalOverlay"></div>
+        <div class="event-modal-content">
+            <div class="event-modal-header">
+                <h2 id="modalEventTitle">Event Details</h2>
+                <button class="event-modal-close" id="eventModalClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6L18 18"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="event-modal-body">
+                <div class="modal-event-details" id="modalEventDetails">
+                    <!-- Event details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if not events %}
         {% if not pending_invitations %}
             <div class="friends-section">
                 <div class="empty-state">
@@ -448,20 +387,44 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: var(--space-5);
+    padding: var(--space-4);
     transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .event-card:hover {
     background: var(--surface-hover);
     border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .event-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-4);
+    flex-direction: column;
+    gap: var(--space-2);
+    flex: 1;
+}
+
+.event-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.event-click-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.event-click-hint svg {
+    opacity: 0.6;
 }
 
 .event-title {
@@ -476,10 +439,12 @@
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     font-weight: 500;
-    background: var(--background);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
+}
+
+.event-time {
+    font-size: var(--font-size-sm);
+    color: var(--primary);
+    font-weight: 500;
 }
 
 .event-details {
@@ -971,11 +936,316 @@ textarea.form-input {
     resize: vertical;
     min-height: 80px;
 }
+
+/* Event Modal Styles */
+.event-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.event-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.event-modal-content {
+    background: var(--surface);
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.event-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-6) var(--space-6) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+}
+
+.event-modal-header h2 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.event-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.event-modal-close:hover {
+    color: var(--text-primary);
+    background: rgba(var(--primary-rgb), 0.1);
+}
+
+.event-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-6);
+    -webkit-overflow-scrolling: touch;
+    background: var(--surface);
+}
+
+.modal-event-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.modal-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.modal-detail-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-detail-value {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+}
+
+.modal-attendees-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+    .event-modal-content {
+        height: 100vh;
+    }
+    
+    .event-modal-header {
+        padding: var(--space-4) var(--space-4) var(--space-3);
+    }
+    
+    .event-modal-body {
+        padding: var(--space-4);
+    }
+}
 </style>
 
 <script>
+// Event modal functions (defined globally so they can be called from onclick)
+function openEventModal(eventId) {
+    console.log('Opening event modal for event:', eventId);
+    
+    // Prevent body scrolling
+    document.body.style.overflow = 'hidden';
+    
+    // Show modal
+    const modal = document.getElementById('eventModal');
+    modal.style.display = 'flex';
+    
+    // Load event details
+    loadEventDetails(eventId);
+}
+
+function closeEventModal() {
+    const modal = document.getElementById('eventModal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Restore body scrolling
+        document.body.style.overflow = '';
+    }
+}
+
+function loadEventDetails(eventId) {
+    const modalTitle = document.getElementById('modalEventTitle');
+    const modalDetails = document.getElementById('modalEventDetails');
+    
+    // Show loading state
+    modalTitle.textContent = 'Loading...';
+    modalDetails.innerHTML = '<div class="loading-spinner"></div><p>Loading event details...</p>';
+    
+    // Fetch event details
+    fetch(`/events/${eventId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayEventDetails(data.event);
+            } else {
+                modalDetails.innerHTML = '<p>Error loading event details.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading event details:', error);
+            modalDetails.innerHTML = '<p>Error loading event details.</p>';
+        });
+}
+
+function displayEventDetails(event) {
+    const modalTitle = document.getElementById('modalEventTitle');
+    const modalDetails = document.getElementById('modalEventDetails');
+    
+    modalTitle.textContent = event.title;
+    
+    let attendeesHtml = '';
+    if (event.attendees && event.attendees.length > 0) {
+        attendeesHtml = event.attendees.map(attendee => `
+            <div class="attendee-item ${attendee.status || 'accepted'}">
+                <div class="friend-avatar ${attendee.is_current_user ? 'current-user-block' : 'friend-color-' + (attendee.id % 8)}">
+                    ${attendee.initials}
+                </div>
+                <span class="attendee-name">
+                    ${attendee.name}${attendee.is_current_user ? ' (You)' : ''}
+                </span>
+                <span class="status-badge ${attendee.status || 'accepted'}">
+                    ${attendee.status_display || '✓ Attending'}
+                </span>
+            </div>
+        `).join('');
+    }
+    
+    let actionsHtml = '';
+    if (event.is_creator) {
+        actionsHtml = `
+            <div class="modal-actions">
+                <button class="btn btn-secondary edit-event-btn" data-event-id="${event.id}">
+                    ✏️ Edit Event
+                </button>
+                <button class="btn btn-danger delete-event-btn" data-event-id="${event.id}">
+                    🗑️ Delete Event
+                </button>
+                <button class="btn btn-primary send-reminders-btn" data-event-id="${event.id}">
+                    📱 Send RSVP Reminders
+                </button>
+            </div>
+        `;
+    }
+    
+    modalDetails.innerHTML = `
+        <div class="modal-detail-section">
+            <div class="modal-detail-label">Date & Time</div>
+            <div class="modal-detail-value">
+                ${event.date}<br>
+                <strong>${event.time}</strong>
+            </div>
+        </div>
+        
+        ${event.location ? `
+            <div class="modal-detail-section">
+                <div class="modal-detail-label">Location</div>
+                <div class="modal-detail-value">📍 ${event.location}</div>
+            </div>
+        ` : ''}
+        
+        ${event.description ? `
+            <div class="modal-detail-section">
+                <div class="modal-detail-label">Description</div>
+                <div class="modal-detail-value">${event.description}</div>
+            </div>
+        ` : ''}
+        
+        <div class="modal-detail-section">
+            <div class="modal-detail-label">Attendees & Invitations</div>
+            <div class="modal-attendees-list">
+                ${attendeesHtml}
+            </div>
+        </div>
+        
+        ${actionsHtml}
+    `;
+    
+    // Re-attach event listeners for action buttons
+    attachModalEventListeners();
+}
+
+function attachModalEventListeners() {
+    // Handle edit event buttons in modal
+    document.querySelectorAll('.modal-actions .edit-event-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.dataset.eventId;
+            closeEventModal();
+            openEditEventModal(eventId);
+        });
+    });
+    
+    // Handle delete event buttons in modal
+    document.querySelectorAll('.modal-actions .delete-event-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.dataset.eventId;
+            closeEventModal();
+            deleteEvent(eventId);
+        });
+    });
+    
+    // Handle send reminders buttons in modal
+    document.querySelectorAll('.modal-actions .send-reminders-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.dataset.eventId;
+            sendRSVPReminders(eventId, this);
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     let currentEventId = null;
+    
+    // Event modal elements
+    const eventModal = document.getElementById('eventModal');
+    const eventModalClose = document.getElementById('eventModalClose');
+    const eventModalOverlay = document.getElementById('eventModalOverlay');
+    
+    // Event modal close handlers
+    if (eventModalClose) {
+        eventModalClose.addEventListener('click', closeEventModal);
+    }
+    if (eventModalOverlay) {
+        eventModalOverlay.addEventListener('click', closeEventModal);
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && eventModal && eventModal.style.display !== 'none') {
+            closeEventModal();
+        }
+    });
     
     // Modal elements
     const editEventModal = document.getElementById('editEventModal');

@@ -103,6 +103,85 @@ def get_event_guests(event_id):
         'guests': guests
     })
 
+@bp.route('/events/<int:event_id>/details')
+@login_required
+def get_event_details(event_id):
+    """Get detailed event information for modal display"""
+    event = Event.query.get_or_404(event_id)
+    
+    # Check if user has access to this event (creator or attendee)
+    if current_user not in event.attendees and event.created_by_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    # Get invitation statuses
+    invitation_statuses = event.get_invitation_statuses()
+    
+    # Build attendees list with status information
+    attendees = []
+    
+    # Add creator first
+    creator = event.created_by
+    attendees.append({
+        'id': creator.id,
+        'name': creator.get_full_name(),
+        'initials': creator.get_initials(),
+        'status': 'creator',
+        'status_display': 'Organizer',
+        'is_current_user': creator.id == current_user.id
+    })
+    
+    # Add all invited users with their status
+    for user_id, invitation_info in invitation_statuses.items():
+        if invitation_info.user.id != event.created_by.id:
+            status_display = {
+                'accepted': '✓ Accepted',
+                'declined': '✗ Declined',
+                'pending': '⏳ Pending'
+            }.get(invitation_info.status, '✓ Attending')
+            
+            attendees.append({
+                'id': invitation_info.user.id,
+                'name': invitation_info.user.get_full_name(),
+                'initials': invitation_info.user.get_initials(),
+                'status': invitation_info.status,
+                'status_display': status_display,
+                'is_current_user': invitation_info.user.id == current_user.id
+            })
+    
+    # Add attendees who don't have invitations (legacy events)
+    for attendee in event.attendees:
+        if attendee.id not in invitation_statuses and attendee.id != event.created_by.id:
+            attendees.append({
+                'id': attendee.id,
+                'name': attendee.get_full_name(),
+                'initials': attendee.get_initials(),
+                'status': 'accepted',
+                'status_display': '✓ Attending',
+                'is_current_user': attendee.id == current_user.id
+            })
+    
+    # Format date and time
+    if current_user.timezone:
+        event_date = event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y')
+        event_time = event.get_time_range(current_user.timezone)
+    else:
+        event_date = event.date.strftime('%B %d, %Y')
+        event_time = event.get_time_range()
+    
+    return jsonify({
+        'success': True,
+        'event': {
+            'id': event.id,
+            'title': event.title,
+            'description': event.description,
+            'location': event.location,
+            'date': event_date,
+            'time': event_time,
+            'attendees': attendees,
+            'is_creator': event.created_by_id == current_user.id
+        }
+    })
+
 @bp.route('/events/<int:event_id>/edit', methods=['POST'])
 @login_required
 def edit_event(event_id):
