@@ -132,20 +132,20 @@ def get_event_details(event_id):
     
     # Add all invited users with their status
     for user_id, invitation_info in invitation_statuses.items():
-        if invitation_info.user.id != event.created_by.id:
+        if invitation_info['user'].id != event.created_by.id:
             status_display = {
                 'accepted': '✓ Accepted',
                 'declined': '✗ Declined',
                 'pending': '⏳ Pending'
-            }.get(invitation_info.status, '✓ Attending')
+            }.get(invitation_info['status'], '✓ Attending')
             
             attendees.append({
-                'id': invitation_info.user.id,
-                'name': invitation_info.user.get_full_name(),
-                'initials': invitation_info.user.get_initials(),
-                'status': invitation_info.status,
+                'id': invitation_info['user'].id,
+                'name': invitation_info['user'].get_full_name(),
+                'initials': invitation_info['user'].get_initials(),
+                'status': invitation_info['status'],
                 'status_display': status_display,
-                'is_current_user': invitation_info.user.id == current_user.id
+                'is_current_user': invitation_info['user'].id == current_user.id
             })
     
     # Add attendees who don't have invitations (legacy events)
