@@ -162,10 +162,10 @@ def get_event_details(event_id):
     
     # Format date and time
     if current_user.timezone:
-        event_date = event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y')
+        event_date = event.get_date_in_timezone(current_user.timezone).strftime('%A, %B %d, %Y')
         event_time = event.get_time_range(current_user.timezone)
     else:
-        event_date = event.date.strftime('%B %d, %Y')
+        event_date = event.date.strftime('%A, %B %d, %Y')
         event_time = event.get_time_range()
     
     return jsonify({
