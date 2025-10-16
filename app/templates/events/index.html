@@ -1047,11 +1047,16 @@ textarea.form-input {
 
 .modal-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--space-3);
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--border);
+}
+
+.modal-actions .btn {
+    flex: 1;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
@@ -1065,6 +1070,16 @@ textarea.form-input {
     
     .event-modal-body {
         padding: var(--space-4);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        flex: none;
     }
 }
 </style>
