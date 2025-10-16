@@ -736,11 +736,13 @@ function showUserDetails(userId) {
 }
 
 function showDeleteConfirmation(userId, username) {
-    // Check if user is authenticated
-    {% if not current_user or not current_user.is_authenticated %}
-    showNotification('Please log in to perform admin actions', 'error');
-    return;
-    {% endif %}
+    // Check if user is authenticated (check for presence of auth-required elements)
+    const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
+    
+    if (!isAuthenticated) {
+        showNotification('Please log in to perform admin actions', 'error');
+        return;
+    }
     
     document.getElementById('deleteUsername').textContent = username;
     document.getElementById('deleteConfirmModal').style.display = 'flex';
@@ -756,11 +758,13 @@ function closeDeleteModal() {
 
 function deleteUser(userId, username) {
     // Check if user is authenticated
-    {% if not current_user or not current_user.is_authenticated %}
-    showNotification('Please log in to perform admin actions', 'error');
-    closeDeleteModal();
-    return;
-    {% endif %}
+    const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
+    
+    if (!isAuthenticated) {
+        showNotification('Please log in to perform admin actions', 'error');
+        closeDeleteModal();
+        return;
+    }
     
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
@@ -794,10 +798,12 @@ function deleteUser(userId, username) {
 
 function toggleAdminStatus(userId, username, isCurrentlyAdmin, buttonElement) {
     // Check if user is authenticated
-    {% if not current_user or not current_user.is_authenticated %}
-    showNotification('Please log in to perform admin actions', 'error');
-    return;
-    {% endif %}
+    const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
+    
+    if (!isAuthenticated) {
+        showNotification('Please log in to perform admin actions', 'error');
+        return;
+    }
     
     const action = isCurrentlyAdmin ? 'revoke' : 'grant';
     const confirmMessage = `Are you sure you want to ${action} admin privileges for ${username}?`;
