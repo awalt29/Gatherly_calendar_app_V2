@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Gatherly{% endblock %}
+{% block title %}User Dashboard - Gatherly{% endblock %}
 
 {% block content %}
 <div class="admin-dashboard">
     <div class="page-header">
-        <h1 class="page-title">🛠️ Admin Dashboard</h1>
+        <h1 class="page-title">📊 User Dashboard</h1>
         <p class="page-description">
-            Manage user accounts and system overview
+            View user accounts and system overview
         </p>
     </div>
 
@@ -33,7 +33,7 @@
 
     <!-- Users Table -->
     <div class="users-section">
-        <h2>User Management</h2>
+        <h2>User Directory</h2>
         <div class="table-container">
             <table class="users-table">
                 <thead>
@@ -91,7 +91,7 @@
                             <button class="btn btn-sm btn-outline view-details" data-user-id="{{ user_data.user.id }}">
                                 👁️ View Details
                             </button>
-                            {% if user_data.user.id != current_user.id %}
+                            {% if current_user and current_user.is_authenticated and user_data.user.id != current_user.id %}
                             <button class="btn btn-sm {% if user_data.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
                                     data-user-id="{{ user_data.user.id }}" 
                                     data-username="{{ user_data.user.username }}"
@@ -163,7 +163,7 @@
                     <button class="btn btn-sm btn-outline view-details" data-user-id="{{ user_data.user.id }}">
                         👁️ Details
                     </button>
-                    {% if user_data.user.id != current_user.id %}
+                    {% if current_user and current_user.is_authenticated and user_data.user.id != current_user.id %}
                     <button class="btn btn-sm {% if user_data.is_admin %}btn-warning{% else %}btn-success{% endif %} toggle-admin" 
                             data-user-id="{{ user_data.user.id }}" 
                             data-username="{{ user_data.user.username }}"

@@ -52,12 +52,9 @@ def debug():
         return f"<h1>Debug Error</h1><p>{str(e)}</p>"
 
 @bp.route('/dashboard')
-@login_required
 def dashboard():
-    """Admin dashboard showing all users"""
-    if not is_admin():
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('main.index'))
+    """Public dashboard showing all users"""
+    # Removed admin check - now accessible to anyone
     
     try:
         # Get all users - simplified version
@@ -181,11 +178,9 @@ def delete_user(user_id):
         return jsonify({'error': f'Failed to delete user: {str(e)}'}), 500
 
 @bp.route('/user-details/<int:user_id>')
-@login_required
 def user_details(user_id):
     """Get detailed information about a specific user"""
-    if not is_admin():
-        return jsonify({'error': 'Access denied'}), 403
+    # Removed admin check - now accessible to anyone
     
     try:
         user = User.query.get_or_404(user_id)
@@ -294,13 +289,12 @@ def test_sms():
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/sms-status')
-@login_required
 def sms_status():
     """Check SMS service configuration status"""
     return jsonify({
         'configured': sms_service.is_configured(),
-        'user_phone': current_user.phone,
-        'user_sms_enabled': current_user.sms_notifications
+        'user_phone': 'N/A (public access)',
+        'user_sms_enabled': 'N/A (public access)'
     })
 
 @bp.route('/run-weekly-reminders', methods=['POST'])
@@ -390,12 +384,11 @@ def sync_all_google_calendars():
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/google-calendar-status')
-@login_required
 def google_calendar_status():
     """Check Google Calendar service configuration status"""
     return jsonify({
         'configured': google_calendar_service.is_configured(),
-        'user_connected': bool(google_calendar_service.get_credentials(current_user.id))
+        'user_connected': 'N/A (public access)'
     })
 
 # @bp.route('/check-group-availability', methods=['POST'])
