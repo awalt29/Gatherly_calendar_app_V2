@@ -1299,6 +1299,10 @@ async function openNotificationModal() {
     }
     
     console.log('Showing modal...');
+    
+    // Prevent body scrolling
+    document.body.style.overflow = 'hidden';
+    
     // Show modal
     modal.style.display = 'flex';
     
@@ -1340,6 +1344,9 @@ function closeNotificationModal() {
     const modal = document.getElementById('notificationModal');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Restore body scrolling
+        document.body.style.overflow = '';
     }
 }
 
