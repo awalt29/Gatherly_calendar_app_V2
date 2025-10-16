@@ -736,6 +736,12 @@ function showUserDetails(userId) {
 }
 
 function showDeleteConfirmation(userId, username) {
+    // Check if user is authenticated
+    {% if not current_user or not current_user.is_authenticated %}
+    showNotification('Please log in to perform admin actions', 'error');
+    return;
+    {% endif %}
+    
     document.getElementById('deleteUsername').textContent = username;
     document.getElementById('deleteConfirmModal').style.display = 'flex';
     
@@ -749,6 +755,13 @@ function closeDeleteModal() {
 }
 
 function deleteUser(userId, username) {
+    // Check if user is authenticated
+    {% if not current_user or not current_user.is_authenticated %}
+    showNotification('Please log in to perform admin actions', 'error');
+    closeDeleteModal();
+    return;
+    {% endif %}
+    
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Deleting...';
@@ -780,6 +793,12 @@ function deleteUser(userId, username) {
 }
 
 function toggleAdminStatus(userId, username, isCurrentlyAdmin, buttonElement) {
+    // Check if user is authenticated
+    {% if not current_user or not current_user.is_authenticated %}
+    showNotification('Please log in to perform admin actions', 'error');
+    return;
+    {% endif %}
+    
     const action = isCurrentlyAdmin ? 'revoke' : 'grant';
     const confirmMessage = `Are you sure you want to ${action} admin privileges for ${username}?`;
     
