@@ -302,11 +302,41 @@ class OutlookCalendarService:
             
             created_event = response.json()
             logger.info(f"Created Outlook event for user {user_id}: {created_event.get('id')}")
-            return True
+            return created_event.get('id')
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Error creating Outlook event for user {user_id}: {str(e)}")
             return False
+    
+    def delete_event(self, user_id, event_id):
+        """Delete an event from Outlook Calendar"""
+        access_token = self.get_access_token(user_id)
+        if not access_token:
+            logger.error(f"No valid access token for user {user_id}")
+            return False
+        
+        # Microsoft Graph API endpoint for deleting an event
+        url = f"https://graph.microsoft.com/v1.0/me/calendar/events/{event_id}"
+        
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+        }
+        
+        try:
+            response = requests.delete(url, headers=headers)
+            response.raise_for_status()
+            
+            logger.info(f"Deleted Outlook event {event_id} for user {user_id}")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            if hasattr(e, 'response') and e.response.status_code == 404:
+                # Event already deleted or doesn't exist
+                logger.info(f"Outlook event {event_id} not found for user {user_id} (already deleted)")
+                return True
+            else:
+                logger.error(f"Error deleting Outlook event {event_id} for user {user_id}: {str(e)}")
+                return False
     
     def disconnect_user(self, user_id):
         """Disconnect user's Outlook Calendar"""

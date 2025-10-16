@@ -296,6 +296,36 @@ class GoogleCalendarService:
         except Exception as e:
             logger.error(f"Error creating Google Calendar event for user {user_id}: {str(e)}")
             return False
+    
+    def delete_event(self, user_id, event_id):
+        """Delete an event from Google Calendar"""
+        service = self.get_calendar_service(user_id)
+        if not service:
+            return False
+        
+        try:
+            sync_record = GoogleCalendarSync.query.filter_by(user_id=user_id).first()
+            calendar_id = sync_record.google_calendar_id if sync_record else 'primary'
+            
+            service.events().delete(
+                calendarId=calendar_id, 
+                eventId=event_id
+            ).execute()
+            
+            logger.info(f"Deleted Google Calendar event {event_id} for user {user_id}")
+            return True
+            
+        except HttpError as e:
+            if e.resp.status == 404:
+                # Event already deleted or doesn't exist
+                logger.info(f"Google Calendar event {event_id} not found for user {user_id} (already deleted)")
+                return True
+            else:
+                logger.error(f"Google Calendar API error deleting event {event_id} for user {user_id}: {str(e)}")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting Google Calendar event {event_id} for user {user_id}: {str(e)}")
+            return False
 
 # Global instance
 google_calendar_service = GoogleCalendarService()

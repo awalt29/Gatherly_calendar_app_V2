@@ -1,5 +1,6 @@
 from datetime import datetime
 import pytz
+import json
 from app import db
 
 # Association table for many-to-many relationship between events and users
@@ -19,6 +20,10 @@ class Event(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # External calendar event IDs for sync
+    google_calendar_event_ids = db.Column(db.Text)  # JSON string of user_id -> event_id mapping
+    outlook_calendar_event_ids = db.Column(db.Text)  # JSON string of user_id -> event_id mapping
     
     # Relationships
     created_by = db.relationship('User', foreign_keys=[created_by_id], backref='created_events')
@@ -77,6 +82,38 @@ class Event(db.Model):
             return start_dt_user.date()
         except Exception:
             return self.date
+    
+    def add_google_calendar_event_id(self, user_id, event_id):
+        """Add Google Calendar event ID for a specific user"""
+        try:
+            ids = json.loads(self.google_calendar_event_ids) if self.google_calendar_event_ids else {}
+            ids[str(user_id)] = event_id
+            self.google_calendar_event_ids = json.dumps(ids)
+        except Exception:
+            self.google_calendar_event_ids = json.dumps({str(user_id): event_id})
+    
+    def add_outlook_calendar_event_id(self, user_id, event_id):
+        """Add Outlook Calendar event ID for a specific user"""
+        try:
+            ids = json.loads(self.outlook_calendar_event_ids) if self.outlook_calendar_event_ids else {}
+            ids[str(user_id)] = event_id
+            self.outlook_calendar_event_ids = json.dumps(ids)
+        except Exception:
+            self.outlook_calendar_event_ids = json.dumps({str(user_id): event_id})
+    
+    def get_google_calendar_event_ids(self):
+        """Get all Google Calendar event IDs"""
+        try:
+            return json.loads(self.google_calendar_event_ids) if self.google_calendar_event_ids else {}
+        except Exception:
+            return {}
+    
+    def get_outlook_calendar_event_ids(self):
+        """Get all Outlook Calendar event IDs"""
+        try:
+            return json.loads(self.outlook_calendar_event_ids) if self.outlook_calendar_event_ids else {}
+        except Exception:
+            return {}
     
     def get_attendee_names(self):
         """Get list of attendee names"""

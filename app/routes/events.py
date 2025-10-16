@@ -273,6 +273,9 @@ def delete_event(event_id):
                     logger.error(f"Failed to create event deletion notification: {str(e)}")
                     # Don't fail the deletion if notification fails
         
+        # Delete from external calendars first
+        _delete_event_from_external_calendars(event)
+        
         # Delete all related invitations first
         EventInvitation.query.filter_by(event_id=event_id).delete()
         
@@ -552,6 +555,9 @@ def _add_event_to_google_calendar(user, event):
         google_event_id = google_calendar_service.create_event(user.id, google_event)
         
         if google_event_id:
+            # Store the Google Calendar event ID
+            event.add_google_calendar_event_id(user.id, google_event_id)
+            db.session.commit()
             logger.info(f"Added event {event.id} to Google Calendar for user {user.id}: {google_event_id}")
             return True
         else:
@@ -609,10 +615,13 @@ def _add_event_to_outlook_calendar(user, event):
             }
         
         # Add to Outlook Calendar
-        success = outlook_calendar_service.create_event(user.id, outlook_event)
+        outlook_event_id = outlook_calendar_service.create_event(user.id, outlook_event)
         
-        if success:
-            logger.info(f"Added event {event.id} to Outlook Calendar for user {user.id}")
+        if outlook_event_id:
+            # Store the Outlook Calendar event ID
+            event.add_outlook_calendar_event_id(user.id, outlook_event_id)
+            db.session.commit()
+            logger.info(f"Added event {event.id} to Outlook Calendar for user {user.id}: {outlook_event_id}")
             return True
         else:
             logger.warning(f"Failed to add event {event.id} to Outlook Calendar for user {user.id}")
@@ -620,6 +629,40 @@ def _add_event_to_outlook_calendar(user, event):
     except Exception as e:
         logger.error(f"Error adding event {event.id} to Outlook Calendar for user {user.id}: {str(e)}")
         return False
+
+def _delete_event_from_external_calendars(event):
+    """Helper function to delete an event from all external calendars"""
+    try:
+        # Delete from Google Calendars
+        google_event_ids = event.get_google_calendar_event_ids()
+        for user_id_str, google_event_id in google_event_ids.items():
+            try:
+                user_id = int(user_id_str)
+                success = google_calendar_service.delete_event(user_id, google_event_id)
+                if success:
+                    logger.info(f"Deleted Google Calendar event {google_event_id} for user {user_id}")
+                else:
+                    logger.warning(f"Failed to delete Google Calendar event {google_event_id} for user {user_id}")
+            except Exception as e:
+                logger.error(f"Error deleting Google Calendar event {google_event_id} for user {user_id}: {str(e)}")
+        
+        # Delete from Outlook Calendars
+        outlook_event_ids = event.get_outlook_calendar_event_ids()
+        for user_id_str, outlook_event_id in outlook_event_ids.items():
+            try:
+                from app.services.outlook_calendar_service import outlook_calendar_service
+                user_id = int(user_id_str)
+                success = outlook_calendar_service.delete_event(user_id, outlook_event_id)
+                if success:
+                    logger.info(f"Deleted Outlook Calendar event {outlook_event_id} for user {user_id}")
+                else:
+                    logger.warning(f"Failed to delete Outlook Calendar event {outlook_event_id} for user {user_id}")
+            except Exception as e:
+                logger.error(f"Error deleting Outlook Calendar event {outlook_event_id} for user {user_id}: {str(e)}")
+                
+    except Exception as e:
+        logger.error(f"Error deleting event {event.id} from external calendars: {str(e)}")
+        # Don't fail the main deletion if external calendar deletion fails
 
 @bp.route('/events/invitation/<int:invitation_id>/accept', methods=['POST'])
 @login_required
