@@ -140,7 +140,7 @@
                     <p>Automatically add accepted Gatherly events to your Google Calendar</p>
                 </div>
                 <div class="setting-control">
-                    <input type="checkbox" id="auto-add-events" {% if user.google_calendar_sync and user.google_calendar_sync.auto_add_events %}checked{% endif %}>
+                    <input type="checkbox" id="auto-add-events" {% if google_calendar_sync and google_calendar_sync.auto_add_events %}checked{% endif %}>
                     <label for="auto-add-events" class="toggle-label"></label>
                 </div>
             </div>
@@ -1176,6 +1176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 function updateGoogleCalendarSetting(setting, value) {
+    console.log('Updating Google Calendar setting:', setting, 'to:', value);
     const data = {};
     data[setting] = value;
     
@@ -1188,6 +1189,7 @@ function updateGoogleCalendarSetting(setting, value) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Google Calendar setting response:', data);
         if (data.success) {
             showNotification('Google Calendar setting updated!', 'success');
         } else {
