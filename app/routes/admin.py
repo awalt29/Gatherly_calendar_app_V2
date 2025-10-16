@@ -145,22 +145,55 @@ def delete_user(user_id):
         user = User.query.get_or_404(user_id)
         username = user.username
         
-        # Delete all user-related data
-        # 1. Delete friendships
+        # Delete all user-related data in correct order to avoid foreign key violations
+        
+        # 1. Delete notifications related to this user
+        from app.models.notification import Notification
+        Notification.query.filter_by(user_id=user_id).delete()
+        Notification.query.filter_by(from_user_id=user_id).delete()
+        
+        # 2. Delete notifications related to friendships involving this user
+        friend_ids = db.session.query(Friend.id).filter(
+            (Friend.user_id == user_id) | (Friend.friend_id == user_id)
+        ).all()
+        for friend_record in friend_ids:
+            Notification.query.filter_by(friend_id=friend_record[0]).delete()
+        
+        # 3. Delete event invitations
+        from app.models.event_invitation import EventInvitation
+        EventInvitation.query.filter_by(invitee_id=user_id).delete()
+        
+        # 4. Delete events created by this user and their invitations
+        from app.models.event import Event
+        user_events = Event.query.filter_by(created_by_id=user_id).all()
+        for event in user_events:
+            EventInvitation.query.filter_by(event_id=event.id).delete()
+            db.session.delete(event)
+        
+        # 5. Remove user from events they're attending (but didn't create)
+        events_attending = Event.query.filter(Event.attendees.any(id=user_id)).all()
+        for event in events_attending:
+            event.attendees.remove(user)
+        
+        # 6. Delete friendships
         Friend.query.filter(
             (Friend.user_id == user_id) | (Friend.friend_id == user_id)
         ).delete()
         
-        # 2. Delete availability records
+        # 7. Delete availability records
         Availability.query.filter_by(user_id=user_id).delete()
         
-        # 3. Delete default schedule
+        # 8. Delete default schedule
         DefaultSchedule.query.filter_by(user_id=user_id).delete()
         
-        # 4. Delete Google Calendar sync
+        # 9. Delete Google Calendar sync
         GoogleCalendarSync.query.filter_by(user_id=user_id).delete()
         
-        # 5. Delete the user
+        # 10. Delete Outlook Calendar sync
+        from app.models.outlook_calendar_sync import OutlookCalendarSync
+        OutlookCalendarSync.query.filter_by(user_id=user_id).delete()
+        
+        # 11. Finally, delete the user
         db.session.delete(user)
         db.session.commit()
         
