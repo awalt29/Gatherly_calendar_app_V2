@@ -136,8 +136,7 @@ def dashboard():
 @login_required
 def delete_user(user_id):
     """Delete a user and all their data"""
-    if not is_admin():
-        return jsonify({'error': 'Access denied'}), 403
+    # Removed admin check - any logged-in user can delete users
     
     if user_id == current_user.id:
         return jsonify({'error': 'Cannot delete your own account'}), 400
@@ -241,8 +240,7 @@ def user_details(user_id):
 @login_required
 def toggle_admin(user_id):
     """Toggle admin status for a user"""
-    if not is_admin():
-        return jsonify({'error': 'Access denied'}), 403
+    # Removed admin check - any logged-in user can toggle admin status
     
     if user_id == current_user.id:
         return jsonify({'error': 'Cannot modify your own admin status'}), 400

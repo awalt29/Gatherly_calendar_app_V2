@@ -736,17 +736,11 @@ function showUserDetails(userId) {
 }
 
 function showDeleteConfirmation(userId, username) {
-    // Check if user is authenticated and has admin privileges
+    // Check if user is authenticated
     const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
-    const isAdmin = {{ 'true' if current_user and current_user.is_authenticated and (current_user.is_admin or current_user.id == 1) else 'false' }};
     
     if (!isAuthenticated) {
-        showNotification('Please log in to perform admin actions', 'error');
-        return;
-    }
-    
-    if (!isAdmin) {
-        showNotification('Admin privileges required for this action', 'error');
+        showNotification('Please log in to perform this action', 'error');
         return;
     }
     
@@ -763,18 +757,11 @@ function closeDeleteModal() {
 }
 
 function deleteUser(userId, username) {
-    // Check if user is authenticated and has admin privileges
+    // Check if user is authenticated
     const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
-    const isAdmin = {{ 'true' if current_user and current_user.is_authenticated and (current_user.is_admin or current_user.id == 1) else 'false' }};
     
     if (!isAuthenticated) {
-        showNotification('Please log in to perform admin actions', 'error');
-        closeDeleteModal();
-        return;
-    }
-    
-    if (!isAdmin) {
-        showNotification('Admin privileges required for this action', 'error');
+        showNotification('Please log in to perform this action', 'error');
         closeDeleteModal();
         return;
     }
@@ -810,17 +797,11 @@ function deleteUser(userId, username) {
 }
 
 function toggleAdminStatus(userId, username, isCurrentlyAdmin, buttonElement) {
-    // Check if user is authenticated and has admin privileges
+    // Check if user is authenticated
     const isAuthenticated = {{ 'true' if current_user and current_user.is_authenticated else 'false' }};
-    const isAdmin = {{ 'true' if current_user and current_user.is_authenticated and (current_user.is_admin or current_user.id == 1) else 'false' }};
     
     if (!isAuthenticated) {
-        showNotification('Please log in to perform admin actions', 'error');
-        return;
-    }
-    
-    if (!isAdmin) {
-        showNotification('Admin privileges required for this action', 'error');
+        showNotification('Please log in to perform this action', 'error');
         return;
     }
     
