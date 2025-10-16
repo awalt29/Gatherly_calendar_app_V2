@@ -73,9 +73,9 @@
                             <div class="event-meta">
                                 <div class="event-date">
                                     {% if current_user.timezone %}
-                                        {{ event.get_date_in_timezone(current_user.timezone).strftime('%B %d, %Y') }}
+                                        {{ event.get_date_in_timezone(current_user.timezone).strftime('%A, %B %d, %Y') }}
                                     {% else %}
-                                        {{ event.date.strftime('%B %d, %Y') }}
+                                        {{ event.date.strftime('%A, %B %d, %Y') }}
                                     {% endif %}
                                 </div>
                                 <div class="event-time">
@@ -88,7 +88,7 @@
                             </div>
                         </div>
                         <div class="event-click-hint">
-                            <span>Tap for details</span>
+                            <span>Details</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9,18 15,12 9,6"></polyline>
                             </svg>
